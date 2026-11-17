@@ -7,25 +7,19 @@
 - 차량에서 **NEMESIS Manager**가 열려야 합니다.
 - 대상은 Telechips `tcc803x` / `tcc897x`와 커널 `3.18.24-tcc`입니다. 패키지가 설치 및 실행 시 플랫폼과 커널을 확인합니다.
 - ipTIME A3000mini는 RTL8812BU를 사용합니다. 이 패키지에서 확인한 모듈의 USB ID에는 `0bda:b812`와 `0bda:b82c`가 포함됩니다.
-- 2024 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`에서 v1.0이 모듈을 로드했고 ipTIME A3000mini의 USB ID `0bda:b812`를 읽었습니다. 당시 인터페이스 확인은 실패했으며, v1.1의 실차 결과는 아직 확인 전입니다.
+- 2024 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`에서 v1.0이 모듈을 로드했고 ipTIME A3000mini의 USB ID `0bda:b812`를 읽었습니다. 당시 인터페이스 확인은 실패했으며, 탐색을 개선한 버전의 실차 결과는 아직 확인 전입니다.
 
 이미 **USB WiFi Hotspot Enabler**(`usbwifi.hotspot`)를 사용 중이면 같은 모듈을 공유하므로 두 패키지 중 하나를 선택하세요.
 
 ## 설치 방법
 
-### 1. PC에서 설치 ZIP 만들기
+### 1. 설치 ZIP 다운로드
 
-GitHub의 **Code → Download ZIP**으로 저장소를 내려받고, PC에서 압축을 풉니다. Python 3.9 이상이 설치된 PC에서 `build_package.py`가 보이는 폴더를 열고 다음 명령을 실행합니다.
-
-```sh
-python build_package.py
-```
-
-Windows에서 `python` 명령으로 실행되지 않으면 `py -3 build_package.py`를 사용하세요. 빌드는 원본 릴리스 ZIP을 내려받아 SHA-256을 검증하고, 플랫폼별 모듈을 추출해 `dist/NEMESIS-RTL8812BU-Gen5W-USB.zip`을 생성합니다.
+최신 배포 릴리스의 **Assets**에서 `NEMESIS-RTL8812BU-Gen5W-USB-v*.zip`을 내려받습니다. 이 파일을 바로 USB에 풀어 설치할 수 있습니다. [최신 배포 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)
 
 ### 2. 설치 USB 준비하기
 
-생성된 **`NEMESIS-RTL8812BU-Gen5W-USB.zip`**을 FAT32 USB 메모리의 최상위에 풉니다. 아래와 같이 `NEMESIS.data`가 첫 화면에 보여야 합니다.
+내려받은 설치 ZIP을 FAT32 USB 메모리의 최상위에 풉니다. 아래와 같이 `NEMESIS.data`가 첫 화면에 보여야 합니다.
 
 ```text
 USB/
@@ -46,7 +40,7 @@ USB/
 
 헤드유닛을 완전히 재부팅한 뒤에는 **Launch**를 다시 누릅니다. 이 패키지를 적용한 뒤 Wi-Fi 네트워크 연결이나 무선 CarPlay를 사용하려면 해당 기능을 별도로 구성합니다.
 
-v1.0이 설치되어 있으면 같은 방법으로 새 USB를 넣고 업데이트를 승인합니다. **My Packages**에서 버전이 **1.1**인지 확인한 뒤 Launch를 누릅니다.
+이전 버전이 설치되어 있으면 같은 방법으로 새 USB를 넣고 업데이트를 승인합니다. **My Packages**에서 배포 버전을 확인한 뒤 **Launch**를 누릅니다.
 
 ## 문제 해결
 
@@ -64,9 +58,9 @@ Launch를 실행한 뒤 동글 대신 USB 메모리를 꽂고 **NEMESIS Manager 
 
 **NEMESIS Manager → My Packages → Realtek RTL8812BU USB Driver → Uninstall**을 누릅니다. 모듈이 사용 중이라는 메시지가 나오면 동글을 빼고 다시 시도합니다.
 
-## 오프라인 빌드
+## 개발용 패키지 재생성
 
-[GRT47 v2.0.7 릴리스](https://github.com/GRT47/HKG_5W_USB_Wlan/releases/tag/v2.0.7)의 `HKG_5W_USBWifi_Hotspot.zip`이 PC에 있으면 그 파일을 지정해 인터넷 연결 없이 빌드할 수 있습니다.
+배포 릴리스에는 USB 설치 ZIP 한 개를 첨부합니다. 패키지를 개발하거나 검증할 때는 Python 3.9 이상에서 `python build_package.py`를 실행합니다. 원본 릴리스 ZIP을 이미 받은 경우 파일 경로를 지정할 수 있습니다.
 
 ```sh
 python build_package.py --upstream ./HKG_5W_USBWifi_Hotspot.zip
@@ -76,6 +70,7 @@ python build_package.py --upstream ./HKG_5W_USBWifi_Hotspot.zip
 
 커널 모듈은 GRT47 릴리스에서 가져옵니다. 빌더는 ARM ELF 형식, vermagic과 USB ID를 확인한 뒤 원본 모듈을 그대로 패키징합니다.
 
+- [GPL-2.0 드라이버 대응 소스와 빌드 설정](driver-source/README.md)
 - [GRT47 v2.0.7 릴리스](https://github.com/GRT47/HKG_5W_USB_Wlan/releases/tag/v2.0.7)
 - [GRT47 커널 모듈 빌드 스크립트](https://github.com/GRT47/HKG_5W_USB_Wlan/tree/v2.0.7/package_usbwifi_hotspot/kernel_build)
 - [Realtek 드라이버 소스 저장소](https://github.com/cilynx/rtl88x2bu)

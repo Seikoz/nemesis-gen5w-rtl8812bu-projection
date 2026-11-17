@@ -1,6 +1,9 @@
-The two 88x2bu kernel modules were extracted byte-for-byte from
-GRT47/HKG_5W_USB_Wlan v2.0.7. The module metadata declares license=GPL.
-Release: https://github.com/GRT47/HKG_5W_USB_Wlan/releases/tag/v2.0.7
-Source and kernel build scripts: https://github.com/GRT47/HKG_5W_USB_Wlan/tree/v2.0.7/package_usbwifi_hotspot/kernel_build
-Driver source used by the upstream build scripts: https://github.com/cilynx/rtl88x2bu
-Original release ZIP SHA-256: 1545BC400CFC32693F2FD0A1DB155441EE753F35BF25D0B1485CF7D1B46673C3
+The two GPL-2.0 Realtek 88x2bu kernel modules were extracted byte-for-byte
+from GRT47/HKG_5W_USB_Wlan v2.0.7. See MODULE-LICENSE.txt for the license.
+
+Complete corresponding source, configs, and rebuild instructions:
+https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/v1.1.1/driver-source
+
+Original release: https://github.com/GRT47/HKG_5W_USB_Wlan/releases/tag/v2.0.7
+Original release ZIP SHA-256: 1545bc400cfc32693f2fd0a1db155441ee753f35bf25d0b1485cf7d1b46673c3
+Verified module srcversion: A8402F29F362DF030025EE3
