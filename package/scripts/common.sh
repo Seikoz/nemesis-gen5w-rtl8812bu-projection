@@ -79,6 +79,29 @@ bound_usb_driver() {
     echo "${driver_path##*/}"
 }
 
+check_korea_projection() {
+    local descriptor=/data/nemesis/apps/korea.projection/NEMESIS.data line
+    projection_version=
+    [ -r "$descriptor" ] || return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            package-version=*)
+                projection_version=${line#package-version=}
+                projection_version=${projection_version#\"}
+                projection_version=${projection_version%\"}
+                return 0
+                ;;
+        esac
+    done < "$descriptor"
+}
+
+projection_rejects_usb() {
+    case "$projection_version" in
+        1.7|1.7.*) return 0 ;;
+    esac
+    return 1
+}
+
 retry_usb_bind() {
     local bind_path=/sys/bus/usb/drivers/rtl88x2bu/bind authorized
     [ -L "$usb_interface/driver" ] && return 0
@@ -139,6 +162,14 @@ save_launch_log() (
             done
         fi
         echo "manual_bind=${bind_result:-not attempted}"
+        if [ -n "$projection_version" ]; then
+            echo "korea_projection.version=$projection_version"
+            if projection_rejects_usb; then
+                echo "korea_projection.usb_wifi=unsupported"
+            else
+                echo "korea_projection.usb_wifi=not_checked"
+            fi
+        fi
         if [ -r /sys/bus/usb/drivers_autoprobe ] &&
            read -r value < /sys/bus/usb/drivers_autoprobe; then
             echo "usb.drivers_autoprobe=$value"
@@ -177,6 +208,9 @@ report_interface() {
             message="RTL8812BU ready: $net_name ($vendor:$product)"
             save_launch_log "$message" success
             echo "$message"
+            if projection_rejects_usb; then
+                echo "Korea Projection $projection_version does not support USB Wi-Fi."
+            fi
             return 0
         fi
         [ "$attempt" = 2 ] && retry_usb_bind

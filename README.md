@@ -7,7 +7,7 @@
 - 차량에서 **NEMESIS Manager**가 열려야 합니다.
 - 대상은 Telechips `tcc803x` / `tcc897x`와 커널 `3.18.24-tcc`입니다. 패키지가 설치 및 실행 시 플랫폼과 커널을 확인합니다.
 - ipTIME A3000mini는 RTL8812BU를 사용합니다. 이 패키지에서 확인한 모듈의 USB ID에는 `0bda:b812`와 `0bda:b82c`가 포함됩니다.
-- 2024 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`에서 v1.1.1은 모듈을 등록하고 ipTIME A3000mini의 USB ID `0bda:b812`를 읽었습니다. USB 인터페이스는 `unbound`로 남았습니다. v1.1.2의 실차 결과는 아직 확인 전입니다. [버전별 변경사항](CHANGELOG.md)
+- 2024 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`의 v1.1.2 실차 로그에서 ipTIME A3000mini(`0bda:b812`)가 `rtl88x2bu`에 자동 연결됐고 `rtwlan0`이 생성됐습니다. 이 시험에서 `manual_bind=not attempted`는 자동 연결이 끝나 수동 재시도가 필요 없었다는 뜻입니다. [버전별 변경사항](CHANGELOG.md)
 
 이미 **USB WiFi Hotspot Enabler**(`usbwifi.hotspot`)를 사용 중이면 같은 모듈을 공유하므로 두 패키지 중 하나를 선택하세요.
 
@@ -39,6 +39,10 @@ USB/
 5. `RTL8812BU ready: rtwlan0 (0bda:b812)`처럼 표시되면 동글이 Wi-Fi 인터페이스로 등록된 것입니다. 인터페이스 번호와 USB ID는 장치에 따라 달라질 수 있습니다.
 
 헤드유닛을 완전히 재부팅한 뒤에는 **Launch**를 다시 누릅니다. 이 패키지를 적용한 뒤 Wi-Fi 네트워크 연결이나 무선 CarPlay를 사용하려면 해당 기능을 별도로 구성합니다.
+
+### Korea Projection 호환성
+
+Korea Projection 1.7.x는 내장 Wi-Fi를 확인한 뒤 무선 모드를 설치합니다. USB 동글이 `rtwlan0`으로 등록된 차에서도 1.7.x는 Wi-Fi 부품 없음으로 표시할 수 있습니다. v1.1.3부터는 이 조합에서 **Launch** 결과와 `launch.log`에 USB 드라이버 인식 여부와 Korea Projection 지원 상태를 구분해 표시합니다. 무선 CarPlay·Android Auto에는 Korea Projection의 USB 지원과 해당 차량 검증이 필요합니다. [Korea Projection의 USB 동글 지원 계획](https://github.com/StopDragon/korea-projection#usb-wi-fi-동글-180-준비-중)
 
 이전 버전이 설치되어 있으면 같은 방법으로 새 USB를 넣고 업데이트를 승인합니다. **My Packages**에서 배포 버전을 확인한 뒤 **Launch**를 누릅니다.
 

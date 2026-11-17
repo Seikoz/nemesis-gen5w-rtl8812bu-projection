@@ -1,5 +1,11 @@
 # 변경사항
 
+## v1.1.3
+
+- 아반떼 N `260902`의 v1.1.2 실차 로그에서 A3000mini(`0bda:b812`)가 `rtl88x2bu`에 자동 연결되고 `rtwlan0`으로 등록된 것을 확인했습니다.
+- Korea Projection 1.7.x가 설치된 경우 USB 드라이버의 인식 성공과 Korea Projection의 USB 미지원 상태를 각각 안내합니다. `launch.log`에는 설치된 Korea Projection 버전과 USB 지원 판정을 기록합니다.
+- Korea Projection의 무선 모드 설치에는 해당 프로젝트의 USB 동글 지원이 필요합니다. [공식 지원 계획](https://github.com/StopDragon/korea-projection#usb-wi-fi-동글-180-준비-중)
+
 ## v1.1.2
 
 - 아반떼 N `260902` 실차 로그에서 동글 `0bda:b812`와 모듈 등록은 확인됐지만 USB 인터페이스 `4-1:1.0`은 `unbound`였습니다. 자동 연결 뒤에도 인터페이스가 비어 있으면 USB ID와 클래스가 일치하는 동글에 한해 `rtl88x2bu` 연결을 한 번 재요청합니다.
