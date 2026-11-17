@@ -1,0 +1,49 @@
+# Included in hotspot.sh by build.py.
+usb_target() {
+  case "$(getprop ro.build.product)" in
+    CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902) ;;
+    *) return 1 ;;
+  esac
+  [ "$(getprop ro.board.platform)" = tcc803x ]
+}
+
+usb_wifi_ready() (
+  [ -d "$WLAN" ] && [ -d "$PROC/net/rtl88x2bu/$WIF" ] || return 1
+  for device in "$USB_SYS"/*; do
+    [ -r "$device/idVendor" ] && [ -r "$device/idProduct" ] || continue
+    read vendor < "$device/idVendor"
+    read product < "$device/idProduct"
+    [ "$vendor:$product" = 0bda:b812 ] || continue
+    for intf in "$device":*; do
+      [ -d "$intf/driver" ] || continue
+      driver=$(cd -P "$intf/driver" && pwd -P) || continue
+      [ "${driver##*/}" = rtl88x2bu ] && return 0
+    done
+  done
+  return 1
+)
+
+usb_setup() {
+  CLASSPATH="$APP/hmgapi/setup.jar" /system/bin/app_process /system/bin usbprojection.UsbProjectionSetup "$@"
+}
+
+usb_network() {
+  usb_setup "$1" "$HMGDATA/settings/hmgapi.json" "$BK/usb-network.ours"
+}
+
+usb_ap_live() {
+  usb_wifi_ready && running "hostapd $CONF" && wlan_has_ip && our_dhcp_on
+}
+
+usb_ap_progress() {
+  if usb_ap_live; then
+    if [ ! -f "$W/usb.ap.ready" ]; then
+      : > "$W/usb.ap.ready"
+      log "USB AP ready: rtwlan0, hostapd and DHCP/1067"
+      prog 100 done "USB Wi-Fi AP ready (rtwlan0). Pair the iPhone over Bluetooth."
+    fi
+  elif [ -f "$W/usb.ap.ready" ]; then
+    rm -f "$W/usb.ap.ready"
+    prog 100 fail "USB Wi-Fi AP lost (rtwlan0). Check the dongle and driver."
+  fi
+}
