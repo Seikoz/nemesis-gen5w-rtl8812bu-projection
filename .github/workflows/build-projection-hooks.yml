@@ -2,7 +2,7 @@ name: Build CN7NPE USB CarPlay test hooks
 on:
   push:
     branches: [compat/korea-projection-usb]
-    paths: ['.github/workflows/build-projection-hooks.yml', 'projection-usb/compile_hooks.sh']
+    paths: ['.github/workflows/build-projection-hooks.yml', 'projection-usb/compile_hooks.sh', 'projection-usb/UsbProjectionSetup.java']
 permissions:
   contents: read
 jobs:
@@ -17,5 +17,5 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: kp-usb-hooks
-          path: out/projection-usb/hooks.jar
+          path: out/projection-usb/*.jar
           if-no-files-found: error
