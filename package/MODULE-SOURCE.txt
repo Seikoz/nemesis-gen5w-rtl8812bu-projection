@@ -1,0 +1,6 @@
+The two 88x2bu kernel modules were extracted byte-for-byte from
+GRT47/HKG_5W_USB_Wlan v2.0.7. The module metadata declares license=GPL.
+Release: https://github.com/GRT47/HKG_5W_USB_Wlan/releases/tag/v2.0.7
+Source and kernel build scripts: https://github.com/GRT47/HKG_5W_USB_Wlan/tree/v2.0.7/package_usbwifi_hotspot/kernel_build
+Driver source used by the upstream build scripts: https://github.com/cilynx/rtl88x2bu
+Original release ZIP SHA-256: 1545BC400CFC32693F2FD0A1DB155441EE753F35BF25D0B1485CF7D1B46673C3

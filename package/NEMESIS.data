@@ -1,0 +1,16 @@
+[nemesis]
+version=1.1
+id=realtek.88x2bu
+name=Realtek RTL8812BU USB Driver
+type=application
+package-version=1.0
+short-desc=Manual USB Wi-Fi driver for Gen5W
+detailed-desc=Connect a supported dongle and launch from My Packages to load 88x2bu. Supports TCC803x and TCC897x with Linux 3.18.24-tcc.
+depends=!usbwifi.hotspot
+preinstall=scripts/preinstall.sh
+preuninstall=scripts/preuninstall.sh
+
+[app.0]
+kind=sh
+path=scripts/load.sh
+uid=root
