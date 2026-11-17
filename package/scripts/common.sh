@@ -30,20 +30,25 @@ module_is_loaded() {
 }
 
 identify_dongle() {
-    for usb in /sys/bus/usb/devices/*; do
-        [ -r "$usb/idVendor" ] && [ -r "$usb/idProduct" ] || continue
-        read -r vendor < "$usb/idVendor" || continue
-        read -r product < "$usb/idProduct" || continue
-        case "$vendor:$product" in
+    local device intf vid pid usb_class usb_subclass usb_protocol
+    for device in /sys/bus/usb/devices/*; do
+        [ -r "$device/idVendor" ] && [ -r "$device/idProduct" ] || continue
+        read -r vid < "$device/idVendor" || continue
+        read -r pid < "$device/idProduct" || continue
+        case "$vid:$pid" in
             @USB_IDS@) ;;
             *) continue ;;
         esac
-        for usb_interface in "$usb":*; do
-            [ -r "$usb_interface/bInterfaceClass" ] || continue
-            read -r usb_class < "$usb_interface/bInterfaceClass" || continue
-            read -r usb_subclass < "$usb_interface/bInterfaceSubClass" || continue
-            read -r usb_protocol < "$usb_interface/bInterfaceProtocol" || continue
+        for intf in "$device":*; do
+            [ -r "$intf/bInterfaceClass" ] || continue
+            read -r usb_class < "$intf/bInterfaceClass" || continue
+            read -r usb_subclass < "$intf/bInterfaceSubClass" || continue
+            read -r usb_protocol < "$intf/bInterfaceProtocol" || continue
             [ "$usb_class:$usb_subclass:$usb_protocol" = ff:ff:ff ] || continue
+            usb=$device
+            usb_interface=$intf
+            vendor=$vid
+            product=$pid
             return 0
         done
     done
@@ -68,16 +73,78 @@ check_conflict() {
     fi
 }
 
-report_interface() {
-    for attempt in 1 2 3; do
-        for net in "$usb_interface"/net/rtwlan*; do
-            if [ -d "$net" ]; then
-                echo "RTL8812BU ready: ${net##*/} ($vendor:$product)"
+bound_usb_driver() {
+    local driver_path
+    driver_path=$(cd -P "$usb_interface/driver" 2>/dev/null && pwd -P) || return 1
+    echo "${driver_path##*/}"
+}
+
+find_wifi_interface() {
+    local net usb_path net_path net_name driver_module
+    usb_path=$(cd -P "$usb" 2>/dev/null && pwd -P) || return 1
+    driver_module=$(cd -P "$usb_interface/driver/module" 2>/dev/null && pwd -P)
+    for net in /sys/class/net/*; do
+        [ -d "$net" ] || continue
+        net_name=${net##*/}
+        net_path=$(cd -P "$net" 2>/dev/null && pwd -P) || continue
+        case "$net_path" in
+            "$usb_path"/*)
+                echo "$net_name"
                 return 0
-            fi
-        done
-        sleep 1
+                ;;
+            */virtual/net/*)
+                # A virtual netdev needs both the USB binding and the 88x2bu proc entry.
+                if { [ "$driver_module" = /sys/module/88x2bu ] ||
+                     [ "$(bound_usb_driver)" = rtl88x2bu ]; } &&
+                   [ -d "/proc/net/rtl88x2bu/$net_name" ]; then
+                    echo "$net_name"
+                    return 0
+                fi
+                ;;
+        esac
     done
-    echo "88x2bu loaded, but no USB Wi-Fi interface appeared ($vendor:$product)."
+    return 1
+}
+
+save_launch_log() (
+    umask 022
+    log_dir=/data/nemesis/logs/realtek.88x2bu
+    mkdir -p "$log_dir" || exit 1
+    {
+        echo "$1"
+        echo "platform=$platform kernel=$release module=$module_file"
+        if [ -n "$usb_interface" ]; then
+            echo "usb=$vendor:$product path=${usb_interface##*/} driver=$(bound_usb_driver || echo unbound)"
+        fi
+        for net in /sys/class/net/*; do
+            [ -d "$net" ] || continue
+            echo "net=${net##*/} path=$(cd -P "$net" 2>/dev/null && pwd -P)"
+        done
+        if [ "$2" = failure ]; then
+            echo "Kernel messages for 88x2bu and this USB port:"
+            dmesg | while IFS= read -r line; do
+                case "$line" in
+                    *RTW:*|*88x2bu*|*"usb ${usb##*/}:"*) echo "$line" ;;
+                esac
+            done
+        fi
+    } > "$log_dir/launch.log"
+) 2>/dev/null
+
+report_interface() {
+    local attempt net_name driver message
+    for attempt in 0 1 2 3 4 5; do
+        [ "$attempt" = 0 ] || sleep 1
+        if identify_dongle && net_name=$(find_wifi_interface); then
+            message="RTL8812BU ready: $net_name ($vendor:$product)"
+            save_launch_log "$message" success
+            echo "$message"
+            return 0
+        fi
+    done
+    driver=$(bound_usb_driver || echo unbound)
+    message="88x2bu loaded, no Wi-Fi interface ($vendor:$product, USB driver: $driver)."
+    save_launch_log "$message" failure
+    echo "$message"
     return 1
 }

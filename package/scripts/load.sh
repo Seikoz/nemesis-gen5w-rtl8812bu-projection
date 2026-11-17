@@ -21,7 +21,9 @@ if module_is_loaded; then
 fi
 
 if ! insmod "$package_dir/modules/$module_file" 'ifname=rtwlan%d' 'if2name=rtwlan%d'; then
-    echo "88x2bu failed to load on $platform. Check the kernel log."
+    message="88x2bu failed to load on $platform."
+    save_launch_log "$message" failure
+    echo "$message"
     exit 1
 fi
 if ! echo "$boot_id" > "$package_dir/.loaded-boot"; then
