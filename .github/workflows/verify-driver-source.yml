@@ -19,3 +19,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq bc bison flex kmod libelf-dev libc6-i386
       - run: bash verification/rebuild.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rtl88x2bu-rebuild-with-source
+          path: verification-output/
+          if-no-files-found: error
+          retention-days: 3

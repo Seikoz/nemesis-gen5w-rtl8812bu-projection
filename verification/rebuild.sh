@@ -2,6 +2,8 @@
 set -euo pipefail
 
 work=$(mktemp -d)
+export VERIFY_OUTPUT="$GITHUB_WORKSPACE/verification-output"
+mkdir -p "$VERIFY_OUTPUT"
 sudo install -d -o "$USER" /opt/src /opt/arm-eabi-4.7
 driver_rev=04ed7009bac4b235fe1880ba29e23159f49a6121
 grt_rev=bcfe084b198475c6edf138b8ee8e080bb48b7902
@@ -32,6 +34,11 @@ arm-eabi-gcc --version
 unzip -q "$work/driver.zip" -d /opt/src
 mv "/opt/src/rtl88x2bu-$driver_rev" /opt/src/rtl88x2bu
 tar -xJf "$work/linux.tar.xz" -C /opt/src
+# GCC 10 defaults to -fno-common. Linux 3.18's host-only device-tree lexer
+# and parser both define yylloc; keep the parser's definition.
+for lexer in dtc-lexer.l dtc-lexer.lex.c_shipped; do
+    sed -i '/^YYLTYPE yylloc;$/d' "/opt/src/linux-3.18.24/scripts/dtc/$lexer"
+done
 cp "$work/config_tcc803x.txt" /opt/src/linux-3.18.24/.config.tcc803x
 cp "$work/config_tcc897x.txt" /opt/src/linux-3.18.24/.config.tcc897x
 
@@ -50,7 +57,13 @@ kernel_end = source.index("\nOUT_MODS=", kernel_start)
 module_start = source.index("\n# 1. Build 88x2bu_tcc897x.ko", kernel_end)
 last_copy = source.index('cp /opt/src/rtl88x2bu/88x2bu.ko "$OUT_MODS/88x2bu.ko"', module_start)
 module_end = source.index("\nfi\n", last_copy) + 4
-sections = [source[patch_start:patch_end], source[kernel_start:kernel_end], source[module_start:module_end]]
+snapshot = 'tar -czf "$VERIFY_OUTPUT/rtl88x2bu-source.tar.gz" -C /opt/src rtl88x2bu'
+sections = [
+    source[patch_start:patch_end],
+    snapshot,
+    source[kernel_start:kernel_end],
+    source[module_start:module_end],
+]
 (work / "rtl-build.sh").write_text("\n".join(sections) + "\n")
 PY
 
@@ -74,3 +87,5 @@ for module in 88x2bu.ko 88x2bu_tcc897x.ko; do
     if cmp -s "$old" "$new"; then echo "$module MATCH"; else echo "$module DIFFERS"; fi
     echo "::endgroup::"
 done
+cp "$work/rebuilt/"*.ko "$VERIFY_OUTPUT/"
+cp "$work/config_tcc803x.txt" "$work/config_tcc897x.txt" "$GITHUB_WORKSPACE/verification/rebuild.sh" "$VERIFY_OUTPUT/"
