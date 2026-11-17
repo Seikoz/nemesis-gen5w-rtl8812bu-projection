@@ -1,0 +1,21 @@
+name: Verify RTL8812BU module source
+
+on:
+  push:
+    branches: [verify/rtl8812bu-source]
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bc bison flex kmod libelf-dev libc6-i386
+      - run: bash verification/rebuild.sh
