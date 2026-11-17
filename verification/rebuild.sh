@@ -35,9 +35,9 @@ unzip -q "$work/driver.zip" -d /opt/src
 mv "/opt/src/rtl88x2bu-$driver_rev" /opt/src/rtl88x2bu
 tar -xJf "$work/linux.tar.xz" -C /opt/src
 # GCC 10 defaults to -fno-common. Linux 3.18's host-only device-tree lexer
-# and parser both define yylloc; keep the parser's definition.
+# and parser both define yylloc; the lexer must use the parser's symbol.
 for lexer in dtc-lexer.l dtc-lexer.lex.c_shipped; do
-    sed -i '/^YYLTYPE yylloc;$/d' "/opt/src/linux-3.18.24/scripts/dtc/$lexer"
+    sed -i 's/^YYLTYPE yylloc;$/extern YYLTYPE yylloc;/' "/opt/src/linux-3.18.24/scripts/dtc/$lexer"
 done
 cp "$work/config_tcc803x.txt" /opt/src/linux-3.18.24/.config.tcc803x
 cp "$work/config_tcc897x.txt" /opt/src/linux-3.18.24/.config.tcc897x
