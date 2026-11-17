@@ -117,6 +117,31 @@ retry_usb_bind() {
     fi
 }
 
+reconfigure_boot_dongle() (
+    # Pin the directory so another USB device at the same port cannot be substituted.
+    cd -P "$usb" 2>/dev/null || return 1
+    local vid pid authorized count config class subclass protocol attempted intf
+    intf=${usb_interface##*/}
+    read -r vid < idVendor && [ "$vid" = 0bda ] &&
+        read -r pid < idProduct && [ "$pid" = b812 ] &&
+        read -r authorized < authorized && [ "$authorized" = 1 ] &&
+        read -r count < bNumInterfaces && [ "$count" = 1 ] &&
+        read -r config < bConfigurationValue && [ "$config" = 1 ] &&
+        read -r class < "$intf/bInterfaceClass" &&
+        read -r subclass < "$intf/bInterfaceSubClass" &&
+        read -r protocol < "$intf/bInterfaceProtocol" &&
+        [ "$class:$subclass:$protocol" = ff:ff:ff ] &&
+        [ ! -L "$intf/driver" ] && [ -w bConfigurationValue ] || return 1
+    if [ -r "$package_dir/.reconfigured-boot" ] &&
+       read -r attempted < "$package_dir/.reconfigured-boot" &&
+       [ "$attempted" = "$boot_id" ]; then
+        return 1
+    fi
+    # Reapply the existing configuration to reprobe this unbound device once per boot.
+    echo "$boot_id" > "$package_dir/.reconfigured-boot" || return 1
+    echo "$config" > bConfigurationValue
+)
+
 find_wifi_interface() {
     local net usb_path net_path net_name driver_module
     usb_path=$(cd -P "$usb" 2>/dev/null && pwd -P) || return 1
@@ -162,6 +187,9 @@ save_launch_log() (
             done
         fi
         echo "manual_bind=${bind_result:-not attempted}"
+        if [ "$launch_mode" = boot ]; then
+            echo "boot_reconfigure=${boot_reconfigure:-not attempted}"
+        fi
         if [ -n "$projection_version" ]; then
             echo "korea_projection.version=$projection_version"
             if projection_rejects_usb; then
@@ -190,31 +218,60 @@ save_launch_log() (
                 esac
             done
         fi
-    } > "$log_dir/launch.log"
+    } > "$log_dir/$log_name.log"
 ) 2>/dev/null
 
+wait_for_interface() {
+    local attempt=0 limit=$1
+    while [ "$attempt" -le "$limit" ]; do
+        if identify_dongle; then
+            net_name=$(find_wifi_interface) && return 0
+            if [ "$attempt" -ge 2 ] && [ -z "$bind_result" ]; then
+                retry_usb_bind
+            fi
+        fi
+        [ "$attempt" -eq "$limit" ] || sleep 1
+        attempt=$((attempt + 1))
+    done
+    return 1
+}
+
 report_interface() {
-    local attempt net_name driver message
-    if ! identify_dongle; then
+    local net_name driver message ready=0 limit=5 boot_reconfigure= bind_result=
+    if [ "$launch_mode" = boot ]; then
+        limit=12
+    elif ! identify_dongle; then
         message="88x2bu loaded. Plug in a supported dongle and press Launch again."
         save_launch_log "$message" success
         echo "$message"
         return 0
     fi
-    for attempt in 0 1 2 3 4 5; do
-        [ "$attempt" = 0 ] || sleep 1
-        identify_dongle || continue
-        if net_name=$(find_wifi_interface); then
-            message="RTL8812BU ready: $net_name ($vendor:$product)"
-            save_launch_log "$message" success
-            echo "$message"
-            if projection_rejects_usb; then
-                echo "Korea Projection $projection_version does not support USB Wi-Fi."
-            fi
-            return 0
+    if wait_for_interface "$limit"; then
+        ready=1
+    elif [ "$launch_mode" = boot ] && identify_dongle; then
+        local reconfigure_error
+        if reconfigure_error=$(reconfigure_boot_dongle 2>&1); then
+            boot_reconfigure="requested"
+            wait_for_interface 5 && ready=1
+        else
+            boot_reconfigure="skipped or failed${reconfigure_error:+: $reconfigure_error}"
         fi
-        [ "$attempt" = 2 ] && retry_usb_bind
-    done
+    fi
+    if [ "$ready" -eq 1 ]; then
+        message="RTL8812BU ready: $net_name ($vendor:$product)"
+        save_launch_log "$message" success
+        echo "$message"
+        if projection_rejects_usb; then
+            echo "Korea Projection $projection_version does not support USB Wi-Fi."
+        fi
+        return 0
+    fi
+    if ! identify_dongle; then
+        message="88x2bu loaded, no supported USB dongle detected."
+        save_launch_log "$message" failure
+        echo "$message"
+        return 1
+    fi
     driver=$(bound_usb_driver || echo unbound)
     message="88x2bu loaded, no Wi-Fi interface ($vendor:$product, USB driver: $driver)."
     save_launch_log "$message" failure

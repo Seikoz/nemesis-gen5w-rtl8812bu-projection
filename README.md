@@ -38,11 +38,13 @@ USB/
 4. **NEMESIS Manager → My Packages → Realtek RTL8812BU USB Driver → Launch**를 누릅니다.
 5. `RTL8812BU ready: rtwlan0 (0bda:b812)`처럼 표시되면 동글이 Wi-Fi 인터페이스로 등록된 것입니다. 인터페이스 번호와 USB ID는 장치에 따라 달라질 수 있습니다.
 
-헤드유닛을 완전히 재부팅한 뒤에는 **Launch**를 다시 누릅니다. 이 패키지를 적용한 뒤 Wi-Fi 네트워크 연결이나 무선 CarPlay를 사용하려면 해당 기능을 별도로 구성합니다.
+v1.1.4부터는 헤드유닛이 부팅될 때 NEMESIS 서비스가 자동으로 드라이버를 올립니다. 부팅에 꽂아 둔 A3000mini가 연결되지 않으면 승인·식별이 확인된 USB 장치의 현재 설정을 부팅당 한 번 다시 적용합니다. **Launch**에서 인식 결과를 확인할 수 있습니다.
 
 ### Korea Projection 호환성
 
 Korea Projection 1.7.x는 내장 Wi-Fi를 확인한 뒤 무선 모드를 설치합니다. USB 동글이 `rtwlan0`으로 등록된 차에서도 1.7.x는 Wi-Fi 부품 없음으로 표시할 수 있습니다. v1.1.3부터는 이 조합에서 **Launch** 결과와 `launch.log`에 USB 드라이버 인식 여부와 Korea Projection 지원 상태를 구분해 표시합니다. 무선 CarPlay·Android Auto에는 Korea Projection의 USB 지원과 해당 차량 검증이 필요합니다. [Korea Projection의 USB 동글 지원 계획](https://github.com/StopDragon/korea-projection#usb-wi-fi-동글-180-준비-중)
+
+1.7.4를 USB로 이식하려면 핫스팟 스크립트의 인터페이스 선택, 내장 Wi-Fi를 확인하는 설치 조건, 번들 HMG-API 무선 모드의 `wlan0` 검사까지 함께 수정해야 합니다. 그 뒤 차량에서 USB 동글의 AP 시작, iPhone 연결 및 CarPlay 세션을 검증해야 합니다. [Korea Projection 핫스팟 소스](https://github.com/StopDragon/korea-projection/blob/v1.7.4/nemesis-pkg/korea.projection/svc/hotspot.sh) · [HMG-API 무선 모드 소스](https://github.com/StopDragon/HMG-API/blob/korea-build/mods/wireless-carplay-aa/src/hmgapi/mods/wireless/Wireless.java)
 
 이전 버전이 설치되어 있으면 같은 방법으로 새 USB를 넣고 업데이트를 승인합니다. **My Packages**에서 배포 버전을 확인한 뒤 **Launch**를 누릅니다.
 
@@ -57,6 +59,8 @@ Korea Projection 1.7.x는 내장 Wi-Fi를 확인한 뒤 무선 모드를 설치�
 | `88x2bu loaded, no Wi-Fi interface` | 모듈을 올린 상태에서 동글을 뺐다가 다시 꽂아 한 번 더 Launch합니다. 같은 메시지가 뜨면 아래 방법으로 로그를 복사합니다. `manual_bind` 항목에서 연결 재시도 결과를 볼 수 있습니다. |
 
 Launch를 실행한 뒤 동글 대신 USB 메모리를 꽂고 **NEMESIS Manager → Logs → Copy to USB**를 누릅니다. USB에 생성된 `NEMESIS-logs/realtek.88x2bu/launch.log`에 플랫폼, USB 드라이버 연결 상태, 네트워크 인터페이스와 실패 관련 커널 메시지가 기록됩니다.
+
+동글을 꽂고 부팅할 때만 실패하면 내비를 완전히 재부팅하고 잠시 기다린 뒤 같은 방법으로 `NEMESIS-logs/realtek.88x2bu/boot.log`를 복사합니다. 로그의 `boot_reconfigure` 항목에서 부팅 중 USB 재설정 요청 여부를 확인할 수 있습니다.
 
 ## 제거
 

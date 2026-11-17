@@ -2,6 +2,13 @@
 package_dir=/data/nemesis/apps/realtek.88x2bu
 . "$package_dir/scripts/common.sh" || exit 1
 
+launch_mode=manual
+log_name=launch
+if [ "${1:-}" = --boot ]; then
+    launch_mode=boot
+    log_name=boot
+fi
+
 select_module && check_conflict || exit 1
 check_korea_projection
 identify_dongle
