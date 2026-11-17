@@ -3,10 +3,7 @@ package_dir=/data/nemesis/apps/realtek.88x2bu
 . "$package_dir/scripts/common.sh" || exit 1
 
 select_module && check_conflict || exit 1
-if ! identify_dongle; then
-    echo "Plug in an RTL8812BU dongle with a supported USB ID."
-    exit 1
-fi
+identify_dongle
 if ! read_boot_id; then
     echo "Cannot read the kernel boot ID."
     exit 1

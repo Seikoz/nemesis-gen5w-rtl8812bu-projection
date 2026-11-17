@@ -79,6 +79,21 @@ bound_usb_driver() {
     echo "${driver_path##*/}"
 }
 
+retry_usb_bind() {
+    local bind_path=/sys/bus/usb/drivers/rtl88x2bu/bind authorized
+    [ -L "$usb_interface/driver" ] && return 0
+    if [ -r "$usb/authorized" ] &&
+       read -r authorized < "$usb/authorized" && [ "$authorized" = 0 ]; then
+        bind_result="skipped: USB device deauthorized"
+    elif [ ! -w "$bind_path" ]; then
+        bind_result="unavailable: $bind_path is not writable"
+    elif bind_error=$( (echo "${usb_interface##*/}" > "$bind_path") 2>&1); then
+        bind_result="requested for ${usb_interface##*/}"
+    else
+        bind_result="failed for ${usb_interface##*/}: $bind_error"
+    fi
+}
+
 find_wifi_interface() {
     local net usb_path net_path net_name driver_module
     usb_path=$(cd -P "$usb" 2>/dev/null && pwd -P) || return 1
@@ -115,6 +130,18 @@ save_launch_log() (
         echo "platform=$platform kernel=$release module=$module_file"
         if [ -n "$usb_interface" ]; then
             echo "usb=$vendor:$product path=${usb_interface##*/} driver=$(bound_usb_driver || echo unbound)"
+            for field in authorized bConfigurationValue speed; do
+                [ -r "$usb/$field" ] && read -r value < "$usb/$field" && echo "usb.$field=$value"
+            done
+            for field in modalias bNumEndpoints; do
+                [ -r "$usb_interface/$field" ] && read -r value < "$usb_interface/$field" &&
+                    echo "interface.$field=$value"
+            done
+        fi
+        echo "manual_bind=${bind_result:-not attempted}"
+        if [ -r /sys/bus/usb/drivers_autoprobe ] &&
+           read -r value < /sys/bus/usb/drivers_autoprobe; then
+            echo "usb.drivers_autoprobe=$value"
         fi
         for net in /sys/class/net/*; do
             [ -d "$net" ] || continue
@@ -123,8 +150,12 @@ save_launch_log() (
         if [ "$2" = failure ]; then
             echo "Kernel messages for 88x2bu and this USB port:"
             dmesg | while IFS= read -r line; do
+                case "$line" in *"SerialNumber:"*) continue ;; esac
                 case "$line" in
-                    *RTW:*|*88x2bu*|*"usb ${usb##*/}:"*) echo "$line" ;;
+                    *RTW:*|*88x2bu*) echo "$line" ;;
+                    *) if [ -n "$usb" ]; then
+                           case "$line" in *"usb ${usb##*/}:"*|*" ${usb_interface##*/}:"*) echo "$line" ;; esac
+                       fi ;;
                 esac
             done
         fi
@@ -133,14 +164,22 @@ save_launch_log() (
 
 report_interface() {
     local attempt net_name driver message
+    if ! identify_dongle; then
+        message="88x2bu loaded. Plug in a supported dongle and press Launch again."
+        save_launch_log "$message" success
+        echo "$message"
+        return 0
+    fi
     for attempt in 0 1 2 3 4 5; do
         [ "$attempt" = 0 ] || sleep 1
-        if identify_dongle && net_name=$(find_wifi_interface); then
+        identify_dongle || continue
+        if net_name=$(find_wifi_interface); then
             message="RTL8812BU ready: $net_name ($vendor:$product)"
             save_launch_log "$message" success
             echo "$message"
             return 0
         fi
+        [ "$attempt" = 2 ] && retry_usb_bind
     done
     driver=$(bound_usb_driver || echo unbound)
     message="88x2bu loaded, no Wi-Fi interface ($vendor:$product, USB driver: $driver)."
