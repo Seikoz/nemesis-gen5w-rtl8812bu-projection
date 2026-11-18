@@ -20,7 +20,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.8 - Installs HMG-API and Realtek as needed
+short-desc=v1.7.4.9 - Includes hostapd failure diagnostics
 
 [package.1]
 path={HMG_API}
@@ -46,10 +46,31 @@ def read_package(installer, expected_sha256, path):
         return usb.read(path)
 
 
+def add_hostapd_diagnostics(package):
+    hotspot = package.read("svc/hotspot.sh")
+    launch = b'''usb_start_hostapd() {
+  (
+    rc=0
+    hostapd "$CONF" || rc=$?
+    echo "hostapd exit=$rc"
+  ) 2>&1 | '''
+    status = package.read("bin/status.sh")
+    reports = b"$W/usb-hostapd.log $W/carreport.txt"
+    if hotspot.count(launch) != 1 or status.count(reports) != 1:
+        raise ValueError("Expected hostapd launch and report hooks in the base package")
+    diagnostics = (ROOT / "bundle" / "hostapd-logcat.sh").read_bytes()
+    return {
+        "svc/hotspot.sh": hotspot.replace(
+            launch, diagnostics + b"\nusb_start_hostapd() {\n  usb_run_hostapd 2>&1 | ",
+        ),
+        "bin/status.sh": status.replace(reports, b"$W/usb-hostapd.log $W/usb-hostapd-logcat.log $W/carreport.txt"),
+    }
+
+
 def build_projection_package(source):
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.8\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.9\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.9,!niro.carplay.hotspot"\n',
@@ -63,7 +84,7 @@ def build_projection_package(source):
             b"Install and launch the RTL8812BU driver v1.1.4 first.",
             b"Install the RTL8812BU driver v1.1.9 or later first.",
         )
-        preinstall = preinstall.replace(b"[12345]", b"[12345678]")
+        preinstall = preinstall.replace(b"[12345]", b"[123456789]")
         preinstall = preinstall.replace(
             b'''if ! hmgapid ping >/dev/null 2>&1; then
   echo "Install and start HMG-API 1.1.0-rc.3 first."
@@ -81,16 +102,13 @@ until hmgapid ping >/dev/null 2>&1; do
 done''',
         )
 
+        changes = add_hostapd_diagnostics(package)
+        changes["NEMESIS.data"] = descriptor
+        changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
         with zipfile.ZipFile(output, "w") as updated:
             for entry in package.infolist():
-                name = entry.filename
-                if name == "NEMESIS.data":
-                    data = descriptor
-                elif name == "scripts/preinstall.sh":
-                    data = preinstall
-                else:
-                    data = package.read(entry)
+                data = changes[entry.filename] if entry.filename in changes else package.read(entry)
                 updated.writestr(entry, data)
         return output.getvalue()
 
@@ -102,7 +120,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.3-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.4-USB.zip",
     )
     args = parser.parse_args()
     try:

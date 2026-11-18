@@ -1,5 +1,10 @@
 # 변경사항
 
+## USB 합본 v0.1.4
+
+- Korea Projection **1.7.4.9**가 `hostapd` 실패 직후 해당 프로세스의 Android `logcat`을 수집합니다. SSID와 키를 가린 최근 오류를 `3-log.txt`의 `usb-hostapd-logcat.log` 항목에 포함합니다.
+- HMG-API **1.1.0-rc.4**, Realtek **1.1.9**, Korea Projection 무선 모드 **2.4.6**을 포함합니다.
+
 ## USB 합본 v0.1.3
 
 - HMG-API 본체를 공식 **1.1.0-rc.4**로 교체했습니다. NEMESIS에서 Korea Projection을 선택하면 rc.3 또는 그 이전 버전을 rc.4로 먼저 업데이트합니다.
