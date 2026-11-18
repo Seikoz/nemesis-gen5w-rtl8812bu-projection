@@ -7,6 +7,7 @@
 - `hostapd` 프로세스의 UID, Linux capabilities, SELinux 컨텍스트와 실패 직후의 Android 로그를 같은 USB 관측 기록과 연결해 `3-log.txt`에 포함합니다.
 - 같은 부팅·USB 장치의 `Operation not permitted` 판별을 수정했습니다. HMG-API **1.1.0-rc.4**와 무선 모드 **2.4.6**을 포함합니다.
 - GitHub 배포를 최신 USB 합본 ZIP 한 개로 정리하고, 이전 릴리스의 변경 이력을 이 문서에 보존합니다.
+- 릴리스 태그를 v0.1.7로 정리했습니다. 설치 안내와 라이선스의 이식 소스는 원본 커밋으로 연결합니다. ZIP의 설치 안내와 소스 링크를 갱신해 SHA-256을 릴리스에 다시 기록했습니다.
 
 ## USB 합본 v0.1.6
 

@@ -161,6 +161,14 @@ done''',
         )
 
         changes = add_hostapd_diagnostics(package)
+        # Use the original source commit so the notice survives release tag cleanup.
+        source_notice = package.read("licenses/Source.md")
+        old_ref = b"/tree/kp-usb-test-v0.1.4/projection-usb"
+        if source_notice.count(old_ref) != 1:
+            raise ValueError("Expected the Korea Projection source link in the base package")
+        changes["licenses/Source.md"] = source_notice.replace(
+            old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
+        )
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
