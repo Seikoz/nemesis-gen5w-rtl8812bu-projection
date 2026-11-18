@@ -1,0 +1,35 @@
+--- a/hal/rtl8822b/rtl8822b_halinit.c
++++ b/hal/rtl8822b/rtl8822b_halinit.c
+@@ -164,6 +164,8 @@
+ 		err = rtw_halmac_init_hal_fw(d, array_mp_8822b_fw_nic, array_length_mp_8822b_fw_nic);
+ 
+ 	if (err) {
++		pr_err("88x2bu: Gen5W chip-init failed stage=halmac-firmware source=%s status=%d\n",
++		       fw_bin ? "file" : "embedded", err);
+ 		RTW_ERR("%s Download Firmware from %s failed\n", __FUNCTION__, (fw_bin) ? "file" : "array");
+ 		return _FALSE;
+ 	}
+--- a/os_dep/linux/os_intfs.c
++++ b/os_dep/linux/os_intfs.c
+@@ -3584,8 +3584,11 @@
+ 		RTW_ENABLE_FUNC(padapter, DF_RX_BIT);
+ 		RTW_ENABLE_FUNC(padapter, DF_TX_BIT);
+ 		status = rtw_hal_init(padapter);
+-		if (status == _FAIL)
++		if (status == _FAIL) {
++			pr_err("88x2bu: Gen5W chip-init failed iface=%s stage=netdev-open-hal status=%u\n",
++			       pnetdev->name, status);
+ 			goto netdev_open_error;
++		}
+ 		rtw_led_control(padapter, LED_CTL_NO_LINK);
+ 		#ifndef RTW_HALMAC
+ 		status = rtw_mi_start_drv_threads(padapter);
+@@ -3713,6 +3716,8 @@
+ 
+ 		status = rtw_hal_init(padapter);
+ 		if (status == _FAIL) {
++			pr_err("88x2bu: Gen5W chip-init failed iface=%s stage=netdev-open-hal status=%u\n",
++			       pnetdev->name, status);
+ 			goto netdev_open_error;
+ 		}
+ #if 0/*#ifdef CONFIG_MI_WITH_MBSSID_CAM*/

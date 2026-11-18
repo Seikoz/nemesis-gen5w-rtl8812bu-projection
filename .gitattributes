@@ -3,3 +3,4 @@
 *.data text eol=lf
 *.txt text eol=lf
 bundle/licenses/HMG-API-AGPL-3.0.txt whitespace=-blank-at-eol
+driver-source/chip-init-diagnostics.patch text eol=lf -whitespace

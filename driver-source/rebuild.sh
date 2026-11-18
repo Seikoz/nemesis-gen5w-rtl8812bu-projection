@@ -45,8 +45,9 @@ cp "$work/config_tcc897x.txt" /opt/src/linux-3.18.24/.config.tcc897x
 
 # Retain the pinned upstream driver patches and the 88x2bu build commands.
 # The WSL chroot and 8851bu build are outside this build.
-python3 - "$work" <<'PY'
+python3 - "$work" "$(dirname "$source_script")/chip-init-diagnostics.patch" <<'PY'
 import pathlib
+import shlex
 import sys
 
 work = pathlib.Path(sys.argv[1])
@@ -61,6 +62,7 @@ module_end = source.index("\nfi\n", last_copy) + 4
 snapshot = 'tar -czf "$VERIFY_OUTPUT/rtl88x2bu-source.tar.gz" -C /opt/src rtl88x2bu'
 sections = [
     source[patch_start:patch_end],
+    "patch --batch --fuzz=0 -p1 < " + shlex.quote(sys.argv[2]),
     snapshot,
     source[kernel_start:kernel_end],
     source[module_start:module_end],
@@ -84,8 +86,10 @@ for module in 88x2bu.ko 88x2bu_tcc897x.ko; do
         modinfo "$candidate"
         readelf -Ws "$candidate" | awk '$7 == "UND" && $8 != "" {print $8}' | sort -u > "$candidate.symbols"
     done
-    diff -u "$old.symbols" "$new.symbols" || true
-    if cmp -s "$old" "$new"; then echo "$module MATCH"; else echo "$module DIFFERS"; fi
+    # Targeted printk calls should not add new kernel ABI dependencies.
+    diff -u "$old.symbols" "$new.symbols"
+    test "$(modinfo -F vermagic "$old")" = "$(modinfo -F vermagic "$new")"
+    strings "$new" | grep -F 'Gen5W chip-init failed'
     echo "::endgroup::"
 done
 cp "$work/rebuilt/"*.ko "$VERIFY_OUTPUT/"

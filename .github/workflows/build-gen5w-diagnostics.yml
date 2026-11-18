@@ -1,0 +1,31 @@
+name: Build Gen5W Wi-Fi diagnostics
+on:
+  push:
+    branches: [test/rtl8812bu-boot-retry]
+    paths:
+      - '.github/workflows/build-gen5w-diagnostics.yml'
+      - 'driver-source/rebuild.sh'
+      - 'driver-source/chip-init-diagnostics.patch'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install kernel build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y bc bison flex kmod libelf-dev libc6-i386
+      - name: Build and verify both 3.18.24-tcc modules
+        run: bash driver-source/rebuild.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: gen5w-wifi-diagnostics
+          path: |
+            verification-output/*.ko
+          if-no-files-found: error
