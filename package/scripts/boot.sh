@@ -1,29 +1,56 @@
 #!/system/bin/sh
-export PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
-loader=/data/nemesis/apps/realtek.88x2bu/scripts/load.sh
+package_dir=/data/nemesis/apps/realtek.88x2bu
+. "$package_dir/scripts/common.sh" || exit 1
 
-run_attempt() {
-    echo "RTL8812BU: $1"
-    /system/bin/sh "$loader" "$2"
-    result=$?
-    echo "RTL8812BU: $1 exit=$result"
+trap 'exit 0' HUP INT TERM
+
+pause() {
+    sleep "$1" & wait $!
 }
 
-run_attempt early --boot-early
-
-# NEMESIS can start shell services before Android is up and before the USB
-# stack has finished setting up the port. Keep the early preload, then retry.
-waited=0
-while [ "$(getprop sys.boot_completed)" != 1 ] && [ "$waited" -lt 90 ]; do
-    sleep 2
-    waited=$((waited + 2))
+# Match the time when Manager can launch packages normally.
+while [ "$(getprop sys.boot_completed)" != 1 ]; do
+    pause 2
 done
-echo "RTL8812BU: boot_completed=$(getprop sys.boot_completed) waited=${waited}s"
+select_module && check_conflict || exit 1
 
-# Recheck even after an early success. The booting unit can enumerate the same
-# device again after the first attempt has already observed it.
-for delay in 5 10 25; do
-    sleep "$delay"
-    run_attempt "late check (+${delay}s)" --boot
+log_dir=/data/nemesis/logs/realtek.88x2bu
+if mkdir -p "$log_dir"; then
+    echo "Automatic NEMESIS Launch started after Android boot." > "$log_dir/boot.log"
+fi
+
+boot_log() {
+    printf '%s\n' "$1"
+    printf '%s\n' "$1" >> "$log_dir/boot.log"
+}
+
+attempt=0
+last_device=
+while :; do
+    if ! identify_dongle; then
+        attempt=0
+        last_device=
+    else
+        # devnum also changes if Android replaces the device at the same port.
+        device_number=
+        if [ -r "$usb/devnum" ]; then
+            read -r device_number < "$usb/devnum"
+        fi
+        device="${usb##*/}:$device_number"
+        if [ "$device" != "$last_device" ]; then
+            attempt=0
+            last_device=$device
+        fi
+
+        if find_wifi_interface >/dev/null; then
+            attempt=0
+        elif [ "$attempt" -lt 3 ]; then
+            attempt=$((attempt + 1))
+            boot_log "Automatic Launch $attempt for $vendor:$product on $device."
+            output=$(/system/xbin/nemesis pkg-launch realtek.88x2bu 2>&1)
+            result=$?
+            boot_log "pkg-launch exit=$result: $output"
+        fi
+    fi
+    pause 5
 done
-exit "$result"

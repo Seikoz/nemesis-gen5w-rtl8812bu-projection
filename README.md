@@ -42,6 +42,8 @@ v1.1.4부터는 헤드유닛이 부팅될 때 NEMESIS 서비스가 자동으로 
 
 v1.1.5 부팅 테스트판은 초기 시도 뒤 Android가 시작될 때까지 기다리고 드라이버와 동글 연결을 최대 세 번 더 확인합니다. 아반떼 N `260902`에서는 기존 Korea Projection USB 테스트판과 함께 드라이버만 업데이트해 확인할 수 있습니다. 동글을 꽂은 채 부팅한 뒤 약 2분 동안 Realtek Launch를 누르지 않으면 자동 인식 여부를 확인할 수 있습니다.
 
+v1.1.6 자동 Launch 테스트판은 Android 부팅 완료 후 동글에 Wi-Fi 인터페이스가 없는 경우 NEMESIS Manager의 **Launch**와 같은 명령을 실행합니다. 아반떼 N에서는 Realtek 패키지만 업데이트하고, 동글을 꽂은 채 재부팅해 Korea Projection이 자동으로 진행되는지 확인합니다.
+
 ### Korea Projection 호환성
 
 Korea Projection 1.7.x는 내장 Wi-Fi를 확인한 뒤 무선 모드를 설치합니다. USB 동글이 `rtwlan0`으로 등록된 차에서도 1.7.x는 Wi-Fi 부품 없음으로 표시할 수 있습니다. v1.1.3부터는 이 조합에서 **Launch** 결과와 `launch.log`에 USB 드라이버 인식 여부와 Korea Projection 지원 상태를 구분해 표시합니다. 무선 CarPlay·Android Auto에는 Korea Projection의 USB 지원과 해당 차량 검증이 필요합니다. [Korea Projection의 USB 동글 지원 계획](https://github.com/StopDragon/korea-projection#usb-wi-fi-동글-180-준비-중)
