@@ -40,6 +40,8 @@ USB/
 
 ### 아반떼 N 260902에서 부팅 인식 테스트
 
+Realtek 1.1.7과 Korea Projection 1.7.4.5를 같은 USB에서 설치하려면 [아반떼 N USB 합본](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.0)을 사용합니다. NEMESIS Package Store의 USB 탭에서 Realtek을 먼저 선택합니다. [합본 설치 안내](bundle/INSTALL-KO.md)
+
 1. 테스트 릴리스의 USB ZIP을 위와 같은 방법으로 풀고 **Realtek RTL8812BU USB Driver v1.1.7** 업데이트를 승인합니다. 기존 Korea Projection USB 테스트판 `1.7.4.5`와 번들 HMG-API를 그대로 사용합니다. [v1.1.7 테스트 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/v1.1.7)
 2. 설치 USB를 빼고 A3000mini를 꽂은 채 내비게이션을 완전히 재부팅합니다.
 3. 약 2분 동안 동글을 장착한 상태로 두고 **Realtek Launch**를 누르지 않습니다. Korea Projection에서 `rtwlan0` 대기 문구가 사라지는지 확인합니다.
