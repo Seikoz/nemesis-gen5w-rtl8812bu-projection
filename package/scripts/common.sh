@@ -82,20 +82,24 @@ bound_usb_driver() {
 check_korea_projection() {
     local descriptor=/data/nemesis/apps/korea.projection/NEMESIS.data line
     projection_version=
+    projection_usb_test=0
     [ -r "$descriptor" ] || return 0
     while IFS= read -r line || [ -n "$line" ]; do
         case "$line" in
+            'name=Korea Projection CN7NPE USB Test'|'name="Korea Projection CN7NPE USB Test"')
+                projection_usb_test=1
+                ;;
             package-version=*)
                 projection_version=${line#package-version=}
                 projection_version=${projection_version#\"}
                 projection_version=${projection_version%\"}
-                return 0
                 ;;
         esac
     done < "$descriptor"
 }
 
 projection_rejects_usb() {
+    [ "$projection_usb_test" = 1 ] && return 1
     case "$projection_version" in
         1.7.4.[123456]) return 1 ;; # CN7NPE Korea Projection USB test packages
         1.7|1.7.*) return 0 ;;

@@ -1,5 +1,11 @@
 # 변경사항
 
+## USB 합본 v0.1.2
+
+- 차량 로그에 기록된 HMG-API 본체 **1.1.0-rc.3** 공식 빌드를 추가했습니다. Korea Projection **1.7.4.7**을 선택하면 NEMESIS가 필요한 HMG-API와 Realtek을 같은 USB에서 찾아 먼저 설치하거나 업데이트합니다.
+- Korea Projection은 새로 설치된 HMG-API 데몬이 응답할 시간을 준 뒤 설치를 진행합니다.
+- Realtek **1.1.9**는 패키지 이름으로 CN7NPE Korea Projection USB 테스트판을 식별합니다. 이전 드라이버와 동일한 커널 모듈과 USB 리셋 도구를 사용합니다.
+
 ## USB 합본 v0.1.1
 
 - Korea Projection **1.7.4.6**이 Realtek **1.1.8 이상**을 요구하도록 NEMESIS 의존성을 선언했습니다. USB 탭에서 Korea Projection을 선택하면 NEMESIS가 필요한 드라이버를 같은 USB에서 찾아 먼저 설치하거나 업데이트합니다.
