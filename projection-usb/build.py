@@ -18,7 +18,7 @@ UPSTREAM_SHA256 = "d33dae33b27cad30d82b47dda557732780b4813c5d0815ed6f22b21c4d0a4
 BASE_USB_SHA256 = "da9d6ec5c2a426052a96bee94e661f663a56c02431fd2dc4bb196d68908a7d7a"
 MOD = "wireless-carplay-aa"
 MOD_VERSION = "2.4.6"
-PACKAGE_VERSION = "1.7.4.4"
+PACKAGE_VERSION = "1.7.4.5"
 MOD_PATH = f"hmgapi/{MOD}.zip"
 PACKAGE_PATH = "packages/korea.projection.zip"
 
@@ -177,6 +177,19 @@ def patch_service(text, mod):
                    '    elif ! usb_network allow > "$W/usb-network.log" 2>&1; then\n'
                    '      _fail=1; LAST_MSG="HMG-API USB firewall setup failed (usb-network.log)."\n'
                    '    elif ptrack 70 run')
+    # The USB service already waits for the adapter before starting HMG setup.
+    # Running the signed mod installer does not require the adapter to remain attached.
+    start = text.index('    elif wake_wifi; _wk=$?; [ $_wk != 0 ]; then\n')
+    end = text.index('    elif ! usb_network allow', start)
+    text = text[:start] + text[end:]
+    text = replace(text, '  elif [ $_auto = 1 ] && [ $_mine = 0 ]; then',
+                   '  elif [ $_auto = 1 ] && [ -s "$HMGDATA/state/local-map.json" ] &&\n'
+                   '       hmgapid engine verify-map > "$W/verify-map.txt" 2>&1; then\n'
+                   '    : > "$BK/automap.checked"\n'
+                   '    log "Reusing the verified HMG-API local map."\n'
+                   '  elif [ $_auto = 1 ] && [ $_mine = 0 ]; then')
+    text = replace(text, '  elif [ $_restart = 1 ] && [ $_fail = 0 ]; then',
+                   '  elif [ $_restart = 1 ] && [ $_fail = 0 ] && setup_done; then', 2)
     text = replace(text, '  usb_seen_write\n', '  usb_seen_write\n'
                    '  rm -f "$W/usb.ap.ready" "$W/usb-realtek-launch.log" "$W/usb-hostapd.log"\n'
                    '  if ! usb_wifi_ready; then\n'
@@ -264,6 +277,14 @@ def build(args):
     preinstall = (HERE / "preinstall.sh").read_text(encoding="utf-8")
     files["scripts/preinstall.sh"] = replace(preinstall, "@MOD_AUTHOR@", manifest["uuid"]).encode()
     files["svc/hotspot.sh"] = patch_service(files["svc/hotspot.sh"].decode(), files[MOD_PATH]).encode()
+    postinstall = files["scripts/post.sh"].decode()
+    postinstall = replace(postinstall, 'HOTSPOT_LIB=1 . /data/nemesis/apps/korea.projection/svc/hotspot.sh',
+                          'HOTSPOT_LIB=1 . /data/nemesis/apps/korea.projection/svc/hotspot.sh\n'
+                          '# Recover a missing bundled mod on an explicit package install or update.\n'
+                          'if [ ! -f "$HMGDATA/mods/$MOD_ID/mod.json" ]; then\n'
+                          '  rm -f "$BK/mod.tried" "$BK/setup.told"\n'
+                          'fi')
+    files["scripts/post.sh"] = postinstall.encode()
     status = files["bin/status.sh"].decode()
     status = replace(status, 'WIF=${WIF:-wlan0}', 'WIF=rtwlan0')
     status = replace(status, '$W/mod-update.txt $W/carreport.txt',

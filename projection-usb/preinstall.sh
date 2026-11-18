@@ -24,7 +24,7 @@ installed=/data/nemesis/apps/korea.projection/NEMESIS.data
 mod=/data/hmgapi/mods/wireless-carplay-aa
 if [ -e "$installed" ] &&
    ! { grep -q '^name=Korea Projection CN7NPE USB Test$' "$installed" &&
-       grep -q '^package-version=1\.7\.4\.[1234]$' "$installed"; }; then
+       grep -q '^package-version=1\.7\.4\.[12345]$' "$installed"; }; then
   echo "Uninstall the existing Korea Projection package before installing the CN7NPE USB test."
   exit 1
 fi

@@ -4,13 +4,13 @@
 
 ## 설치와 확인
 
-기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.3` 사용자는 이 ZIP으로 Korea Projection만 업데이트합니다. 설치 USB를 빼고 A3000mini를 꽂습니다. `Waiting for A3000mini on rtwlan0`이 계속 뜨면 동글을 한 번 재장착합니다. 무선 모드 설정이나 핫스팟 시작에 2~3분을 주고 상태 화면을 확인합니다. 재부팅 안내가 있으면 안내를 따른 뒤 다시 핫스팟을 시도합니다.
+기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.4` 사용자는 이 ZIP으로 Korea Projection만 업데이트합니다. 설치 USB를 빼고 A3000mini를 꽂습니다. `Waiting for A3000mini on rtwlan0`이 계속 뜨면 동글을 한 번 재장착합니다. 무선 모드 설정이나 핫스팟 시작에 2~3분을 주고 상태 화면을 확인합니다. 무선 모드가 적용돼 재부팅 안내가 뜨면 한 번 재부팅하고 필요한 경우 다시 동글을 재장착합니다. `USB Wi-Fi AP ready`가 표시되면 iPhone으로 연결합니다.
 
 처음 설치하는 경우 아래 순서를 따릅니다.
 
 1. A3000mini를 연결하고 NEMESIS → My Packages → Realtek RTL8812BU USB Driver → Launch에서 `rtwlan0`이 잡히는지 확인합니다. 부팅 직후 나타나지 않으면 동글을 재장착해 확인합니다.
 2. 기존 Korea Projection이 설치되어 있으면 NEMESIS에서 제거합니다. 별도로 설치한 `wireless-carplay-aa` 모드가 남아 있다면 HMG-API에서 해당 모드만 제거하고 변경을 적용합니다. 재부팅 안내가 나오면 재부팅합니다.
-3. 릴리즈의 `Korea-Projection-1.7.4.4-CN7NPE-USB-Test.zip`을 FAT32 USB의 최상위에 풉니다. USB 루트에 `NEMESIS.data`가 보여야 합니다. `packages/korea.projection.zip`은 압축된 상태로 둡니다.
+3. 릴리즈의 `Korea-Projection-1.7.4.5-CN7NPE-USB-Test.zip`을 FAT32 USB의 최상위에 풉니다. USB 루트에 `NEMESIS.data`가 보여야 합니다. `packages/korea.projection.zip`은 압축된 상태로 둡니다.
 4. 정차 상태에서 NEMESIS Manager로 USB 패키지를 설치합니다. 설치 직후 HMG-API가 차량 훅 위치와 변경 계획을 확인하므로 3~5분 기다립니다. My Packages → Korea Projection CN7NPE USB Test → Launch를 열고 재부팅 안내가 나오면 USB 메모리를 뺀 뒤 재부팅합니다. 동글은 연결해 둡니다.
 5. Launch에서 USB AP가 준비됐는지 확인합니다. iPhone의 Wi-Fi와 Bluetooth를 켜고 내비게이션의 기기 연결 메뉴에서 Bluetooth로 페어링한 뒤 iPhone의 CarPlay 연결을 허용합니다.
 
@@ -21,6 +21,12 @@
 NEMESIS에서 Korea Projection CN7NPE USB Test를 제거합니다. 설치 프로그램이 추가한 무선 모드는 HMG-API를 통해 제거하고, 시험판이 추가한 방화벽 허용 항목을 회수합니다. 재부팅 후 원래 Korea Projection 패키지를 다시 설치할 수 있습니다.
 
 ## 변경 이력
+
+### USB Test v0.1.4 (NEMESIS 패키지 1.7.4.5)
+
+- 사용자가 설치나 업데이트를 승인했을 때만, 설치된 무선 모드가 없다면 이전 설치 시도 기록을 정리해 동봉된 HMG-API `wireless-carplay-aa 2.4.6`을 다시 적용할 수 있게 합니다.
+- 검증에 통과한 HMG-API 로컬 훅 맵을 다시 사용합니다. 무선 모드가 빠진 경우 훅 맵 검증만으로 설정 완료나 재부팅을 표시하지 않습니다.
+- 서비스가 동글을 한 번 확인한 뒤에는 HMG-API 모드 준비를 계속 진행합니다. AP는 실제 `rtwlan0` 바인딩을 확인한 뒤 시작합니다.
 
 ### USB Test v0.1.3 (NEMESIS 패키지 1.7.4.4)
 
@@ -49,5 +55,5 @@ NEMESIS에서 Korea Projection CN7NPE USB Test를 제거합니다. 설치 프로
 
 - Korea Projection 1.7.4의 스크립트와 APK는 GNU AGPL 3.0을 따릅니다. [원본 태그 및 소스](https://github.com/StopDragon/korea-projection/tree/v1.7.4)
 - HMG-API의 무선 모드는 GNU AGPL 3.0을 따릅니다. [원본 무선 모드 소스](https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa)
-- 이 시험판의 수정과 빌드 스크립트도 GNU AGPL 3.0을 따릅니다. [시험판에 사용한 수정 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/kp-usb-test-v0.1.3/projection-usb)
+- 이 시험판의 수정과 빌드 스크립트도 GNU AGPL 3.0을 따릅니다. [시험판에 사용한 수정 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/kp-usb-test-v0.1.4/projection-usb)
 - 동봉된 BusyBox의 GPL 2.0 안내와 대응 소스 위치는 패키지의 `bin/busybox-LICENSE.txt`에 있습니다.
