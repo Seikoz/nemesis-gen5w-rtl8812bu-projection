@@ -1,5 +1,10 @@
 # 변경사항
 
+## USB 합본 v0.1.3
+
+- HMG-API 본체를 공식 **1.1.0-rc.4**로 교체했습니다. NEMESIS에서 Korea Projection을 선택하면 rc.3 또는 그 이전 버전을 rc.4로 먼저 업데이트합니다.
+- Korea Projection 패키지 **1.7.4.8**에 새 의존성과 기존 테스트판의 업데이트 조건을 반영했습니다. 기존 무선 모드 **2.4.6**과 Realtek **1.1.9**를 그대로 사용합니다.
+
 ## USB 합본 v0.1.2
 
 - 차량 로그에 기록된 HMG-API 본체 **1.1.0-rc.3** 공식 빌드를 추가했습니다. Korea Projection **1.7.4.7**을 선택하면 NEMESIS가 필요한 HMG-API와 Realtek을 같은 USB에서 찾아 먼저 설치하거나 업데이트합니다.
