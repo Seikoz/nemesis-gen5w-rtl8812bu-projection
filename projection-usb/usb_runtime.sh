@@ -11,7 +11,7 @@ usb_a3000mini_paths() (
   for device in "$USB_SYS"/*; do
     [ -r "$device/idVendor" ] && [ -r "$device/idProduct" ] || continue
     read -r vendor < "$device/idVendor" && read -r product < "$device/idProduct" || continue
-    [ "$vendor:$product" != 0bda:b812 ] || printf '%s\n' "$device"
+    [ "$vendor:$product" != 0bda:b812 ] || echo "$device"
   done
 )
 
@@ -54,10 +54,15 @@ usb_launch_if_needed() {
   if [ "$KP_USB_TRIES" -eq 1 ]; then
     log "USB Realtek Launch: NEMESIS pkg-launch ($device_key)"
     "$BB_OWN" timeout 20 /system/xbin/nemesis pkg-launch realtek.88x2bu >> "$launch_log" 2>&1 || rc=$?
-  else
+  elif [ "$KP_USB_TRIES" -eq 2 ]; then
     # Use the same script and arguments as the Launch button if dispatch did not create rtwlan0.
     log "USB Realtek Launch: direct load.sh ($device_key, attempt $KP_USB_TRIES)"
     /system/bin/sh /data/nemesis/apps/realtek.88x2bu/scripts/load.sh >> "$launch_log" 2>&1 || rc=$?
+  else
+    # The driver's boot mode checks the USB ID, authorization and interface
+    # before reapplying the existing configuration at most once per boot.
+    log "USB Realtek Launch: guarded driver boot recovery ($device_key)"
+    /system/bin/sh /data/nemesis/apps/realtek.88x2bu/scripts/load.sh --boot >> "$launch_log" 2>&1 || rc=$?
   fi
   if usb_wifi_ready; then
     log "USB Realtek Launch: rtwlan0 ready (exit $rc)"

@@ -18,7 +18,7 @@ UPSTREAM_SHA256 = "d33dae33b27cad30d82b47dda557732780b4813c5d0815ed6f22b21c4d0a4
 BASE_USB_SHA256 = "da9d6ec5c2a426052a96bee94e661f663a56c02431fd2dc4bb196d68908a7d7a"
 MOD = "wireless-carplay-aa"
 MOD_VERSION = "2.4.6"
-PACKAGE_VERSION = "1.7.4.2"
+PACKAGE_VERSION = "1.7.4.3"
 MOD_PATH = f"hmgapi/{MOD}.zip"
 PACKAGE_PATH = "packages/korea.projection.zip"
 
