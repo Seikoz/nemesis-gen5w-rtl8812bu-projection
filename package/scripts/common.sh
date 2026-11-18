@@ -97,7 +97,7 @@ check_korea_projection() {
 
 projection_rejects_usb() {
     case "$projection_version" in
-        1.7.4.[12345]) return 1 ;; # CN7NPE Korea Projection USB test packages
+        1.7.4.[123456]) return 1 ;; # CN7NPE Korea Projection USB test packages
         1.7|1.7.*) return 0 ;;
     esac
     return 1

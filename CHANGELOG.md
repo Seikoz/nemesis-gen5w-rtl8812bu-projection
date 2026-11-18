@@ -1,5 +1,10 @@
 # 변경사항
 
+## USB 합본 v0.1.1
+
+- Korea Projection **1.7.4.6**이 Realtek **1.1.8 이상**을 요구하도록 NEMESIS 의존성을 선언했습니다. USB 탭에서 Korea Projection을 선택하면 NEMESIS가 필요한 드라이버를 같은 USB에서 찾아 먼저 설치하거나 업데이트합니다.
+- Realtek **1.1.8**은 Korea Projection **1.7.4.6**을 USB 테스트판으로 인식합니다. v1.1.7의 커널 모듈과 USB 리셋 도구를 사용합니다.
+
 ## v1.1.7 (A3000mini 부팅 인식 테스트)
 
 - NEMESIS 서비스 시작 시 모듈을 먼저 로드하고 Android 부팅 완료 후에도 인식을 재시도합니다. 서비스의 첫 시점과 각 시도 결과는 `preload.log`에 기록합니다.

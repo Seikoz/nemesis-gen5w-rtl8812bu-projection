@@ -69,13 +69,12 @@ def archive(files):
     return output.getvalue()
 
 
-def build(upstream, output, reset_helper):
-    files = load_modules(upstream)
+def build_driver_package(modules, helper):
+    files = dict(modules)
     ids_by_module = [usb_ids(path, files[path]) for path in MODULES]
     if ids_by_module[0] != ids_by_module[1]:
         raise ValueError("The platform modules have different USB aliases")
 
-    helper = reset_helper.read_bytes()
     if (len(helper) < 52 or helper[:6] != b"\x7fELF\x01\x01"
             or struct.unpack_from("<HH", helper, 16) != (3, 40)
             or b"/system/bin/linker\0" not in helper):
@@ -93,7 +92,12 @@ def build(upstream, output, reset_helper):
                 text = text.replace("@USB_IDS@", "|".join(sorted(ids_by_module[0])))
             files[name] = text.encode("utf-8")
 
-    usb = archive({"NEMESIS.data": USB_DESCRIPTOR.encode("utf-8"), PACKAGE_PATH: archive(files)})
+    return archive(files)
+
+
+def build(upstream, output, reset_helper):
+    driver = build_driver_package(load_modules(upstream), reset_helper.read_bytes())
+    usb = archive({"NEMESIS.data": USB_DESCRIPTOR.encode("utf-8"), PACKAGE_PATH: driver})
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(usb)
     print(f"Built {output}")
