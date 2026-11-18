@@ -15,9 +15,10 @@ from cryptography.hazmat.primitives.asymmetric import ec
 
 HERE = Path(__file__).resolve().parent
 UPSTREAM_SHA256 = "d33dae33b27cad30d82b47dda557732780b4813c5d0815ed6f22b21c4d0a4315"
+BASE_USB_SHA256 = "da9d6ec5c2a426052a96bee94e661f663a56c02431fd2dc4bb196d68908a7d7a"
 MOD = "wireless-carplay-aa"
 MOD_VERSION = "2.4.6"
-PACKAGE_VERSION = "1.7.4.1"
+PACKAGE_VERSION = "1.7.4.2"
 MOD_PATH = f"hmgapi/{MOD}.zip"
 PACKAGE_PATH = "packages/korea.projection.zip"
 
@@ -158,7 +159,15 @@ def patch_service(text, mod):
     text = replace(text, '--dhcp-authoritative --pid-file',
                    '--port=0 --dhcp-authoritative --dhcp-alternate-port=1067,68 --pid-file', 2)
     text = replace(text, 'up() {\n  $BB ifconfig',
-                   'up() {\n  usb_wifi_ready || { stop_ours; return 1; }\n  $BB ifconfig')
+                   'up() {\n'
+                   '  if ! usb_wifi_ready; then\n'
+                   '    stop_ours\n'
+                   '    usb_launch_if_needed\n'
+                   '    usb_wifi_ready || return 1\n'
+                   '  else\n'
+                   '    KP_USB_DEVICE=\n'
+                   '  fi\n'
+                   '  $BB ifconfig')
     text = replace(text, '  if our_dhcp_on; then\n',
                    '  running "hostapd $CONF" || return 1\n  if our_dhcp_on; then\n', 1)
     text = replace(text, '    elif ptrack 70 run',
@@ -166,12 +175,20 @@ def patch_service(text, mod):
                    '      _fail=1; LAST_MSG="HMG-API USB firewall setup failed (usb-network.log)."\n'
                    '    elif ptrack 70 run')
     text = replace(text, '  usb_seen_write\n', '  usb_seen_write\n'
+                   '  rm -f "$W/usb.ap.ready" "$W/usb-realtek-launch.log"\n'
                    '  if ! usb_wifi_ready; then\n'
-                   '    prog 100 fail "Waiting for A3000mini on rtwlan0. Check Realtek driver Launch."\n'
+                   '    prog 100 fail "Waiting for A3000mini on rtwlan0. Korea Projection will try Realtek Launch."\n'
                    '  fi\n'
                    '  while ! usb_wifi_ready; do\n'
+                   '    usb_launch_if_needed\n'
+                   '    usb_wifi_ready && break\n'
                    '    sleep 2 & wait $!\n'
                    '  done\n')
+    text = replace(text, '    while ! try_ready "$prod"; do sleep 30 & wait $!; req_tick; sleep 30 & wait $!; req_tick; done',
+                   '    while ! try_ready "$prod"; do\n'
+                   '      usb_launch_if_needed\n'
+                   '      sleep 30 & wait $!; req_tick\n'
+                   '    done')
     text = replace(text, '  parse_conf $SRC\n  if [ "${NS:-0}" -lt 4 ]',
                    '  while ! parse_conf "$SRC"; do\n'
                    '    prog 100 fail "Waiting for OEM CarPlay Wi-Fi credentials (usb-credentials.log)."\n'
@@ -210,15 +227,21 @@ CREDENTIALS
                    (HERE / "usb_runtime.sh").read_text(encoding="utf-8") +
                    '\n[ "$HOTSPOT_LIB" = 1 ] || main')
     return re.sub(r'(?m)^WIFI_CHECK_MSG=.*$',
-                  'WIFI_CHECK_MSG="USB Wi-Fi missing. Check A3000mini and RTL8812BU Launch, then restart."',
+                  'WIFI_CHECK_MSG="USB Wi-Fi missing. Check A3000mini and USB Realtek Launch in the report."',
                   text)
 
 
-def build(args):
-    upstream = args.upstream.read_bytes()
-    if hashlib.sha256(upstream).hexdigest() != UPSTREAM_SHA256:
-        raise ValueError("Korea Projection release digest differs from v1.7.4")
-    files = read_zip(upstream)
+def populate_hmg_assets(files, args):
+    if args.base_usb is not None:
+        base = args.base_usb.read_bytes()
+        if hashlib.sha256(base).hexdigest() != BASE_USB_SHA256:
+            raise ValueError("Expected the published CN7NPE USB test v0.1.0 ZIP")
+        previous = read_zip(read_zip(base)[PACKAGE_PATH])
+        for name in (MOD_PATH, "hmgapi/setup.jar"):
+            files[name] = previous[name]
+        return
+    if args.compiled is None or args.key is None:
+        raise ValueError("Pass --base-usb or both --compiled and --key")
     compiled = read_zip(args.compiled.read_bytes())
     for name in ("hooks.jar", "setup.jar"):
         dex = read_zip(compiled[name])["classes.dex"]
@@ -226,10 +249,22 @@ def build(args):
             raise ValueError(f"Invalid Android API 19 DEX in {name}")
     files[MOD_PATH] = signed_mod(files[MOD_PATH], compiled["hooks.jar"], signing_key(args.key))
     files["hmgapi/setup.jar"] = compiled["setup.jar"]
-    files["scripts/preinstall.sh"] = (HERE / "preinstall.sh").read_bytes().replace(b"\r\n", b"\n")
+
+
+def build(args):
+    upstream = args.upstream.read_bytes()
+    if hashlib.sha256(upstream).hexdigest() != UPSTREAM_SHA256:
+        raise ValueError("Korea Projection release digest differs from v1.7.4")
+    files = read_zip(upstream)
+    populate_hmg_assets(files, args)
+    manifest = json.loads(read_zip(files[MOD_PATH])["META-HMGAPI/manifest.json"])
+    preinstall = (HERE / "preinstall.sh").read_text(encoding="utf-8")
+    files["scripts/preinstall.sh"] = replace(preinstall, "@MOD_AUTHOR@", manifest["uuid"]).encode()
     files["svc/hotspot.sh"] = patch_service(files["svc/hotspot.sh"].decode(), files[MOD_PATH]).encode()
     status = files["bin/status.sh"].decode()
     status = replace(status, 'WIF=${WIF:-wlan0}', 'WIF=rtwlan0')
+    status = replace(status, '$W/mod-update.txt $W/carreport.txt',
+                     '$W/mod-update.txt $W/usb-realtek-launch.log $W/carreport.txt')
     status = replace(status, 'https://github.com/StopDragon/korea-projection/issues/new?template=car-report.yml',
                      'https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/issues')
     files["bin/status.sh"] = status.encode()
@@ -267,6 +302,8 @@ def build(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    for option in ("upstream", "source", "compiled", "key", "output"):
+    for option in ("upstream", "source", "output"):
         parser.add_argument(f"--{option}", required=True, type=Path)
+    for option in ("base-usb", "compiled", "key"):
+        parser.add_argument(f"--{option}", type=Path)
     build(parser.parse_args())

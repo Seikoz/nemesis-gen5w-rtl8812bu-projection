@@ -7,13 +7,17 @@ usb_target() {
   [ "$(getprop ro.board.platform)" = tcc803x ]
 }
 
-usb_wifi_ready() (
-  [ -d "$WLAN" ] && [ -d "$PROC/net/rtl88x2bu/$WIF" ] || return 1
+usb_a3000mini_paths() (
   for device in "$USB_SYS"/*; do
     [ -r "$device/idVendor" ] && [ -r "$device/idProduct" ] || continue
-    read vendor < "$device/idVendor"
-    read product < "$device/idProduct"
-    [ "$vendor:$product" = 0bda:b812 ] || continue
+    read -r vendor < "$device/idVendor" && read -r product < "$device/idProduct" || continue
+    [ "$vendor:$product" != 0bda:b812 ] || printf '%s\n' "$device"
+  done
+)
+
+usb_wifi_ready() (
+  [ -d "$WLAN" ] && [ -d "$PROC/net/rtl88x2bu/$WIF" ] || return 1
+  for device in $(usb_a3000mini_paths); do
     for intf in "$device":*; do
       [ -d "$intf/driver" ] || continue
       driver=$(cd -P "$intf/driver" && pwd -P) || continue
@@ -22,6 +26,45 @@ usb_wifi_ready() (
   done
   return 1
 )
+
+usb_launch_if_needed() {
+  local paths device number device_key now launch_log rc
+  paths=$(usb_a3000mini_paths)
+  if [ -z "$paths" ] || usb_wifi_ready; then
+    KP_USB_DEVICE=
+    return 0
+  fi
+  for device in $paths; do break; done
+  number=
+  if [ -r "$device/devnum" ]; then read -r number < "$device/devnum"; fi
+  device_key="${device##*/}:$number"
+  if [ "${KP_USB_DEVICE:-}" != "$device_key" ]; then
+    KP_USB_DEVICE=$device_key
+    KP_USB_TRIES=0
+    KP_USB_LAST=0
+  fi
+  [ "$KP_USB_TRIES" -lt 3 ] || return 0
+  now=$(prog_up)
+  case "$now" in ''|*[!0-9]*) return 0 ;; esac
+  [ "$KP_USB_TRIES" -eq 0 ] || [ "$((now - KP_USB_LAST))" -ge 12 ] || return 0
+  KP_USB_LAST=$now
+  KP_USB_TRIES=$((KP_USB_TRIES + 1))
+  launch_log="$W/usb-realtek-launch.log"
+  rc=0
+  if [ "$KP_USB_TRIES" -eq 1 ]; then
+    log "USB Realtek Launch: NEMESIS pkg-launch ($device_key)"
+    "$BB_OWN" timeout 20 /system/xbin/nemesis pkg-launch realtek.88x2bu >> "$launch_log" 2>&1 || rc=$?
+  else
+    # Use the same script and arguments as the Launch button if dispatch did not create rtwlan0.
+    log "USB Realtek Launch: direct load.sh ($device_key, attempt $KP_USB_TRIES)"
+    /system/bin/sh /data/nemesis/apps/realtek.88x2bu/scripts/load.sh >> "$launch_log" 2>&1 || rc=$?
+  fi
+  if usb_wifi_ready; then
+    log "USB Realtek Launch: rtwlan0 ready (exit $rc)"
+  else
+    log "USB Realtek Launch: rtwlan0 still missing (exit $rc)"
+  fi
+}
 
 usb_setup() {
   CLASSPATH="$APP/hmgapi/setup.jar" /system/bin/app_process /system/bin usbprojection.UsbProjectionSetup "$@"
