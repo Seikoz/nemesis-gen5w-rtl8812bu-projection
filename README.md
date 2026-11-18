@@ -38,11 +38,13 @@ USB/
 4. **NEMESIS Manager → My Packages → Realtek RTL8812BU USB Driver → Launch**를 누릅니다.
 5. `RTL8812BU ready: rtwlan0 (0bda:b812)`처럼 표시되면 동글이 Wi-Fi 인터페이스로 등록된 것입니다. 인터페이스 번호와 USB ID는 장치에 따라 달라질 수 있습니다.
 
-v1.1.4부터는 헤드유닛이 부팅될 때 NEMESIS 서비스가 자동으로 드라이버를 올립니다. 부팅에 꽂아 둔 A3000mini가 연결되지 않으면 승인·식별이 확인된 USB 장치의 현재 설정을 부팅당 한 번 다시 적용합니다. **Launch**에서 인식 결과를 확인할 수 있습니다.
+### 아반떼 N 260902에서 부팅 인식 테스트
 
-v1.1.5 부팅 테스트판은 초기 시도 뒤 Android가 시작될 때까지 기다리고 드라이버와 동글 연결을 최대 세 번 더 확인합니다. 아반떼 N `260902`에서는 기존 Korea Projection USB 테스트판과 함께 드라이버만 업데이트해 확인할 수 있습니다. 동글을 꽂은 채 부팅한 뒤 약 2분 동안 Realtek Launch를 누르지 않으면 자동 인식 여부를 확인할 수 있습니다.
+1. 테스트 릴리스의 USB ZIP을 위와 같은 방법으로 풀고 **Realtek RTL8812BU USB Driver v1.1.7** 업데이트를 승인합니다. 기존 Korea Projection USB 테스트판 `1.7.4.5`와 번들 HMG-API를 그대로 사용합니다. [v1.1.7 테스트 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/v1.1.7)
+2. 설치 USB를 빼고 A3000mini를 꽂은 채 내비게이션을 완전히 재부팅합니다.
+3. 약 2분 동안 동글을 장착한 상태로 두고 **Realtek Launch**를 누르지 않습니다. Korea Projection에서 `rtwlan0` 대기 문구가 사라지는지 확인합니다.
 
-v1.1.6 자동 Launch 테스트판은 Android 부팅 완료 후 동글에 Wi-Fi 인터페이스가 없는 경우 NEMESIS Manager의 **Launch**와 같은 명령을 실행합니다. 아반떼 N에서는 Realtek 패키지만 업데이트하고, 동글을 꽂은 채 재부팅해 Korea Projection이 자동으로 진행되는지 확인합니다.
+이 테스트판은 NEMESIS 서비스가 시작될 때 모듈을 로드하고 Android 부팅 완료 후에도 재시도합니다. 모듈이 올라갔는데도 A3000mini가 USB 드라이버에 연결되지 않으면, 장치 식별과 상태를 확인한 뒤 그 동글에만 USB 리셋을 부팅당 한 번 요청합니다.
 
 ### Korea Projection 호환성
 
@@ -64,7 +66,7 @@ Korea Projection 1.7.x는 내장 Wi-Fi를 확인한 뒤 무선 모드를 설치�
 
 Launch를 실행한 뒤 동글 대신 USB 메모리를 꽂고 **NEMESIS Manager → Logs → Copy to USB**를 누릅니다. USB에 생성된 `NEMESIS-logs/realtek.88x2bu/launch.log`에 플랫폼, USB 드라이버 연결 상태, 네트워크 인터페이스와 실패 관련 커널 메시지가 기록됩니다.
 
-동글을 꽂고 부팅할 때만 실패하면 내비를 완전히 재부팅하고 잠시 기다린 뒤 같은 방법으로 `NEMESIS-logs/realtek.88x2bu/boot.log`를 복사합니다. 로그의 `boot_reconfigure` 항목에서 부팅 중 USB 재설정 요청 여부를 확인할 수 있습니다.
+동글을 꽂고 부팅할 때만 실패하면 같은 방법으로 `NEMESIS-logs/realtek.88x2bu/boot.log`와 `preload.log`를 복사합니다. 복구를 실행한 시도에는 `usb_device_reset` 및 `boot_reconfigure` 결과가 기록됩니다.
 
 ## 제거
 
@@ -72,10 +74,10 @@ Launch를 실행한 뒤 동글 대신 USB 메모리를 꽂고 **NEMESIS Manager 
 
 ## 개발용 패키지 재생성
 
-배포 릴리스에는 USB 설치 ZIP 한 개를 첨부합니다. 패키지를 개발하거나 검증할 때는 Python 3.9 이상에서 `python build_package.py`를 실행합니다. 원본 릴리스 ZIP을 이미 받은 경우 파일 경로를 지정할 수 있습니다.
+배포 릴리스에는 USB 설치 ZIP 한 개를 첨부합니다. 개발용 패키지를 재생성하려면 Android API 19 ARMv7용 USB 리셋 도구를 빌드하고 Python 3.9 이상에서 패키징합니다. 원본 모듈 ZIP을 이미 받은 경우 `--upstream`으로 경로를 지정할 수 있습니다. [USB 리셋 도구의 Android NDK 빌드 설정](.github/workflows/build-a3000mini-reset.yml)
 
 ```sh
-python build_package.py --upstream ./HKG_5W_USBWifi_Hotspot.zip
+python build_package.py --usb-reset-helper ./out/usb-reset-a3000mini
 ```
 
 ## 원본

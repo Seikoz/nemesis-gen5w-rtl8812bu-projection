@@ -20,6 +20,7 @@ USB_ALIAS = re.compile(
     rb"alias=usb:v([0-9A-F]{4})p([0-9A-F]{4})d\*dc\*dsc\*dp\*icFFiscFFipFFin\*\0"
 )
 PACKAGE_PATH = "packages/realtek.88x2bu.zip"
+RESET_HELPER_PATH = "bin/usb-reset-a3000mini"
 USB_DESCRIPTOR = f"[nemesis]\nversion=1.0\ntype=install\npath={PACKAGE_PATH}\n"
 
 
@@ -62,17 +63,24 @@ def archive(files):
         for name, data in sorted(files.items()):
             entry = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             entry.create_system = 3
-            mode = 0o100755 if name.endswith(".sh") else 0o100644
+            mode = 0o100755 if name.endswith(".sh") or name == RESET_HELPER_PATH else 0o100644
             entry.external_attr = mode << 16
             package.writestr(entry, data, compress_type=zipfile.ZIP_DEFLATED)
     return output.getvalue()
 
 
-def build(upstream, output):
+def build(upstream, output, reset_helper):
     files = load_modules(upstream)
     ids_by_module = [usb_ids(path, files[path]) for path in MODULES]
     if ids_by_module[0] != ids_by_module[1]:
         raise ValueError("The platform modules have different USB aliases")
+
+    helper = reset_helper.read_bytes()
+    if (len(helper) < 52 or helper[:6] != b"\x7fELF\x01\x01"
+            or struct.unpack_from("<HH", helper, 16) != (3, 40)
+            or b"/system/bin/linker\0" not in helper):
+        raise ValueError("The USB reset helper must be a 32-bit ARM Android PIE executable")
+    files[RESET_HELPER_PATH] = helper
 
     package_dir = ROOT / "package"
     for path in sorted(package_dir.rglob("*")):
@@ -95,12 +103,14 @@ def build(upstream, output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--upstream", type=Path, help="Local copy of the upstream release ZIP")
+    parser.add_argument("--usb-reset-helper", required=True, type=Path,
+                        help="Android API 19 ARMv7 USB reset executable")
     parser.add_argument(
         "-o", "--output", type=Path, default=ROOT / "dist" / "NEMESIS-RTL8812BU-Gen5W-USB.zip"
     )
     args = parser.parse_args()
     try:
-        build(args.upstream, args.output)
+        build(args.upstream, args.output, args.usb_reset_helper)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         parser.exit(1, f"Build failed: {error}\n")
 

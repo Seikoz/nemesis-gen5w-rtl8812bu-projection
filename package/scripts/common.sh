@@ -97,10 +97,36 @@ check_korea_projection() {
 
 projection_rejects_usb() {
     case "$projection_version" in
-        1.7.4.1) return 1 ;; # CN7NPE Korea Projection USB test package
+        1.7.4.[12345]) return 1 ;; # CN7NPE Korea Projection USB test packages
         1.7|1.7.*) return 0 ;;
     esac
     return 1
+}
+
+is_cn7npe_boot_reset_target() {
+    [ "$platform" = tcc803x ] || return 1
+    case "$(getprop ro.build.product)" in
+        CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902) return 0 ;;
+    esac
+    return 1
+}
+
+claim_boot_recovery() {
+    local marker stale
+    case "$boot_id" in ''|*[!0-9a-f-]*) return 2 ;; esac
+    marker="$package_dir/.usb-recovery-$boot_id"
+    # Keep reset and reconfiguration in one attempt when both services retry.
+    mkdir "$marker" 2>/dev/null || return 1
+    for stale in "$package_dir"/.usb-recovery-*; do
+        [ "$stale" = "$marker" ] || rmdir "$stale" 2>/dev/null
+    done
+    return 0
+}
+
+reset_boot_dongle() {
+    local helper="$package_dir/bin/usb-reset-a3000mini"
+    [ -x "$helper" ] || chmod 755 "$helper" || return 2
+    "$helper" "$usb"
 }
 
 retry_usb_bind() {
@@ -189,6 +215,7 @@ save_launch_log() (
         fi
         echo "manual_bind=${bind_result:-not attempted}"
         if [ "$launch_mode" = boot ]; then
+            echo "usb_device_reset=${boot_reset:-not attempted}"
             echo "boot_reconfigure=${boot_reconfigure:-not attempted}"
         fi
         if [ -n "$projection_version" ]; then
@@ -238,7 +265,7 @@ wait_for_interface() {
 }
 
 report_interface() {
-    local net_name driver message ready=0 limit=5 boot_reconfigure= bind_result=
+    local net_name driver message ready=0 limit=5 boot_reset= boot_reconfigure= bind_result=
     if [ "$launch_mode" = boot ]; then
         if [ "$boot_phase" = --boot-early ]; then
             limit=3
@@ -253,13 +280,29 @@ report_interface() {
     fi
     if wait_for_interface "$limit"; then
         ready=1
-    elif [ "$boot_phase" = --boot ] && identify_dongle; then
-        local reconfigure_error
-        if reconfigure_error=$(reconfigure_boot_dongle 2>&1); then
-            boot_reconfigure="requested"
-            wait_for_interface 5 && ready=1
-        else
-            boot_reconfigure="skipped or failed${reconfigure_error:+: $reconfigure_error}"
+    elif [ "$boot_phase" = --boot ] && identify_dongle &&
+         [ "$vendor:$product" = 0bda:b812 ] && [ ! -L "$usb_interface/driver" ] &&
+         claim_boot_recovery; then
+        if is_cn7npe_boot_reset_target; then
+            local reset_result
+            if reset_result=$(reset_boot_dongle 2>&1); then
+                boot_reset="$reset_result"
+                bind_result=
+                wait_for_interface 8 && ready=1
+            else
+                boot_reset="skipped or failed${reset_result:+: $reset_result}"
+            fi
+            echo "A3000mini USB device reset: ${boot_reset:-requested}"
+        fi
+        if [ "$ready" -eq 0 ] && identify_dongle; then
+            local reconfigure_error
+            if reconfigure_error=$(reconfigure_boot_dongle 2>&1); then
+                boot_reconfigure="requested"
+                bind_result=
+                wait_for_interface 5 && ready=1
+            else
+                boot_reconfigure="skipped or failed${reconfigure_error:+: $reconfigure_error}"
+            fi
         fi
     fi
     if [ "$ready" -eq 1 ]; then

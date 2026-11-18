@@ -8,21 +8,16 @@ pause() {
     sleep "$1" & wait $!
 }
 
+loader="$package_dir/scripts/load.sh"
+read -r uptime _ < /proc/uptime
+echo "RTL8812BU: early preload (uptime ${uptime:-unknown}s)"
+/system/bin/sh "$loader" --boot-early
+
 # Match the time when Manager can launch packages normally.
 while [ "$(getprop sys.boot_completed)" != 1 ]; do
     pause 2
 done
 select_module && check_conflict || exit 1
-
-log_dir=/data/nemesis/logs/realtek.88x2bu
-if mkdir -p "$log_dir"; then
-    echo "Automatic NEMESIS Launch started after Android boot." > "$log_dir/boot.log"
-fi
-
-boot_log() {
-    printf '%s\n' "$1"
-    printf '%s\n' "$1" >> "$log_dir/boot.log"
-}
 
 attempt=0
 last_device=
@@ -46,10 +41,15 @@ while :; do
             attempt=0
         elif [ "$attempt" -lt 3 ]; then
             attempt=$((attempt + 1))
-            boot_log "Automatic Launch $attempt for $vendor:$product on $device."
-            output=$(/system/xbin/nemesis pkg-launch realtek.88x2bu 2>&1)
+            echo "Automatic Launch $attempt for $vendor:$product on $device."
+            if [ "$attempt" -eq 2 ] && [ "$vendor:$product" = 0bda:b812 ] &&
+               is_cn7npe_boot_reset_target; then
+                output=$(/system/bin/sh "$loader" --boot 2>&1)
+            else
+                output=$(/system/xbin/nemesis pkg-launch realtek.88x2bu 2>&1)
+            fi
             result=$?
-            boot_log "pkg-launch exit=$result: $output"
+            echo "driver startup exit=$result: $output"
         fi
     fi
     pause 5

@@ -1,5 +1,11 @@
 # 변경사항
 
+## v1.1.7 (A3000mini 부팅 인식 테스트)
+
+- NEMESIS 서비스 시작 시 모듈을 먼저 로드하고 Android 부팅 완료 후에도 인식을 재시도합니다. 서비스의 첫 시점과 각 시도 결과는 `preload.log`에 기록합니다.
+- 아반떼 N CN7NPE `260902`에서 승인된 A3000mini(`0bda:b812`)가 드라이버에 연결되지 않으면 해당 USB 장치에만 리셋을 부팅당 한 번 요청합니다. Korea Projection과 드라이버 서비스가 모두 재시도하더라도 한쪽만 이 복구를 실행합니다.
+- 복구를 실행한 시도의 `boot.log`에 `usb_device_reset`과 USB 설정 재적용 결과를 기록합니다. Korea Projection USB 테스트판 `1.7.4.5`의 기존 드라이버 호출과 호환됩니다.
+
 ## v1.1.6 (자동 Launch 테스트)
 
 - Android 부팅 완료 후, 지원 동글이 USB에 잡혔지만 Wi-Fi 인터페이스가 아직 없으면 NEMESIS Manager의 Launch 버튼과 같은 `nemesis pkg-launch realtek.88x2bu`를 실행합니다.
