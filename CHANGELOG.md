@@ -1,5 +1,13 @@
 # 변경사항
 
+## USB 합본 v0.1.7
+
+- Realtek **1.1.10**의 Gen5W ARM 모듈에 RTL8822B의 HALMAC·펌웨어 초기화 실패 상태와 네트워크 장치 열기 실패를 커널 로그에 기록하는 코드를 추가했습니다. 두 모듈의 vermagic과 커널 심볼 의존성을 기존 모듈과 대조했습니다.
+- Korea Projection **1.7.4.12**는 부팅 시 처음 감지한 USB 장치와 장치 번호 변경 뒤의 UP 시도를 별도 기록합니다. 각 기록에 서비스 권한, UP 종료 코드, 관련 USB·커널 메시지가 들어갑니다.
+- `hostapd` 프로세스의 UID, Linux capabilities, SELinux 컨텍스트와 실패 직후의 Android 로그를 같은 USB 관측 기록과 연결해 `3-log.txt`에 포함합니다.
+- 같은 부팅·USB 장치의 `Operation not permitted` 판별을 수정했습니다. HMG-API **1.1.0-rc.4**와 무선 모드 **2.4.6**을 포함합니다.
+- GitHub 배포를 최신 USB 합본 ZIP 한 개로 정리하고, 이전 릴리스의 변경 이력을 이 문서에 보존합니다.
+
 ## USB 합본 v0.1.6
 
 - Korea Projection **1.7.4.11**이 `rtwlan0` 활성화 중 `Operation not permitted`를 감지하면 서비스 권한과 USB 식별을 확인합니다. 대상 A3000mini의 Realtek 드라이버 연결을 부팅당 한 번 갱신하고 활성화를 재시도합니다.

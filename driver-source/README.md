@@ -1,5 +1,18 @@
 # RTL88x2BU 대응 소스
 
+## USB 합본 v0.1.7 진단 모듈
+
+Realtek **1.1.10**의 모듈은 아래에 기록된 Gen5W 소스에 [칩 초기화 진단 패치](chip-init-diagnostics.patch)를 적용해 빌드했습니다. HALMAC·펌웨어 초기화 실패와 네트워크 장치를 올리다 실패한 지점에 `88x2bu: Gen5W chip-init failed` 로그를 남깁니다. 실패 반환값은 기존 코드와 같습니다.
+
+[빌드 워크플로](../.github/workflows/build-gen5w-diagnostics.yml)는 두 모듈의 vermagic과 외부 심볼 목록을 GRT47 v2.0.7 바이너리와 대조합니다. [릴리스용 드라이버 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44356015577)
+
+| 모듈 | SHA-256 |
+| --- | --- |
+| `88x2bu.ko` (TCC803x) | `5ed35212c14f6aa3f8a6fc598b4277e5ed8f056582f331d6e0d5f59925fcff00` |
+| `88x2bu_tcc897x.ko` (TCC897x) | `a62aa5569af58877a47f3a3a73a075425376e6962064fceb7472c4f152999626` |
+
+## Gen5W 기반 모듈과 재빌드
+
 이 디렉터리는 NEMESIS RTL8812BU 패키지 v1.1.1에 포함된 두 ARM 모듈의 GPL-2.0 대응 소스와 빌드 설정을 제공합니다.
 
 | 파일 | 내용 |
@@ -17,7 +30,7 @@ bash driver-source/rebuild.sh
 
 빌드 입력은 드라이버 커밋 `04ed7009bac4b235fe1880ba29e23159f49a6121`, GRT47의 v2.0.7 커널 빌드 스크립트와 설정, Linux 3.18.24, AOSP ARM GCC 4.7입니다. [드라이버 원본](https://github.com/cilynx/rtl88x2bu/tree/04ed7009bac4b235fe1880ba29e23159f49a6121) · [Gen5W 빌드 입력](https://github.com/GRT47/HKG_5W_USB_Wlan/tree/bcfe084b198475c6edf138b8ee8e080bb48b7902/package_usbwifi_hotspot/kernel_build)
 
-두 모듈의 `srcversion`은 `A8402F29F362DF030025EE3`입니다. 원본과 재빌드 파일을 비교했을 때 ELF 섹션의 차이는 컴파일 날짜·시각 문자열과 GNU 빌드 ID였습니다. 배포 ZIP에는 아래 해시의 원본 모듈을 담았습니다. [재빌드 기록](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44081118324)
+기반 모듈 두 개의 `srcversion`은 `A8402F29F362DF030025EE3`입니다. 원본과 재빌드 파일을 비교했을 때 ELF 섹션의 차이는 컴파일 날짜·시각 문자열과 GNU 빌드 ID였습니다. v1.1.1 배포에는 아래 해시의 원본 모듈을 담았습니다. [재빌드 기록](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44081118324)
 
 | 모듈 | SHA-256 |
 | --- | --- |

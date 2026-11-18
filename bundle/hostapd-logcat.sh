@@ -1,12 +1,10 @@
 # Save the failed hostapd process's recent Android log before logcat rotates.
 usb_capture_hostapd_logcat() {
-  local pid="$1" rc="$2" snapshot boot_id=
-  if [ -r "$PROC/sys/kernel/random/boot_id" ]; then
-    read -r boot_id < "$PROC/sys/kernel/random/boot_id"
-  fi
+  local pid="$1" rc="$2" snapshot
   snapshot=$("$BB" mktemp "$W/.usb-hostapd-logcat.XXXXXX") || return 1
   {
-    echo "hostapd failure at $(date '+%m-%d %H:%M:%S'): boot=$boot_id pid=$pid exit=$rc"
+    usb_ap_report_header
+    echo "hostapd failure pid=$pid exit=$rc"
     {
       "$BB_OWN" timeout 3 logcat -d -t 1200 -v threadtime '*:V' 2>/dev/null
       echo "logcat_status=$?"
@@ -28,6 +26,10 @@ usb_capture_hostapd_logcat() {
         credentials = (ssid != "" && length(key) >= 8)
       }
       /^logcat_status=[0-9]+$/ { status = substr($0, 15); next }
+      /avc:.*denied/ && $0 ~ ("pid=" pid "([^0-9]|$)") && /hostapd|net_admin|rfkill/ {
+        if (tolower($0) !~ /ssid|psk|password|passphrase|secret/) lines[count++ % 80] = substr($0, 1, 512)
+        next
+      }
       credentials && $1 ~ /^[0-9][0-9]-[0-9][0-9]$/ &&
           $2 ~ /^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.[0-9]+$/ &&
           $3 ~ /^[0-9]+$/ && $3 == pid && $4 ~ /^[0-9]+$/ && $5 ~ /^[VDIWEF]$/ {
@@ -44,7 +46,9 @@ usb_capture_hostapd_logcat() {
         for (i = (count > 80 ? count - 80 : 0); i < count; i++) print lines[i % 80]
       }
     '
-  } > "$snapshot" && "$BB" mv -f "$snapshot" "$W/usb-hostapd-logcat.log" || {
+    echo "Kernel messages since hostapd start:"
+    usb_ap_kernel_log "$AP_HOSTAPD_START" 30
+  } > "$snapshot" && "$BB" mv -f "$snapshot" "$W/usb-hostapd-logcat-$AP_PHASE.log" || {
     "$BB" rm -f "$snapshot"
     return 1
   }
@@ -52,8 +56,10 @@ usb_capture_hostapd_logcat() {
 
 usb_run_hostapd() {
   local pid rc=0
+  AP_HOSTAPD_START=$(usb_ap_uptime)
   hostapd "$CONF" &
   pid=$!
+  usb_capture_hostapd_permissions "$pid" startup
   wait "$pid" || rc=$?
   echo "hostapd exit=$rc"
   # Normal exit or intentional TERM during AP shutdown does not replace a failure.

@@ -69,8 +69,16 @@ def archive(files):
     return output.getvalue()
 
 
-def build_driver_package(modules, helper):
+def build_driver_package(modules, helper, *, diagnostics=False):
     files = dict(modules)
+    if diagnostics:
+        markers = (
+            b"Gen5W chip-init failed stage=halmac-firmware",
+            b"Gen5W chip-init failed iface=%s stage=netdev-open-hal",
+        )
+        for path in MODULES:
+            if not all(marker in files[path] for marker in markers):
+                raise ValueError(f"{path}: missing Gen5W chip initialization diagnostics")
     ids_by_module = [usb_ids(path, files[path]) for path in MODULES]
     if ids_by_module[0] != ids_by_module[1]:
         raise ValueError("The platform modules have different USB aliases")
@@ -86,6 +94,15 @@ def build_driver_package(modules, helper):
         if path.is_file():
             name = path.relative_to(package_dir).as_posix()
             text = path.read_text(encoding="utf-8")
+            if diagnostics and name == "NEMESIS.data":
+                text = text.replace("package-version=1.1.9\n", "package-version=1.1.10\n")
+            if diagnostics and name == "MODULE-SOURCE.txt":
+                text = (
+                    "The Gen5W diagnostic modules are based on GRT47 v2.0.7. "
+                    "See MODULE-LICENSE.txt.\n"
+                    "Corresponding source, diagnostic patch and build instructions:\n"
+                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.7/driver-source\n"
+                )
             if name == "scripts/common.sh":
                 if text.count("@USB_IDS@") != 1:
                     raise ValueError("Missing or repeated USB ID placeholder")

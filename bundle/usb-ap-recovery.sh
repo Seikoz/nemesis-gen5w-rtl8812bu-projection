@@ -53,30 +53,40 @@ usb_ap_rebind() (
 )
 
 usb_prepare_ap_interface() {
-  local up_error up_rc boot_id= hostapd_eperm=0 rebind_rc retry_error retry_rc snapshot
-  up_error=$("$BB" ifconfig "$WIF" "$AP_IP" netmask 255.255.255.0 up 2>&1)
-  up_rc=$?
-  read -r boot_id < "$PROC/sys/kernel/random/boot_id"
-  if [ -n "$boot_id" ] &&
-     "$BB" grep -F -q "boot=$boot_id " "$W/usb-hostapd-logcat.log" 2>/dev/null &&
-     "$BB" grep -F -q "Could not set interface $WIF flags (UP): Operation not permitted" +       "$W/usb-hostapd-logcat.log"; then
+  local up_error up_rc hostapd_eperm=0 rebind_rc retry_error retry_rc snapshot started
+  local failure_log="$W/usb-hostapd-logcat-$AP_PHASE.log"
+  if [ -n "$AP_BOOT" ] &&
+     [ -r "$failure_log" ] &&
+     "$BB" awk -v scope="$AP_SCOPE " -v iface="$WIF" '
+       NR == 1 && index($0, scope) != 1 { exit }
+       index($0, "Could not set interface " iface " flags (UP): Operation not permitted") { matched = 1; exit }
+       END { exit !matched }
+     ' "$failure_log" 2>/dev/null; then
     hostapd_eperm=1
   fi
-  [ "$up_rc" -ne 0 ] || [ "$hostapd_eperm" = 1 ] || return 0
-  if [ -n "$boot_id" ] && [ -d "$W/.ap-rebind-$boot_id" ] && [ -s "$W/usb-ap-up.log" ]; then
-    return 0
+  snapshot=$("$BB" mktemp "$W/.usb-ap-up.XXXXXX")
+  if [ -z "$snapshot" ]; then
+    "$BB" ifconfig "$WIF" "$AP_IP" netmask 255.255.255.0 up 2>/dev/null
+    return
   fi
-  snapshot=$("$BB" mktemp "$W/.usb-ap-up.XXXXXX") || return 1
   {
-    echo "rtwlan0 preflight at $(date '+%m-%d %H:%M:%S'): ifconfig exit=$up_rc"
+    usb_ap_report_header
+    echo "Korea Projection service permissions:"
+    usb_ap_process_info "$$"
+    echo "Kernel messages before UP:"
+    usb_ap_kernel_log "" 20
+    started=$(usb_ap_uptime)
+    up_error=$("$BB" ifconfig "$WIF" "$AP_IP" netmask 255.255.255.0 up 2>&1)
+    up_rc=$?
+    echo "rtwlan0 ifconfig UP exit=$up_rc uptime=$started"
     [ -z "$up_error" ] || echo "$up_error"
     echo "hostapd_up_eperm=$hostapd_eperm"
-    "$BB" awk '/^(Uid|CapEff|CapBnd):/ { print }' "$PROC/$$/status" 2>/dev/null
-    echo "service_context=$("$BB" cat "$PROC/$$/attr/current" 2>/dev/null)"
     case "$hostapd_eperm:$up_rc:$up_error" in
       1:*|0:[1-9]*:*"Operation not permitted"*)
-        if usb_ap_net_admin; then
-          usb_ap_rebind "$boot_id"
+        if [ -d "$W/.ap-rebind-$AP_BOOT" ]; then
+          echo "A3000mini rebind already attempted this boot."
+        elif usb_ap_net_admin; then
+          usb_ap_rebind "$AP_BOOT"
           rebind_rc=$?
           echo "A3000mini rebind exit=$rebind_rc"
           if [ "$rebind_rc" -eq 0 ]; then
@@ -90,11 +100,8 @@ usb_prepare_ap_interface() {
         fi
         ;;
     esac
-    echo "Recent kernel messages:"
-    dmesg 2>/dev/null | "$BB" awk '
-      /SerialNumber|hexdump|ssid|passphrase|password|wpa_psk|secret/ { next }
-      /RTW:|rtl88x2bu|rtwlan0/ || /avc:.*denied.*(hostapd|net_admin|rfkill)/ { print }
-    ' | "$BB" tail -n 50
+    echo "Kernel messages since UP:"
+    usb_ap_kernel_log "$started" 40
   } > "$snapshot"
-  "$BB" mv -f "$snapshot" "$W/usb-ap-up.log" || "$BB" rm -f "$snapshot"
+  usb_ap_publish_attempt "$snapshot" "$AP_UP_FILE"
 }

@@ -8,9 +8,27 @@ pause() {
     sleep "$1" & wait $!
 }
 
+# Remember the first enumeration even if the net device never comes UP.
+record_a3000mini_boot() (
+    [ "$vendor:$product" = 0bda:b812 ] && read_boot_id || exit 0
+    dir=/data/nemesis/logs/realtek.88x2bu
+    marker="$dir/first-usb-device"
+    if [ -r "$marker" ]; then
+        read -r recorded _ < "$marker"
+        [ "$recorded" != "$boot_id" ] || exit 0
+    fi
+    read -r number < "$usb/devnum" && read -r up_seconds _ < /proc/uptime || exit 0
+    case "$number" in ''|*[!0-9]*) exit 0 ;; esac
+    umask 022
+    mkdir -p "$dir" || exit 0
+    printf '%s %s:%s %s\n' "$boot_id" "${usb##*/}" "$number" "$up_seconds" > "$marker.tmp" &&
+        mv -f "$marker.tmp" "$marker"
+) 2>/dev/null
+
 loader="$package_dir/scripts/load.sh"
 read -r uptime _ < /proc/uptime
 echo "RTL8812BU: early preload (uptime ${uptime:-unknown}s)"
+identify_dongle && record_a3000mini_boot
 /system/bin/sh "$loader" --boot-early
 
 # Match the time when Manager can launch packages normally.
@@ -35,6 +53,7 @@ while :; do
         if [ "$device" != "$last_device" ]; then
             attempt=0
             last_device=$device
+            record_a3000mini_boot
         fi
 
         if find_wifi_interface >/dev/null; then

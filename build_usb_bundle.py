@@ -20,7 +20,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.11 - Retries a failed USB AP interface
+short-desc=v1.7.4.12 - Captures USB AP diagnostics
 
 [package.1]
 path={HMG_API}
@@ -30,7 +30,7 @@ short-desc=1.1.0-rc.4 - Korea Projection dependency
 [package.2]
 path={PACKAGE_PATH}
 name=Realtek RTL8812BU USB Driver
-short-desc=v1.1.9 - Korea Projection USB dependency
+short-desc=v1.1.10 - Korea Projection USB dependency
 """
 
 
@@ -56,52 +56,84 @@ def add_hostapd_diagnostics(package):
   ) 2>&1 | '''
     status = package.read("bin/status.sh")
     reports = b"$W/usb-hostapd.log $W/carreport.txt"
+    report_read = b"    if [ -f $_f ]; then lastmask 400 < $_f"
     ap_start = b'''  $BB ifconfig $WIF $AP_IP netmask 255.255.255.0 up 2>/dev/null
   if ! running "hostapd $CONF"; then
     usb_start_hostapd &'''
     ap_end = b'''  fi
   running "hostapd $CONF" || return 1
   if our_dhcp_on; then'''
-    if any(hotspot.count(at) != 1 for at in (launch, ap_start, ap_end)) or status.count(reports) != 1:
+    pending = b"""usb_launch_if_needed() {
+  local paths device number device_key now launch_log rc
+  paths=$(usb_a3000mini_paths)
+  if [ -z "$paths" ] || usb_wifi_ready; then
+    KP_USB_DEVICE=
+    return 0
+  fi"""
+    if (any(hotspot.count(at) != 1 for at in (launch, ap_start, ap_end, pending))
+            or any(status.count(at) != 1 for at in (reports, report_read))):
         raise ValueError("Expected hostapd launch and report hooks in the base package")
     bundle = ROOT / "bundle"
-    diagnostics = (bundle / "hostapd-logcat.sh").read_bytes() + b"\n" + (bundle / "usb-ap-recovery.sh").read_bytes()
+    diagnostics = b"\n".join((bundle / name).read_bytes() for name in (
+        "usb-ap-diagnostics.sh", "hostapd-logcat.sh", "usb-ap-recovery.sh",
+    ))
     return {
         "svc/hotspot.sh": hotspot
         .replace(launch, diagnostics + b"\nusb_start_hostapd() {\n  usb_run_hostapd 2>&1 | ")
-        .replace(ap_start, b'''  if ! running "hostapd $CONF"; then
+        .replace(pending, pending + b'\n  usb_ap_report_waiting "$paths"')
+        .replace(ap_start, b'''  usb_ap_context
+  if ! running "hostapd $CONF"; then
     usb_prepare_ap_interface
+    AP_LAST_UP=$AP_SCOPE
     usb_wifi_ready || return 1
     usb_start_hostapd &''')
-        .replace(ap_end, b'''  else
+        .replace(ap_end, b'''  elif [ "$AP_LAST_UP" != "$AP_SCOPE" ]; then
+    usb_prepare_ap_interface
+    AP_LAST_UP=$AP_SCOPE
+    usb_capture_running_hostapd
+  else
     $BB ifconfig $WIF $AP_IP netmask 255.255.255.0 up 2>/dev/null
 ''' + ap_end),
         "bin/status.sh": status.replace(
-            reports, b"$W/usb-hostapd.log $W/usb-hostapd-logcat.log $W/usb-ap-up.log $W/carreport.txt",
-        ),
+            reports,
+            b"$W/usb-hostapd.log $W/usb-ap-up-boot.log $W/usb-ap-up-replug.log "
+            b"$W/usb-hostapd-permissions-boot.log $W/usb-hostapd-permissions-replug.log "
+            b"$W/usb-hostapd-logcat-boot.log $W/usb-hostapd-logcat-replug.log $W/carreport.txt",
+        ).replace(report_read, b'''    if [ -f "$_f" ]; then
+      case "$_f" in
+        "$W"/usb-ap-up-*.log|"$W"/usb-hostapd-permissions-*.log|"$W"/usb-hostapd-logcat-*.log)
+          _report_boot=$(cat "${BOOT_ID:-/proc/sys/kernel/random/boot_id}" 2>/dev/null)
+          read -r _diag_boot _ < "$_f"
+          if [ -n "$_report_boot" ] && [ "$_diag_boot" != "boot=$_report_boot" ]; then
+            echo "(No diagnostic snapshot for this boot.)"
+            continue
+          fi
+          ;;
+      esac
+      lastmask 400 < "$_f"'''),
     }
 
 
 def build_projection_package(source):
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.11\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.12\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
-            b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.9,!niro.carplay.hotspot"\n',
+            b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.10,!niro.carplay.hotspot"\n',
         )
         descriptor = descriptor.replace(
             b"CN7NPE KOR 260902, HMG-API and RTL8812BU v1.1.4 required.",
-            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.4+ and Realtek 1.1.9+.",
+            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.4+ and Realtek 1.1.10+.",
         )
         preinstall = package.read("scripts/preinstall.sh")
         preinstall = preinstall.replace(
             b"Install and launch the RTL8812BU driver v1.1.4 first.",
-            b"Install the RTL8812BU driver v1.1.9 or later first.",
+            b"Install the RTL8812BU driver v1.1.10 or later first.",
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12)$'",
         )
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
@@ -141,12 +173,16 @@ done''',
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("driver", type=Path, help="Published Realtek v1.1.7 USB ZIP (kernel modules and reset helper)")
+    parser.add_argument("driver", type=Path, help="Published Realtek v1.1.7 USB ZIP (reset helper)")
     parser.add_argument("projection", type=Path, help="Published Korea Projection 1.7.4.5 USB ZIP (base package)")
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.6-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.7-USB.zip",
+    )
+    parser.add_argument(
+        "--diagnostic-modules", required=True, type=Path,
+        help="Directory containing both 3.18.24-tcc modules built by driver-source/rebuild.sh",
     )
     args = parser.parse_args()
     try:
@@ -154,8 +190,8 @@ def main():
             args.driver, "18e888442d26120c5b928e81427040f1586e6ec556f279bb7149b73e486a6596", PACKAGE_PATH,
         )
         with zipfile.ZipFile(io.BytesIO(driver_base)) as source:
-            modules = {name: source.read(name) for name in MODULES}
-            driver = build_driver_package(modules, source.read(RESET_HELPER_PATH))
+            modules = {name: (args.diagnostic_modules / Path(name).name).read_bytes() for name in MODULES}
+            driver = build_driver_package(modules, source.read(RESET_HELPER_PATH), diagnostics=True)
         projection_base = read_package(
             args.projection, "7a41ef0f5a1e3ad4db427bd028291f1300c3449e38821179a9bc0961cb873495", PROJECTION,
         )
