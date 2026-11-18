@@ -20,7 +20,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.9 - Includes hostapd failure diagnostics
+short-desc=v1.7.4.10 - Includes hostapd failure diagnostics
 
 [package.1]
 path={HMG_API}
@@ -70,7 +70,7 @@ def add_hostapd_diagnostics(package):
 def build_projection_package(source):
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.9\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.10\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.9,!niro.carplay.hotspot"\n',
@@ -84,7 +84,18 @@ def build_projection_package(source):
             b"Install and launch the RTL8812BU driver v1.1.4 first.",
             b"Install the RTL8812BU driver v1.1.9 or later first.",
         )
-        preinstall = preinstall.replace(b"[12345]", b"[123456789]")
+        preinstall = preinstall.replace(
+            rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10)$'",
+        )
+        preinstall = preinstall.replace(
+            b'''if [ -e "$mod/mod.json" ] &&
+   ! { [ -r "$installed" ] && [ -f /data/nemesis/backup/korea.projection/mod.ours ] &&''',
+            b'''# NEMESIS 1.16.7 removes the previous app tree before calling preinstall.
+# The ownership marker survives an update along with the installed HMG-API mod.
+if [ -e "$mod/mod.json" ] &&
+   ! { [ -f /data/nemesis/backup/korea.projection/mod.ours ] &&''',
+        )
         preinstall = preinstall.replace(
             b'''if ! hmgapid ping >/dev/null 2>&1; then
   echo "Install and start HMG-API 1.1.0-rc.3 first."
@@ -120,7 +131,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.4-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.5-USB.zip",
     )
     args = parser.parse_args()
     try:

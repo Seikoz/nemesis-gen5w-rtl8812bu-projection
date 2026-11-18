@@ -40,7 +40,7 @@ USB/
 
 ### 아반떼 N 260902에서 부팅 인식 테스트
 
-HMG-API 1.1.0-rc.4, Realtek 1.1.9, Korea Projection 1.7.4.9를 같은 USB에서 설치하려면 [아반떼 N USB 합본](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.4)을 사용합니다. NEMESIS Package Store의 USB 탭에서 Korea Projection을 선택하면 NEMESIS가 필요한 HMG-API와 Realtek을 먼저 설치하거나 업데이트합니다. [합본 설치 안내](bundle/INSTALL-KO.md)
+HMG-API 1.1.0-rc.4, Realtek 1.1.9, Korea Projection 1.7.4.10을 같은 USB에서 설치하려면 [아반떼 N USB 합본](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.5)을 사용합니다. NEMESIS Package Store의 USB 탭에서 Korea Projection을 선택하면 NEMESIS가 필요한 HMG-API와 Realtek을 먼저 설치하거나 업데이트합니다. [합본 설치 안내](bundle/INSTALL-KO.md)
 
 1. 테스트 릴리스의 USB ZIP을 위와 같은 방법으로 풀고 **Realtek RTL8812BU USB Driver v1.1.7** 업데이트를 승인합니다. 기존 Korea Projection USB 테스트판 `1.7.4.5`와 번들 HMG-API를 그대로 사용합니다. [v1.1.7 테스트 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/v1.1.7)
 2. 설치 USB를 빼고 A3000mini를 꽂은 채 내비게이션을 완전히 재부팅합니다.

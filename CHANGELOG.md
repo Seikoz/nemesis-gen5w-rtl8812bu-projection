@@ -1,5 +1,10 @@
 # 변경사항
 
+## USB 합본 v0.1.5
+
+- NEMESIS 1.16.7이 이전 앱 폴더를 지운 뒤 새 설치 전 검사를 실행할 때, 남아 있는 Korea Projection 무선 모드 **2.4.6**이 정상 업데이트를 막던 조건을 수정했습니다. 기존 모드의 소유 기록과 식별 정보로 확인합니다.
+- Korea Projection **1.7.4.10**에서 이전 합본의 업데이트와 v0.1.4 설치 실패 후 재시도를 지원합니다. `hostapd` 실패 시 제보 파일에 Android 로그를 남깁니다.
+
 ## USB 합본 v0.1.4
 
 - Korea Projection **1.7.4.9**가 `hostapd` 실패 직후 해당 프로세스의 Android `logcat`을 수집합니다. SSID와 키를 가린 최근 오류를 `3-log.txt`의 `usb-hostapd-logcat.log` 항목에 포함합니다.
