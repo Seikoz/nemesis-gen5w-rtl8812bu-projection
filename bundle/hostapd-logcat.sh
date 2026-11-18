@@ -1,9 +1,12 @@
 # Save the failed hostapd process's recent Android log before logcat rotates.
 usb_capture_hostapd_logcat() {
-  local pid="$1" rc="$2" snapshot
+  local pid="$1" rc="$2" snapshot boot_id=
+  if [ -r "$PROC/sys/kernel/random/boot_id" ]; then
+    read -r boot_id < "$PROC/sys/kernel/random/boot_id"
+  fi
   snapshot=$("$BB" mktemp "$W/.usb-hostapd-logcat.XXXXXX") || return 1
   {
-    echo "hostapd failure at $(date '+%m-%d %H:%M:%S'): pid=$pid exit=$rc"
+    echo "hostapd failure at $(date '+%m-%d %H:%M:%S'): boot=$boot_id pid=$pid exit=$rc"
     {
       "$BB_OWN" timeout 3 logcat -d -t 1200 -v threadtime '*:V' 2>/dev/null
       echo "logcat_status=$?"

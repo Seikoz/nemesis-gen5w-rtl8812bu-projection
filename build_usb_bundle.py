@@ -20,7 +20,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.10 - Includes hostapd failure diagnostics
+short-desc=v1.7.4.11 - Retries a failed USB AP interface
 
 [package.1]
 path={HMG_API}
@@ -56,21 +56,36 @@ def add_hostapd_diagnostics(package):
   ) 2>&1 | '''
     status = package.read("bin/status.sh")
     reports = b"$W/usb-hostapd.log $W/carreport.txt"
-    if hotspot.count(launch) != 1 or status.count(reports) != 1:
+    ap_start = b'''  $BB ifconfig $WIF $AP_IP netmask 255.255.255.0 up 2>/dev/null
+  if ! running "hostapd $CONF"; then
+    usb_start_hostapd &'''
+    ap_end = b'''  fi
+  running "hostapd $CONF" || return 1
+  if our_dhcp_on; then'''
+    if any(hotspot.count(at) != 1 for at in (launch, ap_start, ap_end)) or status.count(reports) != 1:
         raise ValueError("Expected hostapd launch and report hooks in the base package")
-    diagnostics = (ROOT / "bundle" / "hostapd-logcat.sh").read_bytes()
+    bundle = ROOT / "bundle"
+    diagnostics = (bundle / "hostapd-logcat.sh").read_bytes() + b"\n" + (bundle / "usb-ap-recovery.sh").read_bytes()
     return {
-        "svc/hotspot.sh": hotspot.replace(
-            launch, diagnostics + b"\nusb_start_hostapd() {\n  usb_run_hostapd 2>&1 | ",
+        "svc/hotspot.sh": hotspot
+        .replace(launch, diagnostics + b"\nusb_start_hostapd() {\n  usb_run_hostapd 2>&1 | ")
+        .replace(ap_start, b'''  if ! running "hostapd $CONF"; then
+    usb_prepare_ap_interface
+    usb_wifi_ready || return 1
+    usb_start_hostapd &''')
+        .replace(ap_end, b'''  else
+    $BB ifconfig $WIF $AP_IP netmask 255.255.255.0 up 2>/dev/null
+''' + ap_end),
+        "bin/status.sh": status.replace(
+            reports, b"$W/usb-hostapd.log $W/usb-hostapd-logcat.log $W/usb-ap-up.log $W/carreport.txt",
         ),
-        "bin/status.sh": status.replace(reports, b"$W/usb-hostapd.log $W/usb-hostapd-logcat.log $W/carreport.txt"),
     }
 
 
 def build_projection_package(source):
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.10\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.11\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.9,!niro.carplay.hotspot"\n',
@@ -86,7 +101,7 @@ def build_projection_package(source):
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11)$'",
         )
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
@@ -131,7 +146,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.5-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.6-USB.zip",
     )
     args = parser.parse_args()
     try:
