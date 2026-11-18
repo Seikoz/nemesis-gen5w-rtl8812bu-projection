@@ -97,6 +97,7 @@ check_korea_projection() {
 
 projection_rejects_usb() {
     case "$projection_version" in
+        1.7.4.1) return 1 ;; # CN7NPE Korea Projection USB test package
         1.7|1.7.*) return 0 ;;
     esac
     return 1
@@ -239,7 +240,11 @@ wait_for_interface() {
 report_interface() {
     local net_name driver message ready=0 limit=5 boot_reconfigure= bind_result=
     if [ "$launch_mode" = boot ]; then
-        limit=12
+        if [ "$boot_phase" = --boot-early ]; then
+            limit=3
+        else
+            limit=12
+        fi
     elif ! identify_dongle; then
         message="88x2bu loaded. Plug in a supported dongle and press Launch again."
         save_launch_log "$message" success
@@ -248,7 +253,7 @@ report_interface() {
     fi
     if wait_for_interface "$limit"; then
         ready=1
-    elif [ "$launch_mode" = boot ] && identify_dongle; then
+    elif [ "$boot_phase" = --boot ] && identify_dongle; then
         local reconfigure_error
         if reconfigure_error=$(reconfigure_boot_dongle 2>&1); then
             boot_reconfigure="requested"

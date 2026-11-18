@@ -4,36 +4,43 @@ package_dir=/data/nemesis/apps/realtek.88x2bu
 
 launch_mode=manual
 log_name=launch
-if [ "${1:-}" = --boot ]; then
-    launch_mode=boot
-    log_name=boot
-fi
+case "${1:-}" in
+    --boot|--boot-early)
+        launch_mode=boot
+        log_name=boot
+        ;;
+esac
+boot_phase="${1:-manual}"
 
-select_module && check_conflict || exit 1
+if ! select_module || ! check_conflict; then
+    save_launch_log "Driver load prerequisites failed; see preload.log for a boot attempt." failure
+    exit 1
+fi
 check_korea_projection
 identify_dongle
 if ! read_boot_id; then
     echo "Cannot read the kernel boot ID."
     exit 1
 fi
-if module_is_loaded; then
-    if ! owns_module; then
-        echo "88x2bu is already loaded by another package or tool."
+if ! module_is_loaded; then
+    if insmod "$package_dir/modules/$module_file" 'ifname=rtwlan%d' 'if2name=rtwlan%d'; then
+        if ! echo "$boot_id" > "$package_dir/.loaded-boot"; then
+            rmmod 88x2bu
+            echo "Cannot save this package's module state."
+            exit 1
+        fi
+    elif ! module_is_loaded; then
+        message="88x2bu failed to load on $platform."
+        save_launch_log "$message" failure
+        echo "$message"
         exit 1
     fi
-    report_interface
-    exit $?
 fi
-
-if ! insmod "$package_dir/modules/$module_file" 'ifname=rtwlan%d' 'if2name=rtwlan%d'; then
-    message="88x2bu failed to load on $platform."
+if ! owns_module && ! { sleep 1 && owns_module; }; then
+    # Launch and the boot service can both observe a newly inserted module.
+    message="88x2bu is already loaded by another package or tool."
     save_launch_log "$message" failure
     echo "$message"
-    exit 1
-fi
-if ! echo "$boot_id" > "$package_dir/.loaded-boot"; then
-    rmmod 88x2bu
-    echo "Cannot save this package's module state."
     exit 1
 fi
 report_interface
