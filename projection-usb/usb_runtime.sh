@@ -79,6 +79,46 @@ usb_network() {
   usb_setup "$1" "$HMGDATA/settings/hmgapi.json" "$BK/usb-network.ours"
 }
 
+usb_start_hostapd() {
+  (
+    rc=0
+    hostapd "$CONF" || rc=$?
+    echo "hostapd exit=$rc"
+  ) 2>&1 | "$BB" awk -v config="$CONF" '
+    function hide(line, secret, out, n) {
+      if (secret == "") return line
+      while ((n = index(line, secret)) > 0) {
+        out = out substr(line, 1, n - 1) "[redacted]"
+        line = substr(line, n + length(secret))
+      }
+      return out line
+    }
+    BEGIN {
+      while ((getline row < config) > 0) {
+        if (index(row, "ssid=") == 1) ssid = substr(row, 6)
+        if (index(row, "wpa_passphrase=") == 1) key = substr(row, 16)
+      }
+      close(config)
+      print "hostapd startup: rtwlan0, KR, channel 149, HT40+"
+    }
+    emitted < 80 {
+      line = hide(hide($0, ssid), key)
+      lower = tolower(line)
+      if (lower ~ /hexdump|ssid|password|passphrase|wpa_psk|pairwise key|group key/) {
+        if (lower ~ /fail|error|invalid|unknown/) {
+          print "hostapd reported an SSID or key configuration error."
+          emitted++
+        }
+        next
+      }
+      if (lower ~ /nl80211|err|fail|could not|cannot|not supported|not permitted|no such|invalid|unknown|disabled|enabled|frequency|freq=|channel|regulatory|ctrl_iface|ht40|configuration file|hostapd exit=/) {
+        print line
+        emitted++
+      }
+    }
+  ' > "$W/usb-hostapd.log"
+}
+
 usb_ap_live() {
   usb_wifi_ready && running "hostapd $CONF" && wlan_has_ip && our_dhcp_on
 }
@@ -93,5 +133,7 @@ usb_ap_progress() {
   elif [ -f "$W/usb.ap.ready" ]; then
     rm -f "$W/usb.ap.ready"
     prog 100 fail "USB Wi-Fi AP lost (rtwlan0). Check the dongle and driver."
+  elif usb_wifi_ready && ! running "hostapd $CONF" && [ -s "$W/usb-hostapd.log" ]; then
+    prog 100 fail "USB Wi-Fi is ready, but hostapd failed. Save the Korea Projection report."
   fi
 }
