@@ -1,0 +1,33 @@
+name: Build Android USB reset helper
+on:
+  push:
+    branches: [test/rtl8812bu-boot-retry]
+    paths: ['.github/workflows/build-a3000mini-reset.yml', 'driver-source/usb_reset_a3000mini.c']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build and inspect Android API 19 executable
+        run: |
+          ndk="$ANDROID_HOME/ndk/25.2.9519653"
+          [ -d "$ndk" ] || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'ndk;25.2.9519653'
+          bin="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          mkdir -p out
+          "$bin/armv7a-linux-androideabi19-clang" -std=c11 -Wall -Wextra -Werror -Os \
+            -fPIE -pie -Wl,--build-id=sha1 -Wl,--strip-all \
+            driver-source/usb_reset_a3000mini.c -o out/usb-reset-a3000mini
+          "$bin/llvm-readelf" -h -l -n out/usb-reset-a3000mini
+          "$bin/llvm-readelf" -h out/usb-reset-a3000mini | grep -E 'Machine:[[:space:]]+ARM'
+          "$bin/llvm-readelf" -l out/usb-reset-a3000mini | grep -F 'Requesting program interpreter: /system/bin/linker'
+          sha256sum out/usb-reset-a3000mini
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: a3000mini-reset-armv7
+          path: out/usb-reset-a3000mini
+          if-no-files-found: error
