@@ -33,3 +33,231 @@
  			goto netdev_open_error;
  		}
  #if 0/*#ifdef CONFIG_MI_WITH_MBSSID_CAM*/
+--- a/hal/hal_halmac.c
++++ b/hal/hal_halmac.c
+@@ -2680,19 +2680,25 @@
+ #endif
+ 
+ 	halmac = dvobj_to_halmac(d);
+-	if (!halmac)
++	if (!halmac) {
++		pr_err("88x2bu: Gen5W halmac failed stage=power-on/adapter status=%d\n", (int)(-1));
+ 		goto out;
++	}
+ 
+ 	api = HALMAC_GET_API(halmac);
+ 
+ 	status = api->halmac_pre_init_system_cfg(halmac);
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=power-on/halmac_pre_init_system_cfg status=%d\n", (int)(status));
+ 		goto out;
++	}
+ 
+ #ifdef CONFIG_SDIO_HCI
+ 	status = api->halmac_sdio_cmd53_4byte(halmac, HALMAC_SDIO_CMD53_4BYTE_MODE_RW);
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=power-on/halmac_sdio_cmd53_4byte status=%d\n", (int)(status));
+ 		goto out;
++	}
+ #endif /* CONFIG_SDIO_HCI */
+ 
+ #if defined(CONFIG_PCI_HCI) && defined(CONFIG_RTL8822B)
+@@ -2741,14 +2747,17 @@
+ 			 __FUNCTION__, (HALMAC_RET_SUCCESS == status)?"OK":"FAIL!");
+ 	}
+ 	if (HALMAC_RET_SUCCESS != status) {
++		pr_err("88x2bu: Gen5W halmac failed stage=power-switch status=%d\n", (int)status);
+ 		if (HALMAC_RET_PWR_UNCHANGE == status)
+ 			err = -2;
+ 		goto out;
+ 	}
+ 
+ 	status = api->halmac_init_system_cfg(halmac);
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=power-on/halmac_init_system_cfg status=%d\n", (int)(status));
+ 		goto out;
++	}
+ 
+ 	err = 0;
+ out:
+@@ -3337,6 +3346,7 @@
+ 	/* 2. Driver Check Tx FIFO is empty */
+ 	err = rtw_halmac_txfifo_wait_empty(d, 2000); /* wait 2s */
+ 	if (err) {
++		pr_err("88x2bu: Gen5W halmac failed stage=firmware-txfifo status=%d\n", err);
+ 		err = -1;
+ 		goto resume_tx;
+ 	}
+@@ -3361,6 +3371,7 @@
+ 	/* 5. Download Firmware */
+ 	status = api->halmac_download_firmware(mac, fw, fwsize);
+ 	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=firmware-download status=%d\n", (int)status);
+ 		RTW_ERR("%s: download firmware FAIL! status=0x%02x\n",
+ 			__FUNCTION__, status);
+ 		_debug_dlfw_fail(d);
+@@ -3439,8 +3450,10 @@
+ #ifdef CONFIG_SUPPORT_TRX_SHARED
+ 	status = api->halmac_cfg_rxff_expand_mode(halmac,
+ 						  _rtw_get_trx_share_mode(p));
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=mac-flow/halmac_cfg_rxff_expand_mode status=%d\n", (int)(status));
+ 		goto out;
++	}
+ #endif
+ 
+ #ifdef DBG_LA_MODE
+@@ -3455,19 +3468,25 @@
+ #endif
+ 
+ 	err = _cfg_drv_rsvd_pg_num(d);
+-	if (err)
++	if (err) {
++		pr_err("88x2bu: Gen5W halmac failed stage=mac-flow/_cfg_drv_rsvd_pg_num status=%d\n", (int)(err));
+ 		goto out;
++	}
+ 
+ #ifdef CONFIG_USB_HCI
+ 	status = api->halmac_set_bulkout_num(halmac, d->RtNumOutPipes);
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=mac-flow/halmac_set_bulkout_num status=%d\n", (int)(status));
+ 		goto out;
++	}
+ #endif /* CONFIG_USB_HCI */
+ 
+ 	trx_mode = _choose_trx_mode(d);
+ 	status = api->halmac_init_mac_cfg(halmac, trx_mode);
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=mac-flow/halmac_init_mac_cfg status=%d\n", (int)(status));
+ 		goto out;
++	}
+ 
+ 	/* Driver insert flow: Sync driver setting with register */
+ 	/* Sync driver RCR cache with register setting */
+@@ -3477,8 +3496,10 @@
+ 	/* Driver inser flow end */
+ 
+ 	err = rtw_halmac_rx_agg_switch(d, _TRUE);
+-	if (err)
++	if (err) {
++		pr_err("88x2bu: Gen5W halmac failed stage=mac-flow/rtw_halmac_rx_agg_switch status=%d\n", (int)(err));
+ 		goto out;
++	}
+ 
+ 	nettype = dvobj_to_regsty(d)->wireless_mode;
+ 	if (is_supported_vht(nettype) == _TRUE)
+@@ -3489,8 +3510,10 @@
+ 		status = api->halmac_cfg_operation_mode(halmac, HALMAC_WIRELESS_MODE_G);
+ 	else
+ 		status = api->halmac_cfg_operation_mode(halmac, HALMAC_WIRELESS_MODE_B);
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=mac-flow/halmac_cfg_operation_mode status=%d\n", (int)(status));
+ 		goto out;
++	}
+ 
+ 	err_ret = 0;
+ out:
+@@ -3543,8 +3566,10 @@
+ 
+ 	adapter = dvobj_get_primary_adapter(d);
+ 	halmac = dvobj_to_halmac(d);
+-	if (!halmac)
++	if (!halmac) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/adapter status=%d\n", (int)(-1));
+ 		goto out;
++	}
+ 	api = HALMAC_GET_API(halmac);
+ 
+ 	/* StatePowerOff */
+@@ -3555,57 +3580,75 @@
+ 	/* halmac_mac_power_switch(on) */
+ 	/* halmac_Init_system_cfg */
+ 	ok = rtw_hal_power_on(adapter);
+-	if (_FAIL == ok)
++	if (_FAIL == ok) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/rtw_hal_power_on status=%d\n", (int)(ok));
+ 		goto out;
++	}
+ 
+ 	/* StatePowerOn */
+ 
+ 	/* DownloadFW */
+ 	if (fw && fwsize) {
+ 		err = download_fw(d, fw, fwsize, 0);
+-		if (err)
++		if (err) {
++			pr_err("88x2bu: Gen5W halmac failed stage=hal-init/download_fw status=%d\n", (int)(err));
+ 			goto out;
++		}
+ 		fw_ok = _TRUE;
+ 	}
+ 
+ 	/* InitMACFlow */
+ 	err = init_mac_flow(d);
+-	if (err)
++	if (err) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/init_mac_flow status=%d\n", (int)(err));
+ 		goto out;
++	}
+ 
+ 	/* Driver insert flow: Enable TR/RX */
+ 	err = _drv_enable_trx(d);
+-	if (err)
++	if (err) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/_drv_enable_trx status=%d\n", (int)(err));
+ 		goto out;
++	}
+ 
+ 	/* halmac_send_general_info */
+ 	if (_TRUE == fw_ok) {
+ 		err = _send_general_info(d);
+-		if (err)
++		if (err) {
++			pr_err("88x2bu: Gen5W halmac failed stage=hal-init/_send_general_info status=%d\n", (int)(err));
+ 			goto out;
++		}
+ 	}
+ 
+ 	/* Init Phy parameter-MAC */
+ 	ok = rtw_hal_init_mac_register(adapter);
+-	if (_FALSE == ok)
++	if (_FALSE == ok) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/rtw_hal_init_mac_register status=%d\n", (int)(ok));
+ 		goto out;
++	}
+ 
+ 	/* StateMacInitialized */
+ 
+ 	/* halmac_cfg_drv_info */
+ 	err = rtw_halmac_config_rx_info(d, HALMAC_DRV_INFO_PHY_STATUS);
+-	if (err)
++	if (err) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/rtw_halmac_config_rx_info status=%d\n", (int)(err));
+ 		goto out;
++	}
+ 
+ 	/* halmac_set_hw_value(HALMAC_HW_EN_BB_RF) */
+ 	/* Init BB, RF */
+ 	ok = rtw_hal_init_phy(adapter);
+-	if (_FALSE == ok)
++	if (_FALSE == ok) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/rtw_hal_init_phy status=%d\n", (int)(ok));
+ 		goto out;
++	}
+ 
+ 	status = api->halmac_init_interface_cfg(halmac);
+-	if (status != HALMAC_RET_SUCCESS)
++	if (status != HALMAC_RET_SUCCESS) {
++		pr_err("88x2bu: Gen5W halmac failed stage=hal-init/halmac_init_interface_cfg status=%d\n", (int)(status));
+ 		goto out;
++	}
+ 
+ 	/* SKIP: halmac_verify_platform_api */
+ 	/* SKIP: halmac_h2c_lb */
