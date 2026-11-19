@@ -1,10 +1,10 @@
-# Save the failed hostapd process's recent Android log before logcat rotates.
+# Save the AP process's recent Android log before logcat rotates.
 usb_capture_hostapd_logcat() {
-  local pid="$1" rc="$2" snapshot
+  local pid="$1" rc="$2" observation="${3:-failure}" snapshot
   snapshot=$("$BB" mktemp "$W/.usb-hostapd-logcat.XXXXXX") || return 1
   {
     usb_ap_report_header
-    echo "hostapd failure pid=$pid exit=$rc"
+    echo "hostapd $observation pid=$pid exit=$rc"
     {
       "$BB_OWN" timeout 3 logcat -d -t 1200 -v threadtime '*:V' 2>/dev/null
       echo "logcat_status=$?"
@@ -36,7 +36,8 @@ usb_capture_hostapd_logcat() {
         line = hide(hide($0, key), ssid)
         lower = tolower(line)
         if (lower ~ /hexdump|ssid|psk|passphrase|password|secret|key([[:space:]=:]|$)/) next
-        if (lower !~ /nl80211|err|fail|invalid|denied|not permitted|not allowed|not supported|could not|cannot|no such|freq|channel|regulatory|rfkill|interface|ap-disabled|ap-enabled|hw mode|terminat|fatal/) next
+        if (lower !~ /nl80211|err|fail|invalid|denied|not permitted|not allowed|not supported|could not|cannot|no such|freq|channel|regulatory|rfkill|interface|ap-disabled|ap-enabled|ap-sta-|authenticat|associat|deauth|hw mode|terminat|fatal/) next
+        gsub(/[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]/, "[mac]", line)
         lines[count++ % 80] = substr(line, 1, 512)
       }
       END {

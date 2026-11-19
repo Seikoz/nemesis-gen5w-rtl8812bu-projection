@@ -20,7 +20,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.13 - Captures USB AP diagnostics
+short-desc=v1.7.4.14 - Captures USB AP diagnostics
 
 [package.1]
 path={HMG_API}
@@ -30,7 +30,7 @@ short-desc=1.1.0-rc.4 - Korea Projection dependency
 [package.2]
 path={PACKAGE_PATH}
 name=Realtek RTL8812BU USB Driver
-short-desc=v1.1.11 - Korea Projection USB dependency
+short-desc=v1.1.12 - Korea Projection USB dependency
 """
 
 
@@ -81,7 +81,20 @@ def add_hostapd_diagnostics(package):
         "svc/hotspot.sh": hotspot
         .replace(launch, diagnostics + b"\nusb_start_hostapd() {\n  usb_run_hostapd 2>&1 | ")
         .replace(pending, pending + b'\n  usb_ap_report_waiting "$paths"')
+        .replace(b'      log "USB AP ready: rtwlan0, hostapd and DHCP/1067"',
+                 b'      usb_capture_running_hostapd\n      log "USB AP ready: rtwlan0, hostapd and DHCP/1067"')
         .replace(ap_start, b'''  usb_ap_context
+  if [ -n "$AP_LAST_UP" ] && [ "$AP_LAST_UP" != "$AP_SCOPE" ]; then
+    log "USB device changed: restarting our AP and DHCP."
+    stop_ours
+    "$BB" rm -f "$W/usb.ap.ready"
+    _usb_stop_wait=0
+    while running "hostapd $CONF"; do
+      [ "$_usb_stop_wait" -lt 5 ] || return 1
+      sleep 1
+      _usb_stop_wait=$((_usb_stop_wait + 1))
+    done
+  fi
   if ! running "hostapd $CONF"; then
     usb_prepare_ap_interface || return 1
     AP_LAST_UP=$AP_SCOPE
@@ -118,23 +131,23 @@ def add_hostapd_diagnostics(package):
 def build_projection_package(source):
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.13\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.14\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
-            b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.11,!niro.carplay.hotspot"\n',
+            b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.12,!niro.carplay.hotspot"\n',
         )
         descriptor = descriptor.replace(
             b"CN7NPE KOR 260902, HMG-API and RTL8812BU v1.1.4 required.",
-            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.4+ and Realtek 1.1.11+.",
+            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.4+ and Realtek 1.1.12+.",
         )
         preinstall = package.read("scripts/preinstall.sh")
         preinstall = preinstall.replace(
             b"Install and launch the RTL8812BU driver v1.1.4 first.",
-            b"Install the RTL8812BU driver v1.1.11 or later first.",
+            b"Install the RTL8812BU driver v1.1.12 or later first.",
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14)$'",
         )
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
@@ -187,7 +200,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.8-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.9-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,

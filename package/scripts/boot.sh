@@ -21,8 +21,8 @@ record_a3000mini_boot() (
     case "$number" in ''|*[!0-9]*) exit 0 ;; esac
     umask 022
     mkdir -p "$dir" || exit 0
-    echo "$boot_id ${usb##*/}:$number $up_seconds" > "$marker.tmp" &&
-        mv -f "$marker.tmp" "$marker"
+    # This service is the sole writer. The head unit may not provide mv.
+    echo "$boot_id ${usb##*/}:$number $up_seconds" > "$marker"
 ) 2>/dev/null
 
 loader="$package_dir/scripts/load.sh"

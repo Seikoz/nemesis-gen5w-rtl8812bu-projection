@@ -1,15 +1,17 @@
 # RTL88x2BU 대응 소스
 
-## USB 합본 v0.1.8 진단 모듈
+## USB 합본 v0.1.9 진단 모듈
 
-Realtek **1.1.11**의 모듈은 아래에 기록된 Gen5W 소스에 [칩 초기화 진단 패치](chip-init-diagnostics.patch)를 적용해 빌드했습니다. HALMAC·펌웨어 초기화 실패와 네트워크 장치를 올리다 실패한 지점에 `88x2bu: Gen5W chip-init failed` 로그를 남깁니다. HALMAC 내부의 전원 켜기, 펌웨어 다운로드, MAC·PHY 초기화 실패는 `Gen5W halmac failed stage=...`와 상태 코드로 기록합니다. 실패 반환값은 기존 코드와 같습니다.
+Realtek **1.1.12**의 모듈은 아래에 기록된 Gen5W 소스에 [칩 초기화 진단 패치](chip-init-diagnostics.patch)를 적용해 빌드했습니다. HALMAC·펌웨어 초기화 실패와 네트워크 장치를 올리다 실패한 지점에 `88x2bu: Gen5W chip-init failed` 로그를 남깁니다. HALMAC 내부의 전원 켜기, 펌웨어 다운로드, MAC·PHY 초기화 실패는 `Gen5W halmac failed stage=...`와 상태 코드로 기록합니다. 실패 반환값은 기존 코드와 같습니다.
 
-[빌드 워크플로](../.github/workflows/build-gen5w-diagnostics.yml)는 두 모듈의 vermagic과 외부 심볼 목록을 GRT47 v2.0.7 바이너리와 대조합니다. [릴리스용 드라이버 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44434898867)
+[빌드 워크플로](../.github/workflows/build-gen5w-diagnostics.yml)는 두 모듈의 vermagic과 외부 심볼 목록을 GRT47 v2.0.7 바이너리와 대조합니다. [릴리스용 드라이버 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44472253936)
 
 | 모듈 | SHA-256 |
 | --- | --- |
-| `88x2bu.ko` (TCC803x) | `1cd464be76afda09bf61dbe9d2f4d2f6664f9e3737d686db65ec5daac44bf4b7` |
-| `88x2bu_tcc897x.ko` (TCC897x) | `23e21e943da5ff68f6d2fb2712e3e34f66161f1ad72907c2faa7be6e7229dc9c` |
+| `88x2bu.ko` (TCC803x) | `9c87432954becc5ee30a745feaf818af6864134b70256ccd466cebfd42f118c7` |
+| `88x2bu_tcc897x.ko` (TCC897x) | `4b6dfd6b2f8148ea89bbcd12f9a36da7e3b0f736a5ffe563514dd4e44444795c` |
+
+동글 분리 시 Gen5W의 정지 처리 경로에서 `rtw_os_ndevs_unregister()`를 호출해 이전 네트워크 장치 등록을 해제합니다. 재장착 뒤 중지된 `rtwlan0`을 현재 장치로 판정하는 경로를 수정했습니다. 이 변경의 실차 재연결 검증이 필요합니다.
 
 ## Gen5W 기반 모듈과 재빌드
 
