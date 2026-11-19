@@ -65,6 +65,12 @@ v0.1.13은 IPv6 링크 로컬 피어의 UDP 6031을 추가 허용합니다. **AP
 
 자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
 
+## v0.1.13 배포 검증
+
+- [회귀 검사·세션 콜백·Android 훅 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44536318095), [mDNS 응답 해석 검사·ARMv7 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44535807005)를 통과했습니다.
+- 중첩 패키지·29개 셸 문법·모드 서명·드라이버/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서의 실제 방화벽 통과·카플레이 동작 확인은 남아 있습니다.
+- USB ZIP SHA-256: `340087b19afb6daaea24699776a1ebc80eed468da0ea121f5377129ab1b79f5c`
+
 ## 릴리스 운영
 
 새 합본 ZIP은 GitHub의 **Latest**로 등록합니다. 테스트 상태는 영문 릴리스 제목과 본문에 표시합니다. 새 공개 다운로드와 SHA-256을 확인한 뒤 이전 릴리스와 태그를 정리해 최신 합본 ZIP 한 개를 제공합니다. 변경 사항은 배포 전에 이 README와 CHANGELOG.md에 기록합니다. [Latest release](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)
