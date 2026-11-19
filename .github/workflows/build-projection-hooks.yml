@@ -1,0 +1,22 @@
+name: Build USB CarPlay AP wait hooks
+on:
+  push:
+    branches: [test/rtl8812bu-boot-retry]
+    paths: ['.github/workflows/build-projection-hooks.yml', 'projection-source/**']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test AP readiness ordering and build Android API 19 hooks
+        run: bash projection-source/compile_hooks.sh "$PWD/projection-output"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: usb-carplay-ap-wait-hooks
+          path: projection-output/hooks.jar
+          if-no-files-found: error
