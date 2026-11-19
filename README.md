@@ -73,7 +73,7 @@ v0.1.13은 IPv6 링크 로컬 피어의 UDP 6031을 추가 허용합니다. **AP
 
 ## 릴리스 운영
 
-새 합본 ZIP은 GitHub의 **Latest**로 등록합니다. 테스트 상태는 영문 릴리스 제목과 본문에 표시합니다. 새 공개 다운로드와 SHA-256을 확인한 뒤 이전 릴리스와 태그를 정리해 최신 합본 ZIP 한 개를 제공합니다. 변경 사항은 배포 전에 이 README와 CHANGELOG.md에 기록합니다. [Latest release](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)
+새 합본 ZIP은 GitHub의 **Latest**로 등록합니다. 테스트 상태는 영문 릴리스 제목과 본문에 표시하고 공개 다운로드와 SHA-256을 확인합니다. **이전 릴리스·태그·설치 ZIP은 삭제하지 않고 보존**하여 버전별로 내려받을 수 있게 합니다. 각 릴리스에는 완성된 USB 설치 ZIP 한 개를 올립니다. 변경 사항은 배포 전에 이 README와 CHANGELOG.md에 기록합니다. [Latest release](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)
 
 ## 소스와 라이선스
 
