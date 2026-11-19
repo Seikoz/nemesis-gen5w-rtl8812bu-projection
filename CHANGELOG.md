@@ -1,5 +1,11 @@
 # 변경사항
 
+## 프로젝트 및 릴리스 운영
+
+- 프로젝트 이름을 **NEMESIS RTL8812BU Gen5W**, 저장소 이름을 `nemesis-rtl8812bu-gen5w`로 정리했습니다.
+- 릴리스 제목을 영문으로 통일하고 최신 합본이 GitHub에서 바로 보이도록 **Latest**로 등록합니다.
+- 새 다운로드 검증 후 이전 릴리스와 태그를 정리하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
+
 ## USB 합본 v0.1.8
 
 - v0.1.7 실차 로그에서 HALMAC 초기화 실패와 `rtwlan0` 활성화 실패가 반복됐고, `hostapd`의 `CAP_NET_ADMIN`과 `CAP_NET_RAW`는 유지된 것을 확인했습니다.
@@ -47,6 +53,10 @@
 
 - Korea Projection **1.7.4.6**이 Realtek **1.1.8 이상**을 요구하도록 NEMESIS 의존성을 선언했습니다. USB 탭에서 Korea Projection을 선택하면 NEMESIS가 필요한 드라이버를 같은 USB에서 찾아 먼저 설치하거나 업데이트합니다.
 - Realtek **1.1.8**은 Korea Projection **1.7.4.6**을 USB 테스트판으로 인식합니다. v1.1.7의 커널 모듈과 USB 리셋 도구를 사용합니다.
+
+## USB 합본 v0.1.0
+
+- Korea Projection CN7NPE USB Test **1.7.4.5**와 Realtek 드라이버 **1.1.7**을 같은 USB 메모리에서 설치할 수 있는 합본 ZIP으로 제공했습니다.
 
 ## v1.1.7 (A3000mini 부팅 인식 테스트)
 

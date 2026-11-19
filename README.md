@@ -1,6 +1,6 @@
-# 아반떼 N 260902 NEMESIS USB 합본
+# NEMESIS RTL8812BU Gen5W
 
-2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)용 무선 카플레이 진단 테스트판입니다. 대상 헤드유닛은 TCC803x, 커널은 `3.18.24-tcc`입니다. NEMESIS Manager 1.16.7 이상이 설치되어 있어야 합니다.
+현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
 **[USB 설치 ZIP v0.1.8 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.8/NEMESIS-CN7NPE-260902-Bundle-v0.1.8-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.8) · [전체 변경 이력](CHANGELOG.md)
 
@@ -37,6 +37,26 @@ USB/
 3. 재부팅하기 전에 USB 메모리로 바꿔 꽂고 **NEMESIS → My Packages → Korea Projection CN7NPE USB Test → Launch → 제보 파일 만들기**를 누릅니다. USB의 `KoreaProjection-report/3-log.txt`에 첫 USB 감지와 장치 번호 변경 후 각각의 UP 시도, 커널 로그, `hostapd` 권한 정보와 실패 로그가 들어갑니다. `1-report.md`와 `2-car-report.json`이 만들어졌다면 함께 첨부해 주세요.
 
 v0.1.8의 모듈 빌드와 USB 설치 ZIP을 검증했습니다. 실차의 부팅 인식과 무선 카플레이 연결은 테스트가 필요합니다.
+
+## 버전별 변경 사항
+
+| 합본 버전 | 변경 사항 |
+| --- | --- |
+| v0.1.8 | Realtek 절전 옵션 비활성화, HALMAC 단계별 실패 로그 추가, `printf` 미지원 오류 수정, 인터페이스 UP 성공 뒤 AP 시작 |
+| v0.1.7 | 칩 초기화 실패 로그와 부팅·재열거별 UP 결과, `hostapd` 권한·실패 로그를 제보 파일에 추가 |
+| v0.1.6 | 인터페이스 활성화가 거부되면 권한·USB 상태 확인 후 드라이버 연결을 부팅당 한 번 갱신 |
+| v0.1.5 | 기존 HMG-API 무선 모드가 남은 상태에서 Korea Projection을 업데이트하는 조건 수정 |
+| v0.1.4 | `hostapd` 실패 직후 해당 프로세스의 Android 로그 자동 수집 |
+| v0.1.3 | HMG-API 본체를 공식 1.1.0-rc.4로 교체 |
+| v0.1.2 | HMG-API 본체를 포함하고 Korea Projection 설치 시 필요한 의존성을 먼저 설치 |
+| v0.1.1 | Korea Projection 설치 시 Realtek 드라이버를 같은 USB에서 먼저 설치 |
+| v0.1.0 | Korea Projection CN7NPE USB 테스트판과 Realtek 드라이버를 하나의 USB 설치 ZIP으로 제공 |
+
+자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
+
+## 릴리스 운영
+
+새 합본 ZIP은 GitHub의 **Latest**로 등록합니다. 테스트 상태는 영문 릴리스 제목과 본문에 표시합니다. 새 공개 다운로드와 SHA-256을 확인한 뒤 이전 릴리스와 태그를 정리해 최신 합본 ZIP 한 개를 제공합니다. 변경 사항은 배포 전에 이 README와 CHANGELOG.md에 기록합니다. [Latest release](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)
 
 ## 소스와 라이선스
 
