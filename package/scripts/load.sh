@@ -5,7 +5,7 @@ package_dir=/data/nemesis/apps/realtek.88x2bu
 launch_mode=manual
 log_name=launch
 case "${1:-}" in
-    --boot|--boot-early)
+    --boot|--boot-early|--boot-speed)
         launch_mode=boot
         log_name=boot
         ;;
@@ -44,4 +44,5 @@ if ! owns_module && ! { sleep 1 && owns_module; }; then
     echo "$message"
     exit 1
 fi
+recover_high_speed
 report_interface

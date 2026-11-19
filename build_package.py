@@ -90,6 +90,8 @@ def build_driver_package(modules, helper, *, diagnostics=False):
             or struct.unpack_from("<HH", helper, 16) != (3, 40)
             or b"/system/bin/linker\0" not in helper):
         raise ValueError("The USB reset helper must be a 32-bit ARM Android PIE executable")
+    if diagnostics and b"USB high-speed:" not in helper:
+        raise ValueError("The USB reset helper does not include scoped EHCI recovery")
     files[RESET_HELPER_PATH] = helper
 
     package_dir = ROOT / "package"
@@ -98,13 +100,13 @@ def build_driver_package(modules, helper, *, diagnostics=False):
             name = path.relative_to(package_dir).as_posix()
             text = path.read_text(encoding="utf-8")
             if diagnostics and name == "NEMESIS.data":
-                text = text.replace("package-version=1.1.9\n", "package-version=1.1.12\n")
+                text = text.replace("package-version=1.1.9\n", "package-version=1.1.13\n")
             if diagnostics and name == "MODULE-SOURCE.txt":
                 text = (
                     "The Gen5W diagnostic modules are based on GRT47 v2.0.7. "
                     "See MODULE-LICENSE.txt.\n"
                     "Corresponding source, diagnostic patch and build instructions:\n"
-                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.9/driver-source\n"
+                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.10/driver-source\n"
                 )
             if name == "scripts/common.sh":
                 if text.count("@USB_IDS@") != 1:

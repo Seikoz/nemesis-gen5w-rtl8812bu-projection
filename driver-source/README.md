@@ -1,5 +1,13 @@
 # RTL88x2BU 대응 소스
 
+## USB 합본 v0.1.10 USB 속도 복구 도구
+
+Realtek **1.1.13**에 포함한 `usb-reset-a3000mini`의 `--high-speed` 명령은 직결 A3000mini, USB 12Mbps, 단일 포트의 외부 OHCI와 비어 있는 EHCI 컨트롤러를 확인합니다. 대상 EHCI의 `companion` 파일에 `-1`을 써 포트 소유권을 되돌리고, 로더가 재열거 후 실제 속도를 검사합니다. 인터페이스가 이미 UP이면 도구는 요청을 거부합니다.
+
+제어 방식은 Linux 3.18의 `store_companion()`와 `set_owner()`를 따릅니다. [EHCI sysfs 소스](https://github.com/torvalds/linux/blob/v3.18/drivers/usb/host/ehci-sysfs.c) · [포트 소유권 소스](https://github.com/torvalds/linux/blob/v3.18/drivers/usb/host/ehci-hub.c)
+
+[Android 빌드와 조건 검사](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44475139056) · [복구 도구 소스](usb_reset_a3000mini.c) · [조건 검사](test_usb_speed.py)
+
 ## USB 합본 v0.1.9 진단 모듈
 
 Realtek **1.1.12**의 모듈은 아래에 기록된 Gen5W 소스에 [칩 초기화 진단 패치](chip-init-diagnostics.patch)를 적용해 빌드했습니다. HALMAC·펌웨어 초기화 실패와 네트워크 장치를 올리다 실패한 지점에 `88x2bu: Gen5W chip-init failed` 로그를 남깁니다. HALMAC 내부의 전원 켜기, 펌웨어 다운로드, MAC·PHY 초기화 실패는 `Gen5W halmac failed stage=...`와 상태 코드로 기록합니다. 실패 반환값은 기존 코드와 같습니다.

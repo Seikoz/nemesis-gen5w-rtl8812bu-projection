@@ -39,6 +39,7 @@ select_module && check_conflict || exit 1
 
 attempt=0
 last_device=
+last_speed_device=
 while :; do
     if ! identify_dongle; then
         attempt=0
@@ -54,6 +55,15 @@ while :; do
             attempt=0
             last_device=$device
             record_a3000mini_boot
+        fi
+
+        usb_speed=
+        if [ "$vendor:$product" = 0bda:b812 ] &&
+           read -r usb_speed < "$usb/speed" && [ "$usb_speed" = 12 ] &&
+           [ "$last_speed_device" != "$device" ]; then
+            last_speed_device=$device
+            echo "A3000mini is on 12Mbps; requesting scoped EHCI recovery."
+            /system/bin/sh "$loader" --boot-speed
         fi
 
         if find_wifi_interface >/dev/null; then

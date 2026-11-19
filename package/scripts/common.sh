@@ -133,6 +133,54 @@ reset_boot_dongle() {
     "$helper" "$usb"
 }
 
+# Return a full-speed A3000mini's external port to EHCI before the AP starts.
+recover_high_speed() (
+    local boot_id usb_speed lock marker attempt wait_count helper_rc result=1
+    local log_dir=/data/nemesis/logs/realtek.88x2bu
+    is_cn7npe_boot_reset_target && read_boot_id && identify_dongle &&
+        [ "$vendor:$product" = 0bda:b812 ] &&
+        read -r usb_speed < "$usb/speed" && [ "$usb_speed" = 12 ] || return 0
+    case "$boot_id" in ''|*[!0-9a-f-]*) return 1 ;; esac
+    lock="$package_dir/.usb-speed-lock-$boot_id"
+    mkdir "$lock" 2>/dev/null || return 0
+    trap 'rmdir "$lock" 2>/dev/null' 0
+    mkdir -p "$log_dir" || return 1
+    if [ ! -d "$package_dir/.usb-speed-tried-$boot_id-1" ]; then
+        echo "boot=$boot_id A3000mini USB high-speed recovery" > "$log_dir/speed.log"
+    fi
+    {
+        for attempt in 1 2; do
+            marker="$package_dir/.usb-speed-tried-$boot_id-$attempt"
+            mkdir "$marker" 2>/dev/null || continue
+            identify_dongle && [ "$vendor:$product" = 0bda:b812 ] &&
+                read -r usb_speed < "$usb/speed" || break
+            [ "$usb_speed" != 480 ] || { result=0; break; }
+            [ "$usb_speed" = 12 ] || break
+            echo "Attempt $attempt: usb=${usb##*/} speed_before=$usb_speed"
+            "$package_dir/bin/usb-reset-a3000mini" --high-speed "$usb"
+            helper_rc=$?
+            echo "EHCI ownership request exit=$helper_rc"
+            [ "$helper_rc" -eq 0 ] || break
+            wait_count=0
+            while [ "$wait_count" -lt 6 ]; do
+                sleep 1
+                if identify_dongle && [ "$vendor:$product" = 0bda:b812 ] &&
+                   read -r usb_speed < "$usb/speed" && [ "$usb_speed" = 480 ]; then
+                    echo "Verified usb=${usb##*/} speed_after=480"
+                    result=0
+                    break
+                fi
+                wait_count=$((wait_count + 1))
+            done
+            [ "$result" -ne 0 ] || break
+            echo "480Mbps was not observed after attempt $attempt."
+        done
+        echo "High-speed recovery result=$result"
+    } >> "$log_dir/speed.log" 2>&1
+    echo "A3000mini high-speed recovery exit=$result; see speed.log."
+    return "$result"
+)
+
 retry_usb_bind() {
     local bind_path=/sys/bus/usb/drivers/rtl88x2bu/bind authorized
     [ -L "$usb_interface/driver" ] && return 0
@@ -269,7 +317,7 @@ wait_for_interface() {
 }
 
 report_interface() {
-    local net_name driver message ready=0 limit=5 boot_reset= boot_reconfigure= bind_result=
+    local net_name driver message usb_speed ready=0 limit=5 boot_reset= boot_reconfigure= bind_result=
     if [ "$launch_mode" = boot ]; then
         if [ "$boot_phase" = --boot-early ]; then
             limit=3
@@ -308,6 +356,14 @@ report_interface() {
                 boot_reconfigure="skipped or failed${reconfigure_error:+: $reconfigure_error}"
             fi
         fi
+    fi
+    if [ "$ready" -eq 1 ] && [ "$vendor:$product" = 0bda:b812 ] &&
+       is_cn7npe_boot_reset_target && read -r usb_speed < "$usb/speed" &&
+       [ "$usb_speed" != 480 ]; then
+        message="A3000mini USB speed is ${usb_speed}Mbps; waiting for 480Mbps. See speed.log."
+        save_launch_log "$message" failure
+        echo "$message"
+        return 1
     fi
     if [ "$ready" -eq 1 ]; then
         message="RTL8812BU ready: $net_name ($vendor:$product)"
