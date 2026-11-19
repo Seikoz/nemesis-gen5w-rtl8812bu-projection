@@ -106,7 +106,7 @@ def build_driver_package(modules, helper, *, diagnostics=False):
                     "The Gen5W diagnostic modules are based on GRT47 v2.0.7. "
                     "See MODULE-LICENSE.txt.\n"
                     "Corresponding source, diagnostic patch and build instructions:\n"
-                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.10/driver-source\n"
+                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/4278db733c315ef264877cc86003f3619744209c/driver-source\n"
                 )
             if name == "scripts/common.sh":
                 if text.count("@USB_IDS@") != 1:

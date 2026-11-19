@@ -2,14 +2,14 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
-**[USB 설치 ZIP v0.1.10 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.10/NEMESIS-CN7NPE-260902-Bundle-v0.1.10-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.10) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.11 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.11/NEMESIS-CN7NPE-260902-Bundle-v0.1.11-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.11) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.15 |
+| Korea Projection CN7NPE USB Test | 1.7.4.16 |
 | Realtek RTL8812BU USB Driver | 1.1.13 |
 | HMG-API 본체 | 1.1.0-rc.4 |
-| HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.6 |
+| HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.7 |
 
 ## USB 설치
 
@@ -36,12 +36,13 @@ USB/
 2. 연결이 실패하면 같은 부팅에서 동글을 한 번 뺐다 꽂고 Korea Projection 상태를 다시 확인합니다. 필요한 경우 Realtek **Launch**를 한 번 누릅니다. v0.1.10은 먼저 USB 480Mbps 복구를 자동 시도합니다.
 3. 재부팅하기 전에 USB 메모리로 바꿔 꽂고 **NEMESIS → My Packages → Korea Projection CN7NPE USB Test → Launch → 제보 파일 만들기**를 누릅니다. USB의 `KoreaProjection-report/3-log.txt`에 첫 USB 감지와 장치 번호 변경 후 각각의 UP 시도, 커널 로그, `hostapd` 권한 정보와 실패 로그가 들어갑니다. `1-report.md`와 `2-car-report.json`이 만들어졌다면 함께 첨부해 주세요.
 
-v0.1.8 실차 로그에서 `rtwlan0` 활성화와 AP·DHCP 시작을 확인했습니다. v0.1.10은 부팅 중 OHCI 12Mbps 연결을 EHCI로 재협상하는 테스트판입니다. 실제 480Mbps를 확인한 뒤 AP를 시작합니다. 차량에서 480Mbps 전환과 무선 카플레이 연결을 확인해야 합니다.
+v0.1.10 실차 로그에서 EHCI 480Mbps 연결과 AP·DHCP 시작을 확인했습니다. iPhone 접속 단말 수는 0이었고, AP 준비 전에 Bluetooth iAP2가 시작됐습니다. v0.1.11은 AP 준비 신호와 `rtwlan0` 주소를 확인한 뒤 iAP2를 시작하도록 순서를 수정한 테스트판입니다. 동글 연결 후 무선 모드가 **2.4.7로 업데이트된 것을 확인한 뒤** 완전히 재부팅합니다. 실차의 무선 카플레이 연결 완료 여부는 확인이 필요합니다.
 
 ## 버전별 변경 사항
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.11 | AP 준비 전에 Bluetooth iAP2가 시작되는 순서 수정, 준비 후 자동 진행, 끊긴 연결의 대기 취소 |
 | v0.1.10 | 부팅 시 A3000mini의 외부 포트를 EHCI로 되돌리는 복구 추가, 실제 USB 480Mbps를 확인한 뒤 AP 시작 |
 | v0.1.9 | 분리된 네트워크 장치 등록 정리, 재장착 시 AP·DHCP 재시작, 첫 USB 기록 저장 수정, USB 속도·단말 접속 로그 추가 |
 | v0.1.8 | Realtek 절전 옵션 비활성화, HALMAC 단계별 실패 로그 추가, `printf` 미지원 오류 수정, 인터페이스 UP 성공 뒤 AP 시작 |

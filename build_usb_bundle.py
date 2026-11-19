@@ -8,6 +8,7 @@ import zipfile
 from pathlib import Path
 
 from build_package import MODULES, PACKAGE_PATH, RESET_HELPER_PATH, ROOT, archive, build_driver_package
+from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, verify_mod
 
 
 PROJECTION = "packages/korea.projection.zip"
@@ -20,7 +21,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.15 - Captures USB AP diagnostics
+short-desc=v1.7.4.16 - Waits for the USB AP before CarPlay
 
 [package.1]
 path={HMG_API}
@@ -140,10 +141,10 @@ def add_hostapd_diagnostics(package):
     }
 
 
-def build_projection_package(source):
+def build_projection_package(source, wireless):
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.15\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.16\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.13,!niro.carplay.hotspot"\n',
@@ -159,8 +160,13 @@ def build_projection_package(source):
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16)$'",
         )
+        old_version_guard = b'''grep -q '"version": "2.4.6"' "$mod/META-HMGAPI/manifest.json"'''
+        if preinstall.count(old_version_guard) != 1:
+            raise ValueError('Expected existing-author mod upgrade guard')
+        preinstall = preinstall.replace(old_version_guard,
+            rb'''grep -Eq '"version": "2\.4\.[67]"' "$mod/META-HMGAPI/manifest.json"''')
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
    ! { [ -r "$installed" ] && [ -f /data/nemesis/backup/korea.projection/mod.ours ] &&''',
@@ -187,6 +193,18 @@ done''',
         )
 
         changes = add_hostapd_diagnostics(package)
+        old_wireless = package.read('hmgapi/wireless-carplay-aa.zip')
+        if hashlib.sha256(old_wireless).hexdigest() != WIRELESS_BASE_SHA256:
+            raise ValueError('Expected the original CN7NPE wireless mod 2.4.6')
+        verify_mod(wireless)
+        hotspot = changes['svc/hotspot.sh']
+        old_digest = hashlib.md5(old_wireless, usedforsecurity=False).hexdigest().encode()
+        new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
+        if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:
+            raise ValueError('Expected mod version and checksum installer hooks')
+        changes['svc/hotspot.sh'] = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.7').replace(
+            b'MOD_MD5=' + old_digest, b'MOD_MD5=' + new_digest)
+        changes['hmgapi/wireless-carplay-aa.zip'] = wireless
         # Use the original source commit so the notice survives release tag cleanup.
         source_notice = package.read("licenses/Source.md")
         old_ref = b"/tree/kp-usb-test-v0.1.4/projection-usb"
@@ -194,7 +212,7 @@ done''',
             raise ValueError("Expected the Korea Projection source link in the base package")
         changes["licenses/Source.md"] = source_notice.replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        )
+        ) + b'\nWireless mod 2.4.7 AP readiness ordering source (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.11/projection-source\n'
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -212,7 +230,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.10-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.11-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,
@@ -220,6 +238,8 @@ def main():
     )
     parser.add_argument("--usb-reset-helper", required=True, type=Path,
                         help="Android ARMv7 helper with the scoped EHCI recovery command")
+    parser.add_argument('--wireless-mod', required=True, type=Path,
+                        help='Same-author signed wireless mod 2.4.7 with the AP readiness gate')
     args = parser.parse_args()
     try:
         driver_base = read_package(
@@ -240,7 +260,7 @@ def main():
             "INSTALL-KO.md": (guide / "INSTALL-KO.md").read_bytes(),
             "licenses/HMG-API-AGPL-3.0.txt": (guide / "licenses" / "HMG-API-AGPL-3.0.txt").read_bytes(),
             PACKAGE_PATH: driver,
-            PROJECTION: build_projection_package(projection_base),
+            PROJECTION: build_projection_package(projection_base, args.wireless_mod.read_bytes()),
             HMG_API: read_verified_release(args.hmg_api, HMG_API_SHA256),
         })
         args.output.parent.mkdir(parents=True, exist_ok=True)
