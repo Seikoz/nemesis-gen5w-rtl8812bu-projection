@@ -1,0 +1,34 @@
+name: Build Android AP station counter
+on:
+  push:
+    branches: [test/rtl8812bu-boot-retry]
+    paths: ['.github/workflows/build-station-count.yml', 'projection-source/ap_station_count.c', 'projection-source/test_station_count.py']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test hostapd station queries
+        run: python3 projection-source/test_station_count.py
+      - name: Build Android API 19 ARMv7 counter
+        run: |
+          ndk="$ANDROID_HOME/ndk/25.2.9519653"
+          [ -d "$ndk" ] || "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'ndk;25.2.9519653'
+          bin="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          mkdir -p station-output
+          "$bin/armv7a-linux-androideabi19-clang" -std=c11 -Wall -Wextra -Werror -Os -fPIE -pie \
+            -Wl,--build-id=sha1 -Wl,--strip-all projection-source/ap_station_count.c -o station-output/ap-station-count
+          "$bin/llvm-readelf" -h -l station-output/ap-station-count
+          "$bin/llvm-readelf" -h station-output/ap-station-count | grep -E 'Machine:[[:space:]]+ARM'
+          "$bin/llvm-readelf" -l station-output/ap-station-count | grep -F 'Requesting program interpreter: /system/bin/linker'
+          sha256sum station-output/ap-station-count
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ap-station-count-armv7
+          path: station-output/ap-station-count
+          if-no-files-found: error
