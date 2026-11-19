@@ -261,3 +261,15 @@
  
  	/* SKIP: halmac_verify_platform_api */
  	/* SKIP: halmac_h2c_lb */
+--- a/os_dep/linux/usb_intf.c
++++ b/os_dep/linux/usb_intf.c
+@@ -1593,6 +1593,9 @@
+ 			padapter->bup = _FALSE;
+ 		}
+ 		rtw_stop_cmd_thread(padapter);
++		/* Retire the disconnected netdevs before the next USB probe claims rtwlan0. */
++		rtw_os_ndevs_unregister(dvobj);
++		pr_info("88x2bu: Gen5W USB netdevs unregistered on disconnect\n");
+ 		if (pwrctl_u && 1 == pwrctl_u->autopm_cnt) {
+ 			usb_autopm_put_interface(pusb_intf);
+ 			pwrctl_u->autopm_cnt--;
