@@ -2,7 +2,7 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE USB Test **1.7.4.17** 및 무선 모드 **2.4.8**
+- Korea Projection CN7NPE USB Test **1.7.4.18** 및 무선 모드 **2.4.9**
 - Realtek RTL8812BU USB Driver **1.1.13**
 - HMG-API 본체 **1.1.0-rc.4**, NEMESIS 패키지 버전 **1.0.99.4**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.4)
 
@@ -17,11 +17,13 @@ HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB�
 
 A3000mini가 외부 OHCI 포트에서 12Mbps로 잡히면, 대상 장치와 비어 있는 EHCI 단일 포트를 확인해 해당 포트의 EHCI 소유권 복귀를 부팅당 최대 두 번 요청합니다. 실제 속도가 480Mbps로 바뀌었는지 확인한 뒤 AP를 시작합니다. 관련 제어 파일이 없거나 전환에 실패하면 `speed.log`에 이유를 기록합니다. 드라이버 업데이트 뒤에는 A3000mini를 꽂은 채 내비를 완전히 재부팅해 새 모듈과 옵션을 적용합니다.
 
-v0.1.11의 무선 모드는 AP 준비 신호와 `rtwlan0`의 AP 주소를 모두 확인한 뒤 Bluetooth iAP2를 시작합니다. 먼저 연결된 iPhone은 최대 약 3분간 AP를 기다립니다. 대기가 끝나도 AP가 준비되지 않았다면 준비 완료 후 iPhone Bluetooth를 껐다 켜 재연결합니다. A3000mini를 연결한 뒤 Korea Projection이 무선 모드를 **2.4.8로 업데이트·적용된 것을 확인하고** 내비게이션을 완전히 재부팅합니다. 첫 재부팅 뒤에 모드 업데이트 안내가 나왔다면 업데이트를 마친 뒤 다시 재부팅해야 새 훅이 적용됩니다.
+v0.1.11의 무선 모드는 AP 준비 신호와 `rtwlan0`의 AP 주소를 모두 확인한 뒤 Bluetooth iAP2를 시작합니다. 먼저 연결된 iPhone은 최대 약 3분간 AP를 기다립니다. 대기가 끝나도 AP가 준비되지 않았다면 준비 완료 후 iPhone Bluetooth를 껐다 켜 재연결합니다. A3000mini를 연결한 뒤 Korea Projection이 무선 모드를 **2.4.9로 업데이트·적용된 것을 확인하고** 내비게이션을 완전히 재부팅합니다. 첫 재부팅 뒤에 모드 업데이트 안내가 나왔다면 업데이트를 마친 뒤 다시 재부팅해야 새 훅이 적용됩니다.
 
 v0.1.12는 `rtwlan0`의 차량 AP IPv4 대역과 IPv6 링크 로컬 대역에서 동적 TCP 포트를 허용합니다. 기존 모드 업데이트 후에는 소유한 무선 모드의 변경만 있는지 확인해 자동 적용합니다. 다른 모드 변경이나 오류가 함께 있으면 HMG-API 확인 안내가 표시됩니다. HMG-API 본체를 별도로 재설치할 필요는 없습니다.
 
 준비 완료 화면에는 **Wi-Fi 접속 단말 수**가 표시됩니다. hostapd 인증 목록을 우선 사용하고, 지원되지 않으면 Realtek 연결 테이블로 집계합니다. 두 경로를 모두 읽지 못하면 **확인 불가**로 표시합니다. 연결한 뒤 다음 점검 주기(약 30초)에 숫자가 갱신됩니다. `perf.log`의 `sta_source=hostapd-authorized`는 인증 목록, `realtek-associated`는 드라이버 연결 상태, `unavailable`은 조회 실패를 뜻합니다. 단말 수가 늘어도 카플레이 세션 완료 여부는 별도로 확인해야 합니다.
+
+v0.1.13은 IPv6 UDP 6031을 추가 허용하고 **실제 무선 카플레이 세션 시작**을 연결 판정 기준으로 사용합니다. AP 준비, Wi-Fi 단말 수 증가, 세션 생성만으로 연결됨이라고 표시하지 않습니다. 세션 종료·AP 변경·DiPO 프로세스 종료 뒤에는 이전 연결 표시를 사용하지 않습니다. 상태와 logcat 대체 수집은 보통 다음 30초 점검에 반영됩니다.
 
 ## 부팅과 재장착 기록 보내기
 
@@ -33,4 +35,16 @@ v0.1.12는 `rtwlan0`의 차량 AP IPv4 대역과 IPv6 링크 로컬 대역에서
 
 ARM 모듈과 USB 패키지 구조를 검증했습니다. 실차에서 부팅 인식과 무선 카플레이 연결을 확인하는 진단판입니다.
 
-[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.12/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
+[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.13/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
+
+## v0.1.13 연결 진단
+
+`3-log.txt`에 아래 항목을 자동 포함합니다. 별도 셸 명령이나 수동 logcat 수집은 필요하지 않습니다.
+
+- `usb-carplay-events.log`: `created`(생성), `started`(실제 무선 세션 시작), `finalized`(종료), `wired`(유선) 및 Bluetooth 전환 기록. `started`도 화면·음성 정상 동작까지 보장하는 검사는 아닙니다.
+- `usb-cp-capture.log`: logcat 수집 종료 코드. 권한·시간 초과로 수집하지 못한 경우 확인할 수 있습니다.
+- `usb-connection-first.log`, `usb-connection-latest.log`: 같은 부팅의 첫/최근 AP·단말/세션 변화 때 방화벽, mDNS 서비스 조회 및 TCP 상태 스냅샷. 연결 대기 중에는 제한된 횟수로 재측정합니다.
+
+`HMGAPI_input_jump_position`·`output_jump_position`이 `missing`이면 해당 진입 규칙을 관측하지 못한 것입니다. `1`이어도 뒤의 예외 규칙, 포트와 실제 카운터를 함께 확인해야 합니다. `IPv6_UDP6031_scoped_*_entries`는 커널에 관측된 해당 규칙 개수이며 카플레이 연결 여부와 별개입니다. `mdns ... query=failed`는 조회 자체가 실패한 경우이고, `matched_records=0`은 관측 창에서 응답을 확인하지 못했다는 뜻입니다.
+
+동글을 뺀 뒤 현재 상태가 미연결로 바뀌어도 같은 부팅의 콜백·직전 스냅샷은 남습니다. 재부팅하기 전에 제보 파일을 만들어 주세요.

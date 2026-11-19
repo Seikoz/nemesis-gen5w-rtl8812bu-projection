@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -7,7 +8,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 SH = os.environ.get('TEST_SH', 'sh')
 ENV = dict(os.environ)
-SHELL_DIR = Path(SH).parent.as_posix()
+SHELL_DIR = Path(shutil.which(SH) or SH).parent.as_posix()
 if ':/' in SHELL_DIR:
     SHELL_DIR = '/' + SHELL_DIR[0].lower() + SHELL_DIR[2:]
 ENV['TEST_BIN'] = SHELL_DIR

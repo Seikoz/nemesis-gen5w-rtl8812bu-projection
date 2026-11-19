@@ -2,6 +2,7 @@
 set -euo pipefail
 out=$(realpath -m "$1")
 source_dir=$(dirname "$(realpath "$0")")
+python3 -m unittest discover -s "$source_dir/../tests" -v
 mkdir -p "$out"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -13,6 +14,7 @@ cd "$work/HMG-API-$rev"
 mod=mods/wireless-carplay-aa
 python3 "$source_dir/patch_hooks.py" "$mod"
 python3 "$source_dir/test_ap_wait.py" "$mod/src/hmgapi/mods/wireless/dipo/Bridge.java"
+python3 "$source_dir/test_session_status.py"
 export JAVA_HOME="$JAVA_HOME_17_X64"
 export PATH="$JAVA_HOME/bin:$PATH"
 android=$(find "$ANDROID_HOME/platforms" -name android.jar | sort -V | tail -1)

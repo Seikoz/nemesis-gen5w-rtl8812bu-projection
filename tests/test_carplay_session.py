@@ -81,9 +81,10 @@ usb_connection_tick() { :; }
 usb_cp_generation 1; getprop sys.kp.cp_gen
 usb_cp_generation 0; getprop sys.kp.cp_gen
 echo 0 > ap
+echo '201.50 1.00' > uptime
 usb_cp_generation 1; getprop sys.kp.cp_gen
 ''')
-        self.assertEqual(out.splitlines(),[GEN,'off',GEN])
+        self.assertEqual(out.splitlines(),[GEN,'off','12345678-201.50-8'])
 
 
 if __name__=='__main__': unittest.main()

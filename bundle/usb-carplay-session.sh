@@ -55,8 +55,12 @@ usb_cp_poll() {
   read -r boot < "$PROC/sys/kernel/random/boot_id" || return 0
   snapshot=$("$BB" mktemp "$W/.usb-cp-events.XXXXXX") || return 0
   # The raw buffer is never written to the report: copy only our exact records.
-  "$BB_OWN" timeout 3 logcat -d -t 2000 -v brief '*:V' 2>/dev/null |
-    "$BB" awk '/USB_CP_EVENT v1,/ {sub(/^.*USB_CP_EVENT /, ""); print}' |
+  {
+    "$BB_OWN" timeout 3 logcat -d -t 2000 -v brief '*:V' 2>/dev/null
+    echo "USB_CP_CAPTURE_EXIT=$?"
+  } | "$BB" awk -v file="$W/usb-cp-capture.log" -v boot="$boot" '
+    /^USB_CP_CAPTURE_EXIT=[0-9]+$/ {print "boot=" boot > file; print > file; close(file); next}
+    /USB_CP_EVENT v1,/ {sub(/^.*USB_CP_EVENT /, ""); print}' |
     usb_cp_record_shape > "$snapshot"
   property=$(getprop sys.kp.cp_session 2>/dev/null | usb_cp_record_shape)
   [ -z "$property" ] || printf '%s\n' "$property" >> "$snapshot"

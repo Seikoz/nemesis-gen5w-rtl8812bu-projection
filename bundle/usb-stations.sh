@@ -46,7 +46,14 @@ usb_client_progress() {
   if [ "${USB_CLIENT_DISPLAY:-}" = "$AP_SCOPE:$STA_COUNT:$STA_SOURCE:$CP_STATE:$CP_COUNT" ] &&
      "$BB" grep -q 'Wi-Fi 접속 단말 수:' "$PROG" 2>/dev/null; then return 0; fi
   USB_CLIENT_DISPLAY="$AP_SCOPE:$STA_COUNT:$STA_SOURCE:$CP_STATE:$CP_COUNT"
-  local session_text="CarPlay 세션: ${CP_STATE:-unknown} (연결 미확인)."
+  local session_text='CarPlay 세션 확인 불가 (연결 미확인).'
+  case "$CP_STATE" in
+    idle|bt_attach) session_text='카플레이 연결 대기 중 (세션 시작 미확인).' ;;
+    created) session_text='카플레이 세션 생성됨 (시작 대기).' ;;
+    finalized) session_text='카플레이 세션 종료됨.' ;;
+    stale-ap|process-gone) session_text='카플레이 재연결 대기 중.' ;;
+    wired) session_text='유선 카플레이 세션 감지됨.' ;;
+  esac
   if [ "$CP_COUNT" = 1 ]; then session_text='무선 카플레이 연결됨 (실제 세션 시작 확인).'; fi
   if [ "$STA_COUNT" = unknown ]; then
     prog 100 done "USB Wi-Fi AP ready (rtwlan0). $session_text Wi-Fi 접속 단말 수: 확인 불가."

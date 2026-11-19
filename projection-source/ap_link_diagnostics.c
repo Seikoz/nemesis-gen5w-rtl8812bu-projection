@@ -47,6 +47,7 @@ static const char *service(const char *s) {
         ((p=strstr(s,"._carplay-ctrl._tcp.local")) && !p[25])) return "_carplay-ctrl._tcp";
     return NULL;
 }
+static unsigned record_lines;
 static int decode(const unsigned char *p, size_t n, int family) {
     char owner[256], target[256];
     size_t pos=12;
@@ -70,16 +71,16 @@ static int decode(const unsigned char *p, size_t n, int family) {
         if (s && type==12) {
             size_t at=data;
             if (name(p,n,&at,target,sizeof(target)) || at>end) return -1;
-            printf("mdns family=%d service=%s record=PTR ttl=%u\n",family,s,
+            if (record_lines++<48) printf("mdns family=%d service=%s record=PTR ttl=%u\n",family,s,
                    (unsigned)((uint32_t)p[data-6]<<24|(uint32_t)p[data-5]<<16|(uint32_t)p[data-4]<<8|p[data-3]));
             matches++;
         } else if (s && type==33) {
             size_t at=data+6;
             if (len<7 || name(p,n,&at,target,sizeof(target)) || at>end) return -1;
-            printf("mdns family=%d service=%s record=SRV port=%u\n",family,s,u16(p+data+4));
+            if (record_lines++<48) printf("mdns family=%d service=%s record=SRV port=%u\n",family,s,u16(p+data+4));
             matches++;
         } else if (s && type==16) {
-            printf("mdns family=%d service=%s record=TXT contents=omitted\n",family,s);
+            if (record_lines++<48) printf("mdns family=%d service=%s record=TXT contents=omitted\n",family,s);
             matches++;
         }
         pos=end;

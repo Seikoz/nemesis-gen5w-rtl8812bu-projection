@@ -7,15 +7,23 @@ usb_firewall_snapshot() {
       "$BB_OWN" timeout 2 "$tool" -t filter -n -v -x -L --line-numbers 2>&1
       echo "firewall_exit=$?"
     } | "$BB" awk '
-      /^Chain / {keep=($2=="INPUT" || $2=="OUTPUT" || $2=="HMGAPI_IN" || $2=="HMGAPI_OUT"); if(keep) found++}
+      BEGIN {t=4;p=5;iface_in=7;iface_out=8;src=9;dst=10}
+      /^Chain / {chain=$2; keep=(chain=="INPUT" || chain=="OUTPUT" || chain=="HMGAPI_IN" || chain=="HMGAPI_OUT"); if(keep) found++}
+      $1=="num" {for(i=1;i<=NF;i++) {if($i=="target") t=i; if($i=="prot") p=i; if($i=="in") iface_in=i; if($i=="out") iface_out=i; if($i=="source") src=i; if($i=="destination") dst=i}}
       /^firewall_exit=/ {print; exit}
+      chain=="INPUT" && $t=="HMGAPI_IN" {input=$1}
+      chain=="OUTPUT" && $t=="HMGAPI_OUT" {output=$1}
+      chain=="HMGAPI_IN" && $t=="ACCEPT" && $p=="udp" && $iface_in=="rtwlan0" && $src=="fe80::/10" && /[sd]pt:6031([^0-9]|$)/ {udp_in++}
+      chain=="HMGAPI_OUT" && $t=="ACCEPT" && $p=="udp" && $iface_out=="rtwlan0" && $dst=="fe80::/10" && /[sd]pt:6031([^0-9]|$)/ {udp_out++}
       keep && rows++<320 {print}
       END {if(!found) print "Expected firewall chains unavailable; see exit status.";
+           print "HMGAPI_input_jump_position=" (input==""?"missing":input) " HMGAPI_output_jump_position=" (output==""?"missing":output);
+           print "IPv6_UDP6031_scoped_input_entries=" (udp_in+0) " output_entries=" (udp_out+0);
            if(rows>320) print "Rule output truncated after 320 lines."}'
   done
   echo "=== Applied HMG-API network plan (not proof of kernel traversal) ==="
-  if [ -r /data/hmgapi/state/net.rules ]; then
-    "$BB" awk '/rtwlan0|HMGAPI_IN|HMGAPI_OUT/ {if(n++<120) print}' /data/hmgapi/state/net.rules
+  if [ -r "${HMGDATA:-/data/hmgapi}/state/net.rules" ]; then
+    "$BB" awk '/rtwlan0|HMGAPI_IN|HMGAPI_OUT/ {if(n++<120) print}' "${HMGDATA:-/data/hmgapi}/state/net.rules"
   else echo "HMG-API state/net.rules unavailable"; fi
 }
 

@@ -2,14 +2,14 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
-**[USB 설치 ZIP v0.1.12 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.12/NEMESIS-CN7NPE-260902-Bundle-v0.1.12-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.12) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.13 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.13/NEMESIS-CN7NPE-260902-Bundle-v0.1.13-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.13) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.17 |
+| Korea Projection CN7NPE USB Test | 1.7.4.18 |
 | Realtek RTL8812BU USB Driver | 1.1.13 |
 | HMG-API 본체 | 1.1.0-rc.4 |
-| HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.8 |
+| HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.9 |
 
 ## USB 설치
 
@@ -38,12 +38,17 @@ USB/
 
 v0.1.11 실차 로그에서 AP 준비 후 Bluetooth iAP2 시작까지 확인했습니다. 이후 동적 TCP 포트의 연결 재시도가 기록됐으며, 기존 단말 수 집계는 Realtek 접속을 놓칠 수 있었습니다. v0.1.12는 `rtwlan0`의 AP IPv4 대역과 IPv6 링크 로컬 대역에서 동적 TCP를 허용하고, hostapd 인증 목록 또는 Realtek의 현재 연결 테이블로 단말 수를 표시합니다. 읽지 못하면 0대 대신 **확인 불가**로 표시합니다.
 
-동글 연결 후 무선 모드가 **2.4.8로 업데이트되고 적용된 것을 확인한 뒤** 완전히 재부팅합니다. 실차의 카플레이 연결 성공은 아직 미확인입니다.
+v0.1.13은 IPv6 링크 로컬 피어의 UDP 6031을 추가 허용합니다. **AP 준비·Wi-Fi 단말 접속과 카플레이 연결 완료를 구분**하며, 실제 무선 세션 시작 콜백을 받은 경우에만 연결됨으로 표시합니다. 생성·시작·종료 콜백과 현재 부팅·AP 세대·DiPO 프로세스 시작 시각을 대조하므로 이전 세션 기록으로 연결됐다고 판단하지 않습니다. 갱신은 보통 다음 점검 주기(약 30초)에 반영됩니다.
+
+제보 파일 `3-log.txt`에 `usb-carplay-events.log`, `usb-cp-capture.log`, `usb-connection-first.log`, `usb-connection-latest.log`를 포함합니다. 방화벽의 실제 규칙·점프 순서·패킷/바이트 카운터와 IPv6 UDP 6031 항목 수, mDNS 조회 결과·서비스 포트, TCP 소켓 상태를 확인할 수 있습니다. 첫 스냅샷과 최근 스냅샷을 보존하므로 동글을 빼고 제보 USB로 바꾼 뒤에도 직전 기록을 볼 수 있습니다. mDNS 응답 없음만으로 서비스 부재나 연결 실패를 단정하지 않습니다.
+
+동글 연결 후 무선 모드가 **2.4.9로 업데이트되고 적용된 것을 확인한 뒤** 완전히 재부팅합니다. 실차의 카플레이 연결 성공은 아직 미확인입니다.
 
 ## 버전별 변경 사항
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.13 | IPv6 UDP 6031 허용, 실제 방화벽 규칙·순서·카운터와 mDNS 진단, 실제 카플레이 세션 기준 연결 표시 |
 | v0.1.12 | USB AP 대역의 동적 TCP 허용, 현재 접속 단말 수·확인 불가 표시, 기존 설치의 포트 정책 자동 적용 |
 | v0.1.11 | AP 준비 전에 Bluetooth iAP2가 시작되는 순서 수정, 준비 후 자동 진행, 끊긴 연결의 대기 취소 |
 | v0.1.10 | 부팅 시 A3000mini의 외부 포트를 EHCI로 되돌리는 복구 추가, 실제 USB 480Mbps를 확인한 뒤 AP 시작 |

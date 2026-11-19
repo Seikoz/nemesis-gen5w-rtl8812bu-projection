@@ -206,9 +206,13 @@ def add_session_diagnostics(hotspot, status):
     anchor = b'$W/usb-hostapd.log '
     if status.count(anchor) != 1:
         raise ValueError('Expected report file list')
-    status = status.replace(anchor, anchor + b'$W/usb-carplay-events.log $W/usb-connection-first.log $W/usb-connection-latest.log ')
+    status = status.replace(anchor, anchor + b'$W/usb-carplay-events.log $W/usb-cp-capture.log $W/usb-connection-first.log $W/usb-connection-latest.log ')
     status = status.replace(b'"$W"/usb-ap-up-*.log|',
-                            b'"$W"/usb-carplay-events.log|"$W"/usb-connection-*.log|"$W"/usb-ap-up-*.log|')
+                            b'"$W"/usb-carplay-events.log|"$W"/usb-cp-capture.log|"$W"/usb-connection-*.log|"$W"/usb-ap-up-*.log|')
+    anchor = b'      lastmask 400 < $_f'
+    if status.count(anchor) != 1:
+        raise ValueError('Expected report snapshot size hook')
+    status = status.replace(anchor, b'      case "$_f" in "$W"/usb-connection-*.log) lastmask 1400 < "$_f" ;; *) lastmask 400 < "$_f" ;; esac')
     anchor = b'  echo "cp_conn=$K_CP"'
     if status.count(anchor) != 1:
         raise ValueError('Expected report session summary')
