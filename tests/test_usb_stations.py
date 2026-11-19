@@ -51,6 +51,7 @@ bb() { command "$@"; }
 running() { [ "$AP" = 1 ]; }
 usb_wifi_ready() { [ "$AP" = 1 ]; }
 usb_ap_live() { [ "$AP" = 1 ]; }
+usb_cp_read() { CP_STATE=${TEST_CP_STATE:-unknown}; CP_COUNT=${TEST_CP_COUNT:-0}; }
 hint_write() { echo hint-cleared >> events; }
 log() { echo "$*" >> events; }
 prog() { echo "$*" >> progress; { echo state=done; echo "message=$*"; } > "$PROG"; }

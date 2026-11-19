@@ -4,7 +4,7 @@ from pathlib import Path
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from build_wireless_mod import dynamic_tcp_rules
+from build_wireless_mod import dynamic_tcp_rules, ipv6_udp_rules
 
 
 def accepts(packet):
@@ -52,6 +52,19 @@ class TcpPolicyTest(unittest.TestCase):
             self.assertEqual(rule['action'], 'accept')
             self.assertEqual(rule['ports'], ['1024-65535'])
             self.assertEqual(rule['ip'], ipaddress.ip_network(rule.get('from', rule.get('to'))).version)
+
+    def test_ipv6_udp_6031_is_scoped_to_the_usb_link(self):
+        rules=ipv6_udp_rules()
+        self.assertEqual(len(rules),2)
+        for rule in rules:
+            self.assertEqual(rule['ip'],6)
+            self.assertEqual(rule['proto'],'udp')
+            self.assertEqual(rule['ports'],[6031])
+            self.assertTrue(rule['both_ways'])
+            self.assertEqual(rule.get('in',rule.get('out')),'rtwlan0')
+            prefix=ipaddress.ip_network(rule.get('from',rule.get('to')))
+            self.assertIn(ipaddress.ip_address('fe80::1234'),prefix)
+            self.assertNotIn(ipaddress.ip_address('2001:db8::1'),prefix)
 
 
 if __name__ == '__main__': unittest.main()

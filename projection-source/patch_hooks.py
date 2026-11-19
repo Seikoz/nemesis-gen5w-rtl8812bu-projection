@@ -98,7 +98,23 @@ def patch(root):
         return "1".equals(prop(ApCheck.AA_AP_PROP, "")) &&
                 ApCheck.decide(false, -1, "", wlanAddrs()) == ApCheck.SKIP_OURS;
     }''' + text[end:]
+    for old, new in (
+        ('if (sBt == null) sBt = new BtListener();',
+         'if (sBt == null) { sBt = new BtListener(); SessionStatus.emit("idle", -1); }'),
+        ('log("USB hotspot ready; starting Bluetooth iAP2");',
+         'SessionStatus.emit("bt_attach", -1);\n                        log("USB hotspot ready; starting Bluetooth iAP2");'),
+        ('static void onCpSessionCreated(Object cp) {',
+         'static void onCpSessionCreated(Object cp) {\n        SessionStatus.emit("created", -1);'),
+        ('sCpWireless = transport == 1 && !sUsb;',
+         'sCpWireless = transport == 1 && !sUsb;\n        SessionStatus.emit(sCpWireless ? "started" : "wired", transport);'),
+        ('static void onCpSessionFinalized(int type) {',
+         'static void onCpSessionFinalized(int type) {\n        SessionStatus.emit("finalized", type);'),
+    ):
+        text = replace_once(text, old, new)
     path.write_text(text, encoding='utf-8', newline='\n')
+    (path.parent / 'SessionStatus.java').write_text(
+        (Path(__file__).parent / 'SessionStatus.java').read_text(encoding='utf-8'),
+        encoding='utf-8', newline='\n')
 
 
 if __name__ == '__main__':

@@ -61,6 +61,7 @@ class Handler {
     void next() { queue.remove().run(); }
 }
 class Retry { void cancel() {} }
+class SessionStatus { static void emit(String state, int transport) {} }
 class Bridge {
     static volatile Object sUsbApRequest;
     static boolean sSession, sCpClient, sCpWireless, sUsb;

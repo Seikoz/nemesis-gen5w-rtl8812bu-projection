@@ -22,7 +22,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.17 - Dynamic TCP and live Wi-Fi client counts
+short-desc=v1.7.4.18 - CarPlay session and network diagnostics
 
 [package.1]
 path={HMG_API}
@@ -189,15 +189,48 @@ def add_network_upgrade(hotspot):
   fi''')
 
 
-def build_projection_package(source, wireless, station_counter):
+def add_session_diagnostics(hotspot, status):
+    start = hotspot.index(b'\ncp_count() {') + 1
+    end = hotspot.index(b'\n}\n', hotspot.index(b'\ncp_watch() {', start)) + 3
+    definitions = b'\n'.join((ROOT / 'bundle' / name).read_bytes() for name in (
+        'usb-carplay-session.sh', 'usb-connection-diagnostics.sh'))
+    hotspot = hotspot[:start] + definitions + b'\n' + hotspot[end:]
+    anchor = b'  if [ "$_a" = "$(getprop $AAPROP 2>/dev/null)" ]; then'
+    if hotspot.count(anchor) != 1:
+        raise ValueError('Expected AP property generation hook')
+    hotspot = hotspot.replace(anchor, b'  usb_cp_generation "$_a"\n' + anchor)
+    anchor = b'logs() {\n'
+    if status.count(anchor) != 1:
+        raise ValueError('Expected report collection hook')
+    status = status.replace(anchor, anchor + b'  usb_cp_poll\n  usb_ap_live && usb_connection_snapshot report\n')
+    anchor = b'$W/usb-hostapd.log '
+    if status.count(anchor) != 1:
+        raise ValueError('Expected report file list')
+    status = status.replace(anchor, anchor + b'$W/usb-carplay-events.log $W/usb-connection-first.log $W/usb-connection-latest.log ')
+    status = status.replace(b'"$W"/usb-ap-up-*.log|',
+                            b'"$W"/usb-carplay-events.log|"$W"/usb-connection-*.log|"$W"/usb-ap-up-*.log|')
+    anchor = b'  echo "cp_conn=$K_CP"'
+    if status.count(anchor) != 1:
+        raise ValueError('Expected report session summary')
+    status = status.replace(anchor, anchor + b'\n  usb_cp_read\n  echo "cp_session=$CP_STATE"\n  echo "cp_source=$CP_SOURCE"')
+    anchor = '  echo "- 지금 카플레이 연결 수: $K_CP"'.encode()
+    status = status.replace(anchor, anchor + '\n  usb_cp_read\n  echo "- 카플레이 세션 판정: $CP_STATE ($CP_SOURCE)"'.encode())
+    return hotspot, status
+
+
+def build_projection_package(source, wireless, station_counter, link_diagnostics):
     if (station_counter[:6] != b'\x7fELF\x01\x01' or len(station_counter) < 20 or
             struct.unpack_from('<HH', station_counter, 16) != (3, 40) or
             b'/system/bin/linker\0' not in station_counter or
             b'/data/misc/wifi/hostapd-kp-usb/rtwlan0\0' not in station_counter):
         raise ValueError('Expected the Android ARMv7 AP station counter')
+    if (link_diagnostics[:6] != b'\x7fELF\x01\x01' or len(link_diagnostics) < 20 or
+            struct.unpack_from('<HH', link_diagnostics, 16) != (3, 40) or
+            b'/system/bin/linker\0' not in link_diagnostics or b'_carplay-ctrl._tcp.local\0' not in link_diagnostics):
+        raise ValueError('Expected the Android ARMv7 mDNS diagnostics helper')
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.17\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.18\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.13,!niro.carplay.hotspot"\n',
@@ -213,13 +246,13 @@ def build_projection_package(source, wireless, station_counter):
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18)$'",
         )
         old_version_guard = b'''grep -q '"version": "2.4.6"' "$mod/META-HMGAPI/manifest.json"'''
         if preinstall.count(old_version_guard) != 1:
             raise ValueError('Expected existing-author mod upgrade guard')
         preinstall = preinstall.replace(old_version_guard,
-            rb'''grep -Eq '"version": "2\.4\.[678]"' "$mod/META-HMGAPI/manifest.json"''')
+            rb'''grep -Eq '"version": "2\.4\.[6789]"' "$mod/META-HMGAPI/manifest.json"''')
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
    ! { [ -r "$installed" ] && [ -f /data/nemesis/backup/korea.projection/mod.ours ] &&''',
@@ -251,11 +284,12 @@ done''',
             raise ValueError('Expected the original CN7NPE wireless mod 2.4.6')
         verify_mod(wireless)
         hotspot = add_network_upgrade(add_station_counts(changes['svc/hotspot.sh']))
+        hotspot, changes['bin/status.sh'] = add_session_diagnostics(hotspot, changes['bin/status.sh'])
         old_digest = hashlib.md5(old_wireless, usedforsecurity=False).hexdigest().encode()
         new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
         if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:
             raise ValueError('Expected mod version and checksum installer hooks')
-        changes['svc/hotspot.sh'] = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.8').replace(
+        changes['svc/hotspot.sh'] = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.9').replace(
             b'MOD_MD5=' + old_digest, b'MOD_MD5=' + new_digest)
         changes['hmgapi/wireless-carplay-aa.zip'] = wireless
         # Use the original source commit so the notice survives release tag cleanup.
@@ -265,7 +299,7 @@ done''',
             raise ValueError("Expected the Korea Projection source link in the base package")
         changes["licenses/Source.md"] = source_notice.replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        ) + b'\nWireless mod 2.4.8 local TCP policy, AP readiness ordering and client count sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.12/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.12/bundle/usb-stations.sh\n'
+        ) + b'\nWireless mod 2.4.9 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.13/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.13/bundle\n'
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -273,10 +307,11 @@ done''',
             for entry in package.infolist():
                 data = changes[entry.filename] if entry.filename in changes else package.read(entry)
                 updated.writestr(entry, data)
-            counter_entry = zipfile.ZipInfo('bin/ap-station-count', date_time=(1980, 1, 1, 0, 0, 0))
-            counter_entry.create_system = 3
-            counter_entry.external_attr = 0o100755 << 16
-            updated.writestr(counter_entry, station_counter, compress_type=zipfile.ZIP_DEFLATED)
+            for name, data in (('ap-station-count', station_counter), ('ap-link-diagnostics', link_diagnostics)):
+                entry = zipfile.ZipInfo('bin/' + name, date_time=(1980, 1, 1, 0, 0, 0))
+                entry.create_system = 3
+                entry.external_attr = 0o100755 << 16
+                updated.writestr(entry, data, compress_type=zipfile.ZIP_DEFLATED)
         return output.getvalue()
 
 
@@ -287,7 +322,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.12-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.13-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,
@@ -296,9 +331,11 @@ def main():
     parser.add_argument("--usb-reset-helper", required=True, type=Path,
                         help="Android ARMv7 helper with the scoped EHCI recovery command")
     parser.add_argument('--wireless-mod', required=True, type=Path,
-                        help='Same-author signed wireless mod 2.4.8 with local dynamic TCP rules')
+                        help='Same-author signed wireless mod 2.4.9 with session callbacks and local TCP/UDP rules')
     parser.add_argument('--station-counter', required=True, type=Path,
                         help='Android ARMv7 read-only hostapd station counter')
+    parser.add_argument('--link-diagnostics', required=True, type=Path,
+                        help='Android ARMv7 bounded mDNS diagnostic probe')
     args = parser.parse_args()
     try:
         driver_base = read_package(
@@ -319,7 +356,7 @@ def main():
             "INSTALL-KO.md": (guide / "INSTALL-KO.md").read_bytes(),
             "licenses/HMG-API-AGPL-3.0.txt": (guide / "licenses" / "HMG-API-AGPL-3.0.txt").read_bytes(),
             PACKAGE_PATH: driver,
-            PROJECTION: build_projection_package(projection_base, args.wireless_mod.read_bytes(), args.station_counter.read_bytes()),
+            PROJECTION: build_projection_package(projection_base, args.wireless_mod.read_bytes(), args.station_counter.read_bytes(), args.link_diagnostics.read_bytes()),
             HMG_API: read_verified_release(args.hmg_api, HMG_API_SHA256),
         })
         args.output.parent.mkdir(parents=True, exist_ok=True)

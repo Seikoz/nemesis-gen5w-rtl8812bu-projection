@@ -2,7 +2,7 @@ name: Build Android AP station counter
 on:
   push:
     branches: [test/rtl8812bu-boot-retry]
-    paths: ['.github/workflows/build-station-count.yml', 'projection-source/ap_station_count.c', 'projection-source/test_station_count.py']
+    paths: ['.github/workflows/build-station-count.yml', 'projection-source/ap_station_count.c', 'projection-source/test_station_count.py', 'projection-source/ap_link_diagnostics.c', 'projection-source/test_mdns.py']
 permissions:
   contents: read
 jobs:
@@ -15,6 +15,10 @@ jobs:
           persist-credentials: false
       - name: Test hostapd station queries
         run: python3 projection-source/test_station_count.py
+      - name: Test bounded mDNS response decoder
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -Os projection-source/ap_link_diagnostics.c -o /tmp/mdns-test
+          python3 projection-source/test_mdns.py /tmp/mdns-test
       - name: Build Android API 19 ARMv7 counter
         run: |
           ndk="$ANDROID_HOME/ndk/25.2.9519653"
@@ -24,11 +28,16 @@ jobs:
           "$bin/armv7a-linux-androideabi19-clang" -std=c11 -Wall -Wextra -Werror -Os -fPIE -pie \
             -Wl,--build-id=sha1 -Wl,--strip-all projection-source/ap_station_count.c -o station-output/ap-station-count
           "$bin/llvm-readelf" -h -l station-output/ap-station-count
+          "$bin/armv7a-linux-androideabi19-clang" -std=c11 -Wall -Wextra -Werror -Os -fPIE -pie \
+            -Wl,--build-id=sha1 -Wl,--strip-all projection-source/ap_link_diagnostics.c -o station-output/ap-link-diagnostics
+          "$bin/llvm-readelf" -h -l station-output/ap-link-diagnostics
           "$bin/llvm-readelf" -h station-output/ap-station-count | grep -E 'Machine:[[:space:]]+ARM'
           "$bin/llvm-readelf" -l station-output/ap-station-count | grep -F 'Requesting program interpreter: /system/bin/linker'
           sha256sum station-output/ap-station-count
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ap-station-count-armv7
-          path: station-output/ap-station-count
+          path: |
+            station-output/ap-station-count
+            station-output/ap-link-diagnostics
           if-no-files-found: error

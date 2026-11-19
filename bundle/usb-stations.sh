@@ -40,15 +40,18 @@ usb_realtek_associated_count() {
 }
 
 usb_client_progress() {
+  usb_cp_read
   usb_ap_live || { USB_CLIENT_DISPLAY=; return 0; }
   [ ! -f "$PROG" ] || "$BB" grep -q '^state=done$' "$PROG" || return 0
-  if [ "${USB_CLIENT_DISPLAY:-}" = "$AP_SCOPE:$STA_COUNT:$STA_SOURCE" ] &&
+  if [ "${USB_CLIENT_DISPLAY:-}" = "$AP_SCOPE:$STA_COUNT:$STA_SOURCE:$CP_STATE:$CP_COUNT" ] &&
      "$BB" grep -q 'Wi-Fi 접속 단말 수:' "$PROG" 2>/dev/null; then return 0; fi
-  USB_CLIENT_DISPLAY="$AP_SCOPE:$STA_COUNT:$STA_SOURCE"
+  USB_CLIENT_DISPLAY="$AP_SCOPE:$STA_COUNT:$STA_SOURCE:$CP_STATE:$CP_COUNT"
+  local session_text="CarPlay 세션: ${CP_STATE:-unknown} (연결 미확인)."
+  if [ "$CP_COUNT" = 1 ]; then session_text='무선 카플레이 연결됨 (실제 세션 시작 확인).'; fi
   if [ "$STA_COUNT" = unknown ]; then
-    prog 100 done "USB Wi-Fi AP ready (rtwlan0). Wi-Fi 접속 단말 수: 확인 불가."
+    prog 100 done "USB Wi-Fi AP ready (rtwlan0). $session_text Wi-Fi 접속 단말 수: 확인 불가."
   else
-    prog 100 done "USB Wi-Fi AP ready (rtwlan0). Wi-Fi 접속 단말 수: ${STA_COUNT}대."
+    prog 100 done "USB Wi-Fi AP ready (rtwlan0). $session_text Wi-Fi 접속 단말 수: ${STA_COUNT}대."
   fi
 }
 

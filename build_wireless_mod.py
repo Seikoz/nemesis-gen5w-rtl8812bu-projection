@@ -16,7 +16,7 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.8'
+VERSION = '2.4.9'
 
 
 def dynamic_tcp_rules():
@@ -26,6 +26,15 @@ def dynamic_tcp_rules():
          'proto': 'tcp', 'ports': ['1024-65535'], 'both_ways': True, 'action': 'accept'}
         for chain, direction, side in (('input', 'in', 'from'), ('output', 'out', 'to'))
         for family, prefix in ((4, '192.168.43.0/24'), (6, 'fe80::/10'))
+    ]
+
+
+def ipv6_udp_rules():
+    """The wired CarPlay 6031 exception, limited to USB AP link-local peers."""
+    return [
+        {'chain': chain, direction: 'rtwlan0', 'ip': 6, side: 'fe80::/10',
+         'proto': 'udp', 'ports': [6031], 'both_ways': True, 'action': 'accept'}
+        for chain, direction, side in (('input', 'in', 'from'), ('output', 'out', 'to'))
     ]
 
 
@@ -70,7 +79,8 @@ def build_mod(base, hooks, key_path):
         dex = jar.read('classes.dex')
         if (jar.testzip() is not None or not dex.startswith(b'dex\n035\0') or
                 b'rtwlan0\0' not in dex or b'\x05wlan0\0' in dex or
-                b'USB hotspot ready; starting Bluetooth iAP2' not in dex):
+                b'USB hotspot ready; starting Bluetooth iAP2' not in dex or
+                b'USB_CP_EVENT ' not in dex or b'sys.kp.cp_session' not in dex):
             raise ValueError('Expected Android API 19 USB AP wait hooks')
     key = serialization.load_pem_private_key(key_path.read_bytes(), None)
     if key.public_key().public_bytes(serialization.Encoding.DER,
@@ -79,6 +89,7 @@ def build_mod(base, hooks, key_path):
     mod = json.loads(files['mod.json'])
     mod['version'] = VERSION
     mod['network']['rules'].extend(dynamic_tcp_rules())
+    mod['network']['rules'].extend(ipv6_udp_rules())
     files['mod.json'] = json_bytes(mod)
     files['hooks.jar'] = hooks
     manifest = json_bytes({
