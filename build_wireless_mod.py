@@ -16,7 +16,17 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.7'
+VERSION = '2.4.8'
+
+
+def dynamic_tcp_rules():
+    """Permit negotiated peer TCP ports only on the local USB AP link."""
+    return [
+        {'chain': chain, direction: 'rtwlan0', 'ip': family, side: prefix,
+         'proto': 'tcp', 'ports': ['1024-65535'], 'both_ways': True, 'action': 'accept'}
+        for chain, direction, side in (('input', 'in', 'from'), ('output', 'out', 'to'))
+        for family, prefix in ((4, '192.168.43.0/24'), (6, 'fe80::/10'))
+    ]
 
 
 def json_bytes(value):
@@ -68,6 +78,7 @@ def build_mod(base, hooks, key_path):
         raise ValueError('Use the existing mod author key to preserve upgrade compatibility')
     mod = json.loads(files['mod.json'])
     mod['version'] = VERSION
+    mod['network']['rules'].extend(dynamic_tcp_rules())
     files['mod.json'] = json_bytes(mod)
     files['hooks.jar'] = hooks
     manifest = json_bytes({
