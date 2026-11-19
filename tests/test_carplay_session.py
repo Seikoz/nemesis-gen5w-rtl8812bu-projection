@@ -19,7 +19,7 @@ class SessionTest(unittest.TestCase):
             (p/'proc/123/stat').write_text('123 (DiPO with ) spaces) S '+'0 '*18+'77 0\n')
             (p/'net').mkdir()
             (p/'net/ifindex').write_text('8\n')
-            (p/'uptime').write_text('200.50 1.00\n')
+            (p/'uptime').write_text('202.50 1.00\n')
             (p/'sys.kp.cp_session').write_text(record+'\n')
             (p/'sys.kp.cp_gen').write_text(GEN+'\n')
             (p/'ap').write_text('1\n')
@@ -59,6 +59,7 @@ usb_connection_tick() { :; }
             ('echo off > sys.kp.cp_gen','stale-ap'),
             ('rm proc/123/stat','process-gone'),
             ("sed 's/77/78/' proc/123/stat > changed; mv changed proc/123/stat",'process-gone'),
+            ("echo '300.50 1.00' > uptime",'stale-session'),
         ):
             out,_=self.run_case(self.event(),commands+'\nusb_cp_read; echo "$CP_COUNT $CP_STATE"')
             self.assertEqual(out.strip(),'0 '+status)

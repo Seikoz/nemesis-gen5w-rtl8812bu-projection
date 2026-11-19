@@ -45,6 +45,10 @@ EOF
   # /proc/<pid>/stat comm may contain spaces or parentheses. starttime is field 22.
   actual=$("$BB" awk '{sub(/^.*\) /, ""); print $20}' "$PROC/$pid/stat" 2>/dev/null)
   [ -n "$actual" ] && [ "$actual" = "$start" ] || { CP_STATE=process-gone; return 0; }
+  if [ "$state" = started ] && ! "$BB" awk -v event="$millis" '
+    NR==1 {now=$1*1000; exit !(now>=event && now-event<=60000)}' "$UPTIME" 2>/dev/null; then
+    CP_STATE=stale-session; return 0
+  fi
   CP_STATE=$state CP_SOURCE=session-callback
   if [ "$state" = started ] && [ "$transport" = 1 ] &&
      [ "$(getprop "$AAPROP" 2>/dev/null)" = 1 ] && usb_wifi_ready; then CP_COUNT=1; fi

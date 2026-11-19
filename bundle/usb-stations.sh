@@ -51,7 +51,7 @@ usb_client_progress() {
     idle|bt_attach) session_text='카플레이 연결 대기 중 (세션 시작 미확인).' ;;
     created) session_text='카플레이 세션 생성됨 (시작 대기).' ;;
     finalized) session_text='카플레이 세션 종료됨.' ;;
-    stale-ap|process-gone) session_text='카플레이 재연결 대기 중.' ;;
+    stale-ap|stale-session|process-gone) session_text='카플레이 세션 재확인 대기 중.' ;;
     wired) session_text='유선 카플레이 세션 감지됨.' ;;
   esac
   if [ "$CP_COUNT" = 1 ]; then session_text='무선 카플레이 연결됨 (실제 세션 시작 확인).'; fi
