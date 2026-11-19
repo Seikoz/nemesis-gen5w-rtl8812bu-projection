@@ -2,12 +2,12 @@
 
 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)용 무선 카플레이 진단 테스트판입니다. 대상 헤드유닛은 TCC803x, 커널은 `3.18.24-tcc`입니다. NEMESIS Manager 1.16.7 이상이 설치되어 있어야 합니다.
 
-**[USB 설치 ZIP v0.1.7 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.7/NEMESIS-CN7NPE-260902-Bundle-v0.1.7-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.7) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.8 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.8/NEMESIS-CN7NPE-260902-Bundle-v0.1.8-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.8) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.12 |
-| Realtek RTL8812BU USB Driver | 1.1.10 |
+| Korea Projection CN7NPE USB Test | 1.7.4.13 |
+| Realtek RTL8812BU USB Driver | 1.1.11 |
 | HMG-API 본체 | 1.1.0-rc.4 |
 | HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.6 |
 
@@ -36,7 +36,7 @@ USB/
 2. 연결이 실패하면 같은 부팅에서 동글을 한 번 뺐다 꽂고 Korea Projection 상태를 다시 확인합니다. 필요한 경우 Realtek **Launch**를 한 번 누릅니다.
 3. 재부팅하기 전에 USB 메모리로 바꿔 꽂고 **NEMESIS → My Packages → Korea Projection CN7NPE USB Test → Launch → 제보 파일 만들기**를 누릅니다. USB의 `KoreaProjection-report/3-log.txt`에 첫 USB 감지와 장치 번호 변경 후 각각의 UP 시도, 커널 로그, `hostapd` 권한 정보와 실패 로그가 들어갑니다. `1-report.md`와 `2-car-report.json`이 만들어졌다면 함께 첨부해 주세요.
 
-v0.1.7의 모듈 빌드와 USB 설치 ZIP을 검증했습니다. 실차의 부팅 인식과 무선 카플레이 연결은 테스트가 필요합니다.
+v0.1.8의 모듈 빌드와 USB 설치 ZIP을 검증했습니다. 실차의 부팅 인식과 무선 카플레이 연결은 테스트가 필요합니다.
 
 ## 소스와 라이선스
 

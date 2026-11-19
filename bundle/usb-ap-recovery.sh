@@ -92,6 +92,7 @@ usb_prepare_ap_interface() {
           if [ "$rebind_rc" -eq 0 ]; then
             retry_error=$("$BB" ifconfig "$WIF" "$AP_IP" netmask 255.255.255.0 up 2>&1)
             retry_rc=$?
+            up_rc=$retry_rc
             echo "rtwlan0 retry: ifconfig exit=$retry_rc"
             [ -z "$retry_error" ] || echo "$retry_error"
           fi
@@ -104,4 +105,5 @@ usb_prepare_ap_interface() {
     usb_ap_kernel_log "$started" 40
   } > "$snapshot"
   usb_ap_publish_attempt "$snapshot" "$AP_UP_FILE"
+  return "$up_rc"
 }

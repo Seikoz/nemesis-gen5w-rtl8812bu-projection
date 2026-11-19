@@ -21,7 +21,7 @@ record_a3000mini_boot() (
     case "$number" in ''|*[!0-9]*) exit 0 ;; esac
     umask 022
     mkdir -p "$dir" || exit 0
-    printf '%s %s:%s %s\n' "$boot_id" "${usb##*/}" "$number" "$up_seconds" > "$marker.tmp" &&
+    echo "$boot_id ${usb##*/}:$number $up_seconds" > "$marker.tmp" &&
         mv -f "$marker.tmp" "$marker"
 ) 2>/dev/null
 

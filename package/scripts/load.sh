@@ -23,7 +23,8 @@ if ! read_boot_id; then
     exit 1
 fi
 if ! module_is_loaded; then
-    if insmod "$package_dir/modules/$module_file" 'ifname=rtwlan%d' 'if2name=rtwlan%d'; then
+    if insmod "$package_dir/modules/$module_file" 'ifname=rtwlan%d' 'if2name=rtwlan%d' \
+        'rtw_power_mgnt=0' 'rtw_ips_mode=0' 'rtw_enusbss=0'; then
         if ! echo "$boot_id" > "$package_dir/.loaded-boot"; then
             rmmod 88x2bu
             echo "Cannot save this package's module state."

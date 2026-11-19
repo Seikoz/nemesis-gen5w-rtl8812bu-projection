@@ -74,6 +74,8 @@ def build_driver_package(modules, helper, *, diagnostics=False):
     if diagnostics:
         markers = (
             b"Gen5W chip-init failed stage=halmac-firmware",
+            b"Gen5W halmac failed stage=firmware-download",
+            b"Gen5W halmac failed stage=power-switch",
             b"Gen5W chip-init failed iface=%s stage=netdev-open-hal",
         )
         for path in MODULES:
@@ -95,13 +97,13 @@ def build_driver_package(modules, helper, *, diagnostics=False):
             name = path.relative_to(package_dir).as_posix()
             text = path.read_text(encoding="utf-8")
             if diagnostics and name == "NEMESIS.data":
-                text = text.replace("package-version=1.1.9\n", "package-version=1.1.10\n")
+                text = text.replace("package-version=1.1.9\n", "package-version=1.1.11\n")
             if diagnostics and name == "MODULE-SOURCE.txt":
                 text = (
                     "The Gen5W diagnostic modules are based on GRT47 v2.0.7. "
                     "See MODULE-LICENSE.txt.\n"
                     "Corresponding source, diagnostic patch and build instructions:\n"
-                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.7/driver-source\n"
+                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.8/driver-source\n"
                 )
             if name == "scripts/common.sh":
                 if text.count("@USB_IDS@") != 1:

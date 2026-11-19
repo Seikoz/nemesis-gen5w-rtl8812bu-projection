@@ -74,7 +74,14 @@ usb_ap_kernel_log() {
 }
 
 usb_ap_report_header() {
+  local parameter value
   echo "$AP_SCOPE phase=$AP_PHASE first_usb=${AP_FIRST:-unknown} first_seen_uptime=${AP_FIRST_UP:-unknown} uptime=$(usb_ap_uptime) time=$(date '+%m-%d %H:%M:%S')"
+  for parameter in rtw_power_mgnt rtw_ips_mode rtw_enusbss; do
+    value=unavailable
+    [ ! -r "/sys/module/88x2bu/parameters/$parameter" ] ||
+      read -r value < "/sys/module/88x2bu/parameters/$parameter"
+    echo "$parameter=$value"
+  done
 }
 
 # Retain the first and latest observations of each phase in this boot.

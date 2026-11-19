@@ -20,7 +20,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.12 - Captures USB AP diagnostics
+short-desc=v1.7.4.13 - Captures USB AP diagnostics
 
 [package.1]
 path={HMG_API}
@@ -30,7 +30,7 @@ short-desc=1.1.0-rc.4 - Korea Projection dependency
 [package.2]
 path={PACKAGE_PATH}
 name=Realtek RTL8812BU USB Driver
-short-desc=v1.1.10 - Korea Projection USB dependency
+short-desc=v1.1.11 - Korea Projection USB dependency
 """
 
 
@@ -83,12 +83,13 @@ def add_hostapd_diagnostics(package):
         .replace(pending, pending + b'\n  usb_ap_report_waiting "$paths"')
         .replace(ap_start, b'''  usb_ap_context
   if ! running "hostapd $CONF"; then
-    usb_prepare_ap_interface
+    usb_prepare_ap_interface || return 1
     AP_LAST_UP=$AP_SCOPE
     usb_wifi_ready || return 1
+    sleep 2
     usb_start_hostapd &''')
         .replace(ap_end, b'''  elif [ "$AP_LAST_UP" != "$AP_SCOPE" ]; then
-    usb_prepare_ap_interface
+    usb_prepare_ap_interface || return 1
     AP_LAST_UP=$AP_SCOPE
     usb_capture_running_hostapd
   else
@@ -117,23 +118,23 @@ def add_hostapd_diagnostics(package):
 def build_projection_package(source):
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.12\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.13\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
-            b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.10,!niro.carplay.hotspot"\n',
+            b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.11,!niro.carplay.hotspot"\n',
         )
         descriptor = descriptor.replace(
             b"CN7NPE KOR 260902, HMG-API and RTL8812BU v1.1.4 required.",
-            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.4+ and Realtek 1.1.10+.",
+            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.4+ and Realtek 1.1.11+.",
         )
         preinstall = package.read("scripts/preinstall.sh")
         preinstall = preinstall.replace(
             b"Install and launch the RTL8812BU driver v1.1.4 first.",
-            b"Install the RTL8812BU driver v1.1.10 or later first.",
+            b"Install the RTL8812BU driver v1.1.11 or later first.",
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13)$'",
         )
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
@@ -186,7 +187,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.7-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.8-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,
