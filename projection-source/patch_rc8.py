@@ -147,7 +147,7 @@ def patch(mod, old):
         sCpClient = true;''')
     # Both initial handover and upstream re-attach retain their native send/watchdog logic.
     for start_signature, end_signature in (
-        ('    static void startCpClient(', '\n    static void onCpClientConnected'),
+        ('    static synchronized void startCpClient(', '\n    static void onCpClientConnected'),
         ('    static void reattachCpClient(', '\n    static final class ReattachHost')):
         start=text.index(start_signature); end=text.index(end_signature,start)
         block=text[start:end]
