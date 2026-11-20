@@ -1,6 +1,7 @@
 """Apply the CN7NPE USB changes to the pinned wireless-mod sources."""
 from pathlib import Path
 import sys
+import patch_handover
 
 
 def replace_once(text, old, new):
@@ -111,6 +112,7 @@ def patch(root):
          'static void onCpSessionFinalized(int type) {\n        SessionStatus.emit("finalized", type);'),
     ):
         text = replace_once(text, old, new)
+    text = patch_handover.patch(text)
     path.write_text(text, encoding='utf-8', newline='\n')
     (path.parent / 'SessionStatus.java').write_text(
         (Path(__file__).parent / 'SessionStatus.java').read_text(encoding='utf-8'),

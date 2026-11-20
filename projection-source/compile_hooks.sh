@@ -14,6 +14,7 @@ cd "$work/HMG-API-$rev"
 mod=mods/wireless-carplay-aa
 python3 "$source_dir/patch_hooks.py" "$mod"
 python3 "$source_dir/test_ap_wait.py" "$mod/src/hmgapi/mods/wireless/dipo/Bridge.java"
+python3 "$source_dir/test_handover.py" "$mod/src/hmgapi/mods/wireless/dipo/Bridge.java"
 python3 "$source_dir/test_session_status.py"
 export JAVA_HOME="$JAVA_HOME_17_X64"
 export PATH="$JAVA_HOME/bin:$PATH"

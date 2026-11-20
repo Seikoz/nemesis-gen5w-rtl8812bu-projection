@@ -21,7 +21,7 @@ usb_cp_generation() {
 usb_cp_record_shape() {
   "$BB" awk -F, 'NF==8 && $1=="v1" && $2~/^[1-9][0-9]*$/ &&
     $3~/^[0-9]+$/ && $4~/^[a-zA-Z0-9.-]+$/ && $5~/^[0-9]+$/ && $6~/^[0-9]+$/ &&
-    $7~/^(idle|bt_attach|created|started|wired|finalized)$/ && $8~/^-?[0-9]+$/ {print}'
+    $7~/^(idle|bt_attach|created|started|wired|unclassified|finalized)$/ && $8~/^-?[0-9]+$/ {print}'
 }
 
 usb_cp_read() {
@@ -50,7 +50,7 @@ EOF
     CP_STATE=stale-session; return 0
   fi
   CP_STATE=$state CP_SOURCE=session-callback
-  if [ "$state" = started ] && [ "$transport" = 1 ] &&
+  if [ "$state" = started ] && { [ "$transport" = 0 ] || [ "$transport" = 1 ]; } &&
      [ "$(getprop "$AAPROP" 2>/dev/null)" = 1 ] && usb_wifi_ready; then CP_COUNT=1; fi
 }
 

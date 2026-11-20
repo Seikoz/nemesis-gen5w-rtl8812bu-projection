@@ -46,12 +46,14 @@ usb_connection_tick() { :; }
         return f'v1,123,77,{gen},201000,2,{state},{transport}'
 
     def test_started_only_and_lifecycle(self):
-        for state in ('idle','bt_attach','created','wired','finalized'):
+        for state in ('idle','bt_attach','created','wired','unclassified','finalized'):
             out,_=self.run_case(self.event(state))
             self.assertEqual(out.strip(),f'0 {state} session-callback')
         out,_=self.run_case(self.event())
         self.assertEqual(out.strip(),'1 started session-callback')
         out,_=self.run_case(self.event(transport=0))
+        self.assertEqual(out.strip(),'1 started session-callback')
+        out,_=self.run_case(self.event(transport=2))
         self.assertTrue(out.startswith('0 '))
 
     def test_stale_ap_reboot_dead_process_and_pid_reuse(self):

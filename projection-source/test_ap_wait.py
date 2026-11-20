@@ -64,6 +64,8 @@ class Retry { void cancel() {} }
 class SessionStatus { static void emit(String state, int transport) {} }
 class Bridge {
     static volatile Object sUsbApRequest;
+    static volatile Object sUsbDetachFence;
+    static boolean sUsbBtConfirmed;
     static boolean sSession, sCpClient, sCpWireless, sUsb;
     static String sAddr, apProperty;
     static boolean on, connected, addressReady, failBroadcast;

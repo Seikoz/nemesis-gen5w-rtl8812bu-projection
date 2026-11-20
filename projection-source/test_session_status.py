@@ -35,12 +35,12 @@ public class Bridge {
   if(fields.length!=8 || !fields[0].equals("v1") || !fields[3].equals("12345678-100.10-8") ||
     !fields[4].equals("123456") || !fields[6].equals("created") || Long.parseLong(fields[2])<=0)
     throw new AssertionError("Bad callback record");
-  SessionStatus.emit("started",1);
-  if(!android.os.SystemProperties.value.endsWith(",2,started,1")) throw new AssertionError("Missing start");
+  SessionStatus.emit("started",0);
+  if(!android.os.SystemProperties.value.endsWith(",2,started,0")) throw new AssertionError("Missing transport-0 start");
   android.os.SystemProperties.gen="new-ap-generation";
   h.queue.remove().run();
   if(!android.os.SystemProperties.value.contains(",12345678-100.10-8,") ||
-      !android.os.SystemProperties.value.endsWith(",3,started,1")) throw new AssertionError("Heartbeat changed AP identity");
+      !android.os.SystemProperties.value.endsWith(",3,started,0")) throw new AssertionError("Heartbeat changed AP identity/raw transport");
   android.os.SystemProperties.fail=true;
   SessionStatus.emit("finalized",1);
   int n=lines.size(); h.queue.remove().run();

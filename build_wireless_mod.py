@@ -16,7 +16,7 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.9'
+VERSION = '2.4.10'
 
 
 def dynamic_tcp_rules():
@@ -80,7 +80,8 @@ def build_mod(base, hooks, key_path):
         if (jar.testzip() is not None or not dex.startswith(b'dex\n035\0') or
                 b'rtwlan0\0' not in dex or b'\x05wlan0\0' in dex or
                 b'USB hotspot ready; starting Bluetooth iAP2' not in dex or
-                b'USB_CP_EVENT ' not in dex or b'sys.kp.cp_session' not in dex):
+                b'USB_CP_EVENT ' not in dex or b'sys.kp.cp_session' not in dex or
+                b'USB_CP_HANDOVER stage=spp-down-preserved raw_transport=' not in dex):
             raise ValueError('Expected Android API 19 USB AP wait hooks')
     key = serialization.load_pem_private_key(key_path.read_bytes(), None)
     if key.public_key().public_bytes(serialization.Encoding.DER,

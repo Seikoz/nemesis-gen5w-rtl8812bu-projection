@@ -2,6 +2,7 @@ package hmgapi.mods.wireless.dipo;
 
 import android.os.Process;
 import android.os.SystemClock;
+import android.os.Handler;
 import java.io.BufferedReader;
 import java.io.FileReader;
 
@@ -11,22 +12,26 @@ final class SessionStatus {
     private static long epoch;
     private static boolean warned;
 
-    static synchronized void emit(String state, int transport) {
+    static void emit(String state, final int transport) {
+        // No SessionStatus -> Bridge lock order in the heartbeat.
+        final Handler scheduler = Bridge.handler();
+        synchronized (SessionStatus.class) {
         final long request = ++epoch;
         final String generation = generation();
         write(state, transport, generation);
         if ("started".equals(state)) {
             // Refresh only the state established by a real callback. A later callback cancels
             // this chain. Retain the original AP generation even if the AP is recreated.
-            Bridge.handler().postDelayed(new Runnable() {
+            scheduler.postDelayed(new Runnable() {
                 @Override public void run() {
                     synchronized (SessionStatus.class) {
                         if (epoch != request) return;
-                        write("started", 1, generation);
-                        Bridge.handler().postDelayed(this, 15000);
+                        write("started", transport, generation);
+                        scheduler.postDelayed(this, 15000);
                     }
                 }
             }, 15000);
+        }
         }
     }
 
