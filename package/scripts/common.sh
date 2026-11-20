@@ -127,10 +127,40 @@ claim_boot_recovery() {
     return 0
 }
 
-reset_boot_dongle() {
+prepare_reset_helper() {
     local helper="$package_dir/bin/usb-reset-a3000mini"
-    [ -x "$helper" ] || chmod 755 "$helper" || return 2
-    "$helper" "$usb"
+    if [ ! -f "$helper" ] || [ ! -s "$helper" ] || [ -L "$helper" ]; then
+        echo "USB recovery helper missing or not a regular package file."
+        return 2
+    fi
+    if [ ! -x "$helper" ]; then
+        echo "USB recovery helper lacks execute permission; repairing mode to 0755."
+        chmod 755 "$helper" || return 2
+    fi
+    [ -x "$helper" ] || { echo "USB recovery helper is still not executable."; return 2; }
+}
+
+reset_helper_diagnostics() {
+    local helper="$package_dir/bin/usb-reset-a3000mini"
+    echo "USB recovery helper permission diagnostics (no policy changes):"
+    id 2>/dev/null
+    ls -l "$helper" 2>/dev/null
+    ls -lZ "$helper" 2>/dev/null
+    getenforce 2>/dev/null
+    # A mount/SELinux denial is reported, never bypassed by relocating the executable.
+    if [ -r /proc/mounts ]; then
+        while read -r source target type options rest; do
+            case "$target" in /data|/data/nemesis|/data/nemesis/apps|/data/nemesis/apps/realtek.88x2bu)
+                echo "mount_target=$target type=$type options=$options" ;;
+            esac
+        done < /proc/mounts
+    fi
+    return 0
+}
+
+reset_boot_dongle() {
+    prepare_reset_helper || return 2
+    "$package_dir/bin/usb-reset-a3000mini" "$usb"
 }
 
 # Return a full-speed A3000mini's external port to EHCI before the AP starts.
@@ -149,6 +179,13 @@ recover_high_speed() (
         echo "boot=$boot_id A3000mini USB high-speed recovery" > "$log_dir/speed.log"
     fi
     {
+        # ZIP extraction need not preserve executable bits. Check before claiming a
+        # hardware attempt, so a permission-only failure does not spend the budget.
+        if ! prepare_reset_helper; then
+            reset_helper_diagnostics
+            echo "High-speed recovery blocked before EHCI request: helper is not executable."
+            return 2
+        fi
         for attempt in 1 2; do
             marker="$package_dir/.usb-speed-tried-$boot_id-$attempt"
             mkdir "$marker" 2>/dev/null || continue
@@ -160,6 +197,7 @@ recover_high_speed() (
             "$package_dir/bin/usb-reset-a3000mini" --high-speed "$usb"
             helper_rc=$?
             echo "EHCI ownership request exit=$helper_rc"
+            case "$helper_rc" in 126|127) reset_helper_diagnostics ;; esac
             [ "$helper_rc" -eq 0 ] || break
             wait_count=0
             while [ "$wait_count" -lt 6 ]; do

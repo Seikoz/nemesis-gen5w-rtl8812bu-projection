@@ -43,7 +43,8 @@ usb_connection_snapshot() {
       [ ! -r "$file" ] || "$BB" awk '/rtwlan0/ {print}' "$file"
     done
     echo '=== mDNS service probe (unicast replies, no instance/host/TXT contents) ==='
-    "$BB_OWN" timeout 3 "$APP/bin/ap-link-diagnostics" 2>&1
+    usb_prepare_native_tool ap-link-diagnostics &&
+      "$BB_OWN" timeout 3 "$APP/bin/ap-link-diagnostics" 2>&1
     echo "mdns_probe_exit=$?"
     echo '=== TCP and mDNS socket states: hex endpoints, no application payload ==='
     for file in tcp tcp6 udp udp6; do

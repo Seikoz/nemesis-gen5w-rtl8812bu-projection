@@ -1,3 +1,12 @@
+# Repair only this package's named native tools when extraction loses execute bits.
+usb_prepare_native_tool() {
+  local helper
+  case "$1" in ap-station-count|ap-link-diagnostics) helper="$APP/bin/$1" ;; *) return 1 ;; esac
+  [ -f "$helper" ] && [ ! -L "$helper" ] || return 1
+  [ -x "$helper" ] || chmod 755 "$helper" 2>/dev/null || return 1
+  [ -x "$helper" ]
+}
+
 # Snapshot the AP's current clients instead of accumulating vendor log messages.
 usb_realtek_associated_count() {
   local file="$PROC/net/rtl88x2bu/$WIF/all_sta_info" own=
@@ -67,7 +76,7 @@ wifi_events() {
   STA_COUNT=unknown STA_SOURCE=unavailable WSTA=0 WGONE=
   if ! running "hostapd $CONF" || ! usb_wifi_ready; then
     STA_COUNT=0 STA_SOURCE=ap-off
-  elif count=$("$APP/bin/ap-station-count" 2>/dev/null); then
+  elif usb_prepare_native_tool ap-station-count && count=$("$APP/bin/ap-station-count" 2>/dev/null); then
     STA_COUNT=$count STA_SOURCE=hostapd-authorized
   elif count=$(usb_realtek_associated_count); then
     STA_COUNT=$count STA_SOURCE=realtek-associated
