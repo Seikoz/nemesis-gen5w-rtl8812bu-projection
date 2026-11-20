@@ -1,17 +1,17 @@
-# 아반떼 CN7PE·CN7NPE 260902 USB 합본 설치
+# 아반떼 CN7PE·CN7HEVPE·CN7NPE 260902 USB 합본 설치
 
-대상은 국내형 아반떼 CN7PE와 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x), ipTIME A3000mini(`0bda:b812`)입니다. CN7PE의 설치 경로를 추가한 실차 시험 버전입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
+대상은 국내형 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x), ipTIME A3000mini(`0bda:b812`)입니다. CN7HEVPE는 실차 시험 대상입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7PE / CN7NPE BETA **1.7.4.30** — 설치·AP·연결 관리
-- HMG-API Wireless Mode **2.4.15** — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
-- Realtek Wi-Fi Driver **1.1.18** — RTL8812BU 무선랜 드라이버
+- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.31** — 설치·AP·연결 관리
+- HMG-API Wireless Mode **2.4.15** (CN7PE·CN7NPE) / **2.4.16** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
+- Realtek Wi-Fi Driver **1.1.19** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
 
 ## 설치 및 업데이트
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
-2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7PE / CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek Wi-Fi Driver 1.1.18이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.30`는 업데이트할 수 있습니다.
+2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
+3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek Wi-Fi Driver 1.1.19이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.31`는 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드가 재부팅을 요청하면 재부팅합니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 페어링합니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
@@ -30,7 +30,7 @@ v0.1.13은 IPv6 UDP 6031을 추가 허용하고 **실제 무선 카플레이 세
 
 1. A3000mini를 꽂은 채 내비게이션을 완전히 재부팅하고 약 2분 기다립니다. 첫 시도에는 Realtek Launch를 누르지 않습니다.
 2. 대기 문구나 AP 시작 오류가 계속되면 같은 부팅에서 동글을 한 번 재장착합니다. 필요하면 Realtek Launch를 한 번 누르고 Korea Projection 상태를 확인합니다.
-3. 재부팅하기 전에 동글을 빼고 USB 메모리를 연결합니다. **NEMESIS → My Packages → Korea Projection CN7PE / CN7NPE BETA → Launch → 제보 파일 만들기**를 선택합니다. `KoreaProjection-report`의 `3-log.txt`와 함께 생성된 `1-report.md`, `2-car-report.json`을 확인합니다.
+3. 재부팅하기 전에 동글을 빼고 USB 메모리를 연결합니다. **NEMESIS → My Packages → Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA → Launch → 제보 파일 만들기**를 선택합니다. `KoreaProjection-report`의 `3-log.txt`와 함께 생성된 `1-report.md`, `2-car-report.json`을 확인합니다.
 
 `3-log.txt`의 `speed.log`에는 EHCI 복구 요청과 실제 480Mbps 확인 결과가 들어갑니다. `usb-ap-up-boot.log`와 `usb-ap-up-replug.log`는 같은 부팅의 첫 USB 장치와 USB 장치 번호가 바뀐 뒤의 UP 시도를 기록합니다. 자동 USB 복구에 따른 재열거도 장치 번호가 바뀔 수 있습니다. 각 파일에서 부팅 ID, USB 포트·장치 번호, USB 속도(`usb_speed_mbps`), UP 종료 코드, 전후 커널 로그를 확인할 수 있습니다. `12`는 full-speed, `480`은 high-speed 연결 기록입니다. `usb-hostapd-permissions-*.log`에는 실제 프로세스의 UID·권한·SELinux 컨텍스트가 들어가며, 프로세스가 먼저 종료되면 읽지 못했음을 표시합니다. `usb-hostapd-logcat-*.log`에는 해당 프로세스의 종료 코드와 AP 시작·단말 접속·실패 로그가 들어갑니다. 제보를 위해 동글을 빼고 USB 메모리로 바꾼 뒤에는 현재 상태가 AP lost로 표시될 수 있으므로, 같은 부팅에서 앞서 기록한 UP·AP 시작 결과를 함께 확인합니다.
 
@@ -157,3 +157,12 @@ A3000mini를 꽂은 채 **지금 재부팅**을 누릅니다. 제보 파일 `3-l
 설치 USB를 A3000mini로 교체합니다. CN7PE에서는 USB 준비 뒤 HMG-API의 CN7PE용 지도 확인을 통과해야 무선 설정을 진행합니다. 지도 확인에 실패하면 상태 화면에서 실패 이유를 확인하고 HMG-API **Car Report**와 Korea Projection 제보의 `usb-cn7pe-map.log`가 포함된 `3-log.txt`를 같은 부팅에서 저장하세요. 무선 모드 적용 후 재부팅 안내를 따릅니다.
 
 CN7PE의 실제 자동 인식, 핫스팟, 무선 카플레이·안드로이드 오토 및 차량 오디오는 주차 상태에서 확인합니다. 설치 전에 차량의 버전이 위 범위와 일치하는지 확인하세요.
+
+
+## v0.1.26 CN7HEVPE 하이브리드 시험
+
+대상은 `CN7HEVPE.KOR.S5W_M.V039.001.260902` 국내형 Gen5W TCC803x와 A3000mini입니다. NEMESIS USB 목록에서 **Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA → Install**을 선택합니다. 기존 합본 사용자는 **Update**를 선택합니다.
+
+A3000mini를 꽂고 기다립니다. 하이브리드는 내비 자체 파일을 읽어 HMG-API 차량 지도를 생성한 뒤, 필요한 훅이 있으면 지도 검증을 거쳐 하이브리드용 무선 모드 **2.4.16**을 적용합니다. 첫 지도 생성에는 수분이 걸릴 수 있습니다. 화면에 재부팅 안내가 나오면 적용 후 재부팅합니다. 이미 있는 차량 지도는 검증해 사용합니다.
+
+지도 확인에서 멈추면 같은 부팅의 **HMG-API Car Report**와 `usb-cn7hevpe-map.log`가 포함된 Korea Projection `3-log.txt`를 저장합니다. 하이브리드판은 무선 설정 페이지 대체와 카플레이 시작 시 Bluetooth 유지 훅 없이 시험합니다. 실차의 USB 인식, 무선 연결·유지, 차량 오디오는 확인이 필요합니다.

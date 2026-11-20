@@ -7,6 +7,14 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.26
+
+- 국내형 아반떼 하이브리드 **CN7HEVPE `V039.001.260902`**(Gen5W TCC803x)를 설치 대상으로 추가합니다. **Korea Projection 1.7.4.31**과 **Realtek 1.1.19**가 설치·시작·외부 USB 복구 조건에 하이브리드를 포함합니다.
+- **HMG-API Wireless Mode 2.4.16**은 하이브리드에서 자동 선택됩니다. rc.7에 내장 지도가 없는 차종이므로 내비 파일로 전체 지도를 만든 뒤, 필요한 39개 선언 훅과 네이티브 iAP2 송신 지점을 확인하고 HMG-API 지도 검증을 통과해야 무선 설정을 진행합니다. 생성 및 검증 결과는 `usb-cn7hevpe-map.log`에 남깁니다.
+- 공개 차량 제보 지도에서 확인되지 않는 무선 설정 페이지 대체 및 카플레이 시작 시 Bluetooth 유지 훅은 하이브리드용 선언과 코드에서 제외했습니다. 기존 CN7PE·CN7NPE에는 이전 서명 모드 **2.4.15**를 제공합니다. [CN7HEVPE 차량 제보](https://github.com/StopDragon/korea-projection/issues/390)
+- CN7HEVPE 차량에서 동글 자동 인식, 무선 연결과 유지, 오디오 출력은 시험이 필요합니다.
+- 공개 지도와 필수 지점 대조, 실제 rc.7 엔진의 세 차종 적용·재적용·복원, Linux 회귀 41개, Android API 19 빌드, 셸 문법 29개 및 ZIP 재현 빌드를 확인했습니다. SHA-256 `c68c0ec52ac92ffeb72b225b36cd2f376aaa5d0d4f8a2afd340ffa8bb7fb27e5`. [검사 결과](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44754478562)
+
 ## USB 합본 v0.1.25
 
 - 국내형 **CN7PE Gen5W `V039.001.260902`**를 기존 CN7NPE와 함께 설치 대상으로 추가합니다. Korea Projection **1.7.4.30**의 설치 목록과 시작 시점에 펌웨어·플랫폼을 확인합니다. 두 차종 모두 NEMESIS에서 **Korea Projection CN7PE / CN7NPE BETA**를 선택합니다.
