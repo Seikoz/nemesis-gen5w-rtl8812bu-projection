@@ -1,10 +1,10 @@
 [nemesis]
 version=1.1
 id=realtek.88x2bu
-name=Realtek RTL8812BU USB Driver
+name=Realtek Wi-Fi Driver
 type=application,service
 package-version=1.1.9
-short-desc=USB Wi-Fi driver with automatic startup for Gen5W
+short-desc=RTL8812BU USB Wi-Fi driver with automatic startup for Gen5W
 detailed-desc=Preloads the driver at boot and retries USB Wi-Fi after Android starts. Launch from My Packages to check a USB dongle. Supports TCC803x and TCC897x with Linux 3.18.24-tcc.
 depends=!usbwifi.hotspot
 preinstall=scripts/preinstall.sh
