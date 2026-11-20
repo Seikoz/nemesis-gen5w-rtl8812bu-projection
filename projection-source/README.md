@@ -2,6 +2,12 @@
 
 The v0.1.14 bundle contains Korea Projection **1.7.4.19**, signed wireless mod **2.4.10**, Realtek **1.1.13** and HMG-API core **1.1.0-rc.4**. The local mod numbering is independent of upstream Open-HMG releases. Vehicle CarPlay success remains unverified. These modifications are AGPL-3.0, like the original wireless mod.
 
+## Current v0.1.18: official rc.8 USB rebase
+
+[compile_rc8.sh](compile_rc8.sh) pins official wireless c47c0bb and core rc.7 5732e26 plus the official rc.7 SDK. [patch_rc8.py](patch_rc8.py) ports USB AP readiness, origin/status and handover fences to the upstream bridge while retaining its per-link CpTx sender and re-attach logic. The signed local version is **2.4.11**, based on official **2.2.0-rc.8**; its numbering and author key are local upgrade identities.
+
+The checked target map has 351 older points. Eight newer required declarations/consumers are omitted so the whole mod can load. CP parking also needs two map points absent from that older catalogue. [Compatibility review and limitations](../docs/compatibility-rc7-rc8-usb.md) explains the feature subset, native-testing limits and previous fork-only options not ported. Earlier implementation notes below describe v0.1.14 and remain for history.
+
 ## Session ordering and status
 
 Base: [StopDragon/HMG-API b573ac624e284cd7d6e0a7b9fa6c32862c528988](https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa). The build verifies the complete source archive hash.
@@ -37,13 +43,13 @@ A 15-second heartbeat refreshes only the state established by a real wireless se
 [compile_hooks.sh](compile_hooks.sh) runs the shell/policy regressions, [test_ap_wait.py](test_ap_wait.py) on the modified real Bridge methods and [test_session_status.py](test_session_status.py) on the actual record writer, then compiles Android API 19 DEX. The latter tests property-denied fallback, start ticks, heartbeat generation retention and finalization cancellation. [test_mdns.py](test_mdns.py) exercises the actual DNS decoder with compressed, truncated and cyclic packets and checks that private content is omitted. GitHub Actions builds the ARMv7 PIE helpers against API 19.
 
 ```sh
-bash projection-source/compile_hooks.sh projection-output
-python build_wireless_mod.py --base-mod wireless-2.4.6.zip --hooks projection-output/hooks.jar --key /private/path/existing-author.key --output wireless-2.4.10.zip
-python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.7-nemesis-package.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-2.4.10.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
+bash projection-source/compile_rc8.sh projection-output
+python build_wireless_mod.py --base-mod wireless-carplay-aa-2.2.0-rc.8.zip --previous-mod wireless-2.4.10.zip --hooks projection-output/hooks.jar --key /private/path/existing-author.key --output wireless-2.4.11.zip
+python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.7-nemesis-package.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-2.4.11.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
 python -m unittest discover -s tests -v
 ```
 
-The USB builder verifies pinned source packages, signed mod identity/hashes, Android ELF architecture and new diagnostic payloads. Upgrade/reinstall guards accept the existing local 2.4.6–2.4.10 identity. The user installs the finished USB ZIP; no build tools are required on the vehicle.
+The USB builder verifies pinned source packages, signed mod identity/hashes, Android ELF architecture and new diagnostic payloads. Upgrade/reinstall guards accept the existing local 2.4.6–2.4.11 identity. The user installs the finished USB ZIP; no build tools are required on the vehicle.
 
 ## v0.1.14: confirmed Bluetooth origin and CarPlay-channel handover
 

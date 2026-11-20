@@ -2,7 +2,7 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE USB Test **1.7.4.23** 및 무선 모드 **2.4.10**
+- Korea Projection CN7NPE USB Test **1.7.4.23** 및 무선 모드 **2.4.11** (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek RTL8812BU USB Driver **1.1.16**
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
 
@@ -77,10 +77,12 @@ Korea Projection만 설치/업데이트하고 설치 계획에 **Realtek 1.1.16*
 
 속도 대기가 계속되면 **재부팅 전에** 제보 USB로 바꾸고 제보 파일을 만듭니다. `3-log.txt`와 Realtek `speed.log`, `boot.log`, `launch.log`(있는 경우)를 보내 주세요. 컨트롤러 복원 실패가 기록되면 내비게이션을 완전히 재부팅해 정상 바인딩 복원을 확인합니다. 드라이버 재등록은 물리 전원 차단을 보장하지 않으며 실차의 480Mbps 전환 성공은 확인이 필요합니다. 12/480Mbps는 USB 버스 인식 속도입니다.
 
-## v0.1.18 HMG-API rc.7 업데이트
+## v0.1.18 HMG-API rc.7 + 무선 rc.8 USB 이식판
 
-Korea Projection **1.7.4.23**의 설치/업데이트만 선택하면 HMG-API 본체 **1.1.0-rc.7**(NEMESIS **1.0.99.7**) 이상이 필요하다는 의존성에 따라 같은 USB의 공식 패키지가 먼저 설치됩니다. Realtek **1.1.16**과 RTL8812BU용 무선 모드 **2.4.10**, rtwlan0·EHCI 복구·방화벽·카플레이 세션 처리는 v0.1.17과 동일합니다. 공식 무선 모드 2.2.0-rc.8은 이 합본에 넣지 않습니다.
+Korea Projection **1.7.4.23**만 설치/업데이트합니다. 필요한 HMG-API 본체 **1.1.0-rc.7**(NEMESIS **1.0.99.7**)가 먼저 갱신되고, 공식 무선 **2.2.0-rc.8** 기반 USB 이식판 **2.4.11**이 기존 합본 서명으로 업데이트됩니다. Realtek **1.1.16**과 EHCI 복구는 그대로입니다.
 
-설치를 마친 뒤 A3000mini를 꽂고 Korea Projection 상태 화면의 **지금 재부팅**을 눌러 새 본체 런타임을 적용합니다. HMG-API 앱에서 **1.1.0-rc.7**, 훅 활성 상태와 기존 무선 모드 **2.4.10**을 확인합니다. 기존 차량 로컬 지도(`state/local-map.json`)와 모드/설정은 본체 업데이트 시 보존되는 구조입니다. CN7PE 지도는 CN7NPE 전용 지도로 간주하지 않습니다. 훅이 꺼져 있으면 상태 화면의 지도 확인 결과를 함께 제보해주세요.
+A3000mini를 꽂은 채 Korea Projection 상태 화면의 **지금 재부팅**을 누릅니다. HMG-API 앱에서 **1.1.0-rc.7 / 훅 활성**, 무선 모드 **2.4.11**을 확인합니다. 첫 재부팅 후 무선 모드 업데이트·적용 안내가 나오면 완료 후 한 번 더 재부팅하세요. 초기 시험에는 재장착/Realtek Launch 없이 약 2분 기다립니다.
 
-rc.7의 문제 기록은 **HMG-API → Logs → Record a problem**에서 시작하고 증상 재현 후 종료합니다. 12Mbps 복구 분석에는 Korea Projection 제보 파일과 Realtek `speed.log`도 함께 보내주세요. 이번 본체 교체만으로 실제 USB 480Mbps 전환이나 카플레이 연결이 검증된 것은 아닙니다.
+기존 차량 로컬 지도는 `state/local-map.json`에 보존됩니다. 확인된 351개 지도와 맞지 않는 신규 8개 훅 선언은 제외하며, 새 다중 폰 제어·AA 주차는 등록하지 않습니다. 카플레이 주차 기능도 지도에 해당 점이 있어야 켜집니다. 이전 한국판 전용 `tbt_fit`·별표 팝업 건너뛰기는 이번 무선 모드에 이식하지 않았습니다. 공식 원본 ZIP을 따로 설치하면 기존 서명/USB AP 처리와 맞지 않으므로 이 합본에서 업데이트합니다.
+
+실제 480Mbps·카플레이 연결 유지 여부는 차량에서 확인해야 합니다. 실패하면 Korea Projection 제보 파일과 Realtek `speed.log`, `boot.log`, `launch.log`를 함께 보냅니다. rc.7의 **Logs → Record a problem**도 사용할 수 있습니다. [호환성 검토](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.18/docs/compatibility-rc7-rc8-usb.md).
