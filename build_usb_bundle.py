@@ -22,7 +22,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.23 - HMG-API rc.7 / RTL8812BU USB Wi-Fi
+short-desc=v1.7.4.24 - Automatic audio support apply / RTL8812BU
 
 [package.1]
 path={HMG_API}
@@ -58,6 +58,7 @@ def add_hostapd_diagnostics(package):
   ) 2>&1 | '''
     status = package.read("bin/status.sh")
     reports = b"$W/usb-hostapd.log $W/carreport.txt"
+    # Existing report entries are extended after the hostapd/status integration.
     report_read = b"    if [ -f $_f ]; then lastmask 400 < $_f"
     ap_start = b'''  $BB ifconfig $WIF $AP_IP netmask 255.255.255.0 up 2>/dev/null
   if ! running "hostapd $CONF"; then
@@ -184,7 +185,25 @@ def add_network_upgrade(hotspot):
 ''')
     start = hotspot.index(b'\nplan_only_mod() {') + 1
     end = hotspot.index(b'\n}\n', start) + 3
-    hotspot = hotspot[:start] + (ROOT / 'bundle/usb-mod-plan.sh').read_bytes() + hotspot[end:]
+    hotspot = hotspot[:start] + (ROOT / 'bundle/usb-mod-plan.sh').read_bytes() + b'\n' + (
+        ROOT / 'bundle/usb-audio-apply.sh').read_bytes() + hotspot[end:]
+    gate = '  # 시계가 맞춰진 뒤의 시각으로 다시 잡는다(경과 시간)\n'.encode()
+    if hotspot.count(gate) != 1:
+        raise ValueError('Expected startup gate after live USB readiness')
+    hotspot = hotspot.replace(gate, '''  log "USB readiness passed: rtwlan0 and 480Mbps; checking wireless/audio setup."
+  usb_audio_reconcile > "$W/usb-audio-apply.log" 2>&1
+  _usb_audio_rc=$?
+  case "$_usb_audio_rc" in
+    1)
+      log "USB audio support applied; AP waits for reboot."
+      prog 100 reboot "오디오 지원 파일을 자동 적용했습니다. 지금 재부팅을 눌러 주세요."
+      idle_req ;;
+    2)
+      log "USB audio setup blocked: $USB_AUDIO_STATUS; see usb-audio-apply.log."
+      prog 100 fail "오디오 자동 적용을 보류했습니다. HMG-API 변경 사항과 제보 로그를 확인해 주세요."
+      idle_req ;;
+  esac
+'''.encode() + gate)
     at = b'''  if plan_nothing; then
     return 0
   fi'''
@@ -245,7 +264,7 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         raise ValueError('Expected the Android ARMv7 mDNS diagnostics helper')
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.23\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.24\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.7,realtek.88x2bu@>=1.1.16,!niro.carplay.hotspot"\n',
@@ -261,7 +280,7 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24)$'",
         )
         old_version_guard = b'''grep -q '"version": "2.4.6"' "$mod/META-HMGAPI/manifest.json"'''
         if preinstall.count(old_version_guard) != 1:
@@ -300,6 +319,7 @@ done''',
         verify_mod(wireless)
         hotspot = add_network_upgrade(add_station_counts(changes['svc/hotspot.sh']))
         hotspot, changes['bin/status.sh'] = add_session_diagnostics(hotspot, changes['bin/status.sh'])
+        changes['bin/status.sh'] = changes['bin/status.sh'].replace(b'$W/mod-apply.txt', b'$W/mod-apply.txt $W/usb-audio-apply.log $W/usb-mod-files-check.log')
         old_digest = hashlib.md5(old_wireless, usedforsecurity=False).hexdigest().encode()
         new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
         if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:
@@ -307,6 +327,9 @@ done''',
         changes['svc/hotspot.sh'] = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.11').replace(
             b'MOD_MD5=' + old_digest, b'MOD_MD5=' + new_digest)
         changes['hmgapi/wireless-carplay-aa.zip'] = wireless
+        with zipfile.ZipFile(io.BytesIO(wireless)) as signed_mod:
+            checksums = ''.join(hashlib.md5(signed_mod.read(name), usedforsecurity=False).hexdigest() +
+                                '  ' + name + '\n' for name in sorted(signed_mod.namelist()))
         # Use the original source commit so the notice survives release tag cleanup.
         source_notice = package.read("licenses/Source.md")
         old_ref = b"/tree/kp-usb-test-v0.1.4/projection-usb"
@@ -314,7 +337,7 @@ done''',
             raise ValueError("Expected the Korea Projection source link in the base package")
         changes["licenses/Source.md"] = source_notice.replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        ) + b'\nWireless mod 2.4.11 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/bundle\n'
+        ) + b'\nWireless mod 2.4.11 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.19/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.19/bundle\n'
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -327,6 +350,10 @@ done''',
                 entry.create_system = 3
                 entry.external_attr = 0o100755 << 16
                 updated.writestr(entry, data, compress_type=zipfile.ZIP_DEFLATED)
+            entry = zipfile.ZipInfo('hmgapi/usb-mod-files.md5', date_time=(1980, 1, 1, 0, 0, 0))
+            entry.create_system = 3
+            entry.external_attr = 0o100644 << 16
+            updated.writestr(entry, checksums.encode('ascii'), compress_type=zipfile.ZIP_DEFLATED)
         return output.getvalue()
 
 
@@ -337,7 +364,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.7 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.18-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.19-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,

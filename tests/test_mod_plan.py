@@ -15,6 +15,17 @@ class ModPlanTest(unittest.TestCase):
             ('same     /system/file\nsetting  prop/persist.sys.iap2.wifi = t [wireless-carplay-aa]\n', 0, 0),
             ('change   /system/file [wireless-carplay-aa] -> hash\nhook plan: enabled\n', 0, 0),
             ('nothing changed\n', 0, 0),
+            ('change   /system/lib/libcarplayidentity.so [wireless-carplay-aa] -> hash [restart the head unit]\n'
+             'update   /system/lib/libleafiaaac.so [wireless-carplay-aa] -> hash\n'
+             'event    parked -> its apps and hooks hear it [wireless-carplay-aa]\n'
+             'event    unparked -> its apps and hooks hear it [wireless-carplay-aa]\n'
+             'event    shutdown -> its apps and hooks hear it [wireless-carplay-aa]\n'
+             'event    wake -> its apps and hooks hear it [wireless-carplay-aa]\n'
+             'home Wi-Fi  off\nnetwork  no cellular [nemesis-shortcut]\n', 0, 0),
+            ('event    parked -> its apps and hooks hear it [other-mod]\n', 0, 1),
+            ('event    parked -> unknown command [wireless-carplay-aa]\n', 0, 1),
+            ('home Wi-Fi  on\n', 0, 1),
+            ('network  no cellular [bad] extra\n', 0, 1),
             ('network  firewall filter input: accept tcp port 5555 [other-mod]\n', 0, 1),
             ('change   /system/file [other-mod] -> hash\n', 0, 1),
             ('setting  prop/example = x [wireless-carplay-aa] back to stock\n', 0, 1),

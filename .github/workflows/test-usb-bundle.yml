@@ -1,0 +1,16 @@
+name: Verify USB audio apply recovery
+on:
+  push:
+    branches: [test/rtl8812bu-boot-retry]
+    paths: ['.github/workflows/test-usb-bundle.yml', 'bundle/usb-audio-apply.sh', 'bundle/usb-mod-plan.sh', 'bundle/usb-carplay-session.sh', 'tests/test_mod_plan.py', 'tests/test_usb_audio_apply.py', 'build_usb_bundle.py']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s tests -v

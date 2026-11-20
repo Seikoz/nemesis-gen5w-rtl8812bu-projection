@@ -33,7 +33,7 @@ usb_cp_read() {
     read -r record cached < "$W/usb-cp-state"
     [ "$record" = "boot=$boot" ] || cached=
   fi
-  record=$(printf '%s\n%s\n' "$cached" "$property" | usb_cp_record_shape |
+  record=$("$BB" printf '%s\n%s\n' "$cached" "$property" | usb_cp_record_shape |
     "$BB" awk -F, '$5+0>time || ($5+0==time && $6+0>=seq) {v=$0; time=$5+0; seq=$6+0} END {print v}')
   [ -n "$record" ] || return 0
   IFS=, read -r record pid start generation millis seq state transport <<EOF
@@ -67,7 +67,7 @@ usb_cp_poll() {
     /USB_CP_EVENT v1,/ {sub(/^.*USB_CP_EVENT /, ""); print}' |
     usb_cp_record_shape > "$snapshot"
   property=$(getprop sys.kp.cp_session 2>/dev/null | usb_cp_record_shape)
-  [ -z "$property" ] || printf '%s\n' "$property" >> "$snapshot"
+  [ -z "$property" ] || "$BB" printf '%s\n' "$property" >> "$snapshot"
   if [ -r "$W/usb-cp-state" ]; then
     read -r record old < "$W/usb-cp-state"
     [ "$record" = "boot=$boot" ] || old=
@@ -80,7 +80,7 @@ usb_cp_poll() {
       cat "$snapshot"
     } | "$BB" awk '!seen[$0]++ {line[n++%120]=$0} END {for(i=(n>120?n-120:0);i<n;i++) print line[i%120]}'
   } > "$W/.usb-carplay-events.next" && "$BB" mv -f "$W/.usb-carplay-events.next" "$W/usb-carplay-events.log"
-  selected=$( { printf '%s\n' "$old"; cat "$snapshot"; } | usb_cp_record_shape |
+  selected=$( { "$BB" printf '%s\n' "$old"; cat "$snapshot"; } | usb_cp_record_shape |
     "$BB" awk -F, '$5+0>time || ($5+0==time && $6+0>=seq) {v=$0;time=$5+0;seq=$6+0} END {print v}')
   if [ -n "$selected" ]; then
     echo "boot=$boot $selected" > "$W/.usb-cp-state.next" &&
