@@ -88,7 +88,8 @@ check_korea_projection() {
         case "$line" in
             'name=Korea Projection CN7NPE USB Test'|'name="Korea Projection CN7NPE USB Test"'|\
             'name=Korea Projection CN7NPE BETA'|'name="Korea Projection CN7NPE BETA"'|\
-            'name=Korea Projection CN7PE / CN7NPE BETA'|'name="Korea Projection CN7PE / CN7NPE BETA"')
+            'name=Korea Projection CN7PE / CN7NPE BETA'|'name="Korea Projection CN7PE / CN7NPE BETA"'|\
+            'name=Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA'|'name="Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"')
                 projection_usb_test=1
                 ;;
             package-version=*)
@@ -113,6 +114,7 @@ is_avante_boot_reset_target() {
     [ "$platform" = tcc803x ] || return 1
     case "$(getprop ro.build.product)" in
         CN7PE.KOR.0000.V039.001.260902|CN7PE.KOR.S5W_M.V039.001.260902|\
+        CN7HEVPE.KOR.0000.V039.001.260902|CN7HEVPE.KOR.S5W_M.V039.001.260902|\
         CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902) return 0 ;;
     esac
     return 1

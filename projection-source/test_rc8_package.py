@@ -5,10 +5,10 @@ from zipfile import ZipFile
 import hashlib,json,os,subprocess,sys,tempfile,urllib.request
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from build_wireless_mod import rebase_files
+from build_wireless_mod import hybrid_files, rebase_files
 sdk=Path(os.environ['HMGAPI_SDK'])
 model=sys.argv[2].lower()
-assert model in ('cn7npe','cn7pe')
+assert model in ('cn7npe','cn7pe','cn7hevpe')
 product=f'{model.upper()}.KOR.0000.V039.001.260902'
 onebin=f'{model}_kr'
 def fetch(url,digest):
@@ -36,6 +36,14 @@ if model=='cn7pe':
                 vehicle.update(json.loads(core.read(name)))
         points=('\n'.join(sorted(vehicle))+'\n').encode()
 files,_=rebase_files(base,Path(sys.argv[1]).read_bytes(),previous)
+if model=='cn7hevpe':
+    report=json.loads(fetch('https://github.com/user-attachments/files/34976977/2-car-report.json',
+                            '45a00902da6b533b4812942ede383a048a0d14ed179bb2a7a272e04b7c2b38e1'))
+    assert report['unit']['product']==product and report['unit']['platform']=='tcc803x'
+    assert report['unit']['onebin']==onebin and report['verify_map']['ok']
+    points=('\n'.join(sorted(report['map_car']['points']))+'\n').encode()
+    files=hybrid_files(files,Path(sys.argv[3]).read_bytes())
+    assert 'dipo.carplay.native_iap_send' in points.decode().splitlines()
 assert set(json.loads(files['mod.json'])['hooks']['points']) <= set(points.decode().splitlines())
 def write(path,content):
     path.parent.mkdir(parents=True,exist_ok=True)

@@ -9,15 +9,15 @@ import zipfile
 from pathlib import Path
 
 from build_package import MODULES, PACKAGE_PATH, RESET_HELPER_PATH, ROOT, archive, build_driver_package
-from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, verify_mod
+from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, HYBRID_VERSION, hybrid_files, verify_mod
 
 
 PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "16bea991f1c541acccea658f766971fac0b9d41caf34d6ca7523c9007fc41a63"
-PROJECTION_NAME = "Korea Projection CN7PE / CN7NPE BETA"
+PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
-                 for model in ("CN7PE", "CN7NPE") for variant in ("0000", "S5W_M"))
+                 for model in ("CN7PE", "CN7HEVPE", "CN7NPE") for variant in ("0000", "S5W_M"))
 BASE_PRODUCTS = b"CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902"
 USB_LIST = f"""[nemesis]
 version=1.1
@@ -26,7 +26,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name={PROJECTION_NAME}
-short-desc=v1.7.4.30 - Installs HMG-API, wireless mode and Realtek driver
+short-desc=v1.7.4.31 - Installs HMG-API, wireless mode and Realtek driver
 
 [package.1]
 path={HMG_API}
@@ -36,7 +36,7 @@ short-desc=1.1.0-rc.7 - Core runtime and mod manager
 [package.2]
 path={PACKAGE_PATH}
 name=Realtek Wi-Fi Driver
-short-desc=v1.1.18 - RTL8812BU USB Wi-Fi driver
+short-desc=v1.1.19 - RTL8812BU USB Wi-Fi driver
 """
 
 
@@ -297,11 +297,20 @@ def allow_avante_products(script):
     return script.replace(BASE_PRODUCTS, "|".join(PRODUCTS).encode("ascii"))
 
 
-def check_cn7pe_map_before_start(hotspot, status):
+def check_avante_map_before_start(hotspot, status, hybrid_digest):
     anchor = b'  usb_audio_reconcile > "$W/usb-audio-apply.log" 2>&1'
     if hotspot.count(anchor) != 1:
         raise ValueError("Expected wireless setup after USB readiness")
     gate = '''  case "$prod" in
+    CN7HEVPE.KOR.*)
+      prog 20 run "CN7HEVPE 차량 지도를 확인하는 중입니다."
+      if ! usb_hybrid_map_ready > "$W/usb-cn7hevpe-map.log" 2>&1; then
+        log "CN7HEVPE map or required hooks failed validation; see usb-cn7hevpe-map.log."
+        prog 100 fail "CN7HEVPE 차량 지도 확인에 실패했습니다. HMG-API 차량 제보를 확인해 주세요."
+        idle_req
+      fi
+      log "CN7HEVPE local map verified before wireless setup."
+      ;;
     CN7PE.KOR.*)
       if ! "$BB_OWN" timeout 30 hmgapid engine verify-map > "$W/usb-cn7pe-map.log" 2>&1; then
         log "CN7PE HMG-API map verification failed; see usb-cn7pe-map.log."
@@ -312,11 +321,28 @@ def check_cn7pe_map_before_start(hotspot, status):
       ;;
   esac
 '''.encode()
-    status = status.replace(b'$W/usb-boot-setup.log', b'$W/usb-boot-setup.log $W/usb-cn7pe-map.log')
+    status = status.replace(b'$W/usb-boot-setup.log', b'$W/usb-boot-setup.log $W/usb-cn7pe-map.log $W/usb-cn7hevpe-map.log')
+    definitions = b'\nmain() {\n'
+    if hotspot.count(definitions) != 1:
+        raise ValueError("Expected one AP service entry point")
+    helper = (ROOT / 'bundle/usb-hybrid-map.sh').read_bytes()
+    hotspot = hotspot.replace(definitions, b'\n' + helper + definitions)
+    version = b'MOD_VER=2.4.15\n'
+    if hotspot.count(version) != 1:
+        raise ValueError("Expected one standard wireless version")
+    selected = f'''case "$(getprop ro.build.product)" in
+  CN7HEVPE.KOR.*)
+    KP_HMG="$KP_HMG/cn7hevpe"
+    MOD_VER={HYBRID_VERSION}
+    MOD_MD5={hybrid_digest}
+    ;;
+esac
+'''.encode("ascii")
+    hotspot = hotspot.replace(version, version + selected)
     return allow_avante_products(hotspot.replace(anchor, gate + anchor)), status
 
 
-def build_projection_package(source, wireless, station_counter, link_diagnostics):
+def build_projection_package(source, wireless, hybrid, station_counter, link_diagnostics):
     if (station_counter[:6] != b'\x7fELF\x01\x01' or len(station_counter) < 20 or
             struct.unpack_from('<HH', station_counter, 16) != (3, 40) or
             b'/system/bin/linker\0' not in station_counter or
@@ -328,42 +354,42 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         raise ValueError('Expected the Android ARMv7 mDNS diagnostics helper')
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.30\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.31\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
-            b'depends="hmgapi@>=1.0.99.7,realtek.88x2bu@>=1.1.18,!niro.carplay.hotspot"\n',
+            b'depends="hmgapi@>=1.0.99.7,realtek.88x2bu@>=1.1.19,!niro.carplay.hotspot"\n',
         )
         descriptor = descriptor.replace(
             b"CN7NPE KOR 260902, HMG-API and RTL8812BU v1.1.4 required.",
-            b"CN7PE/CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.7+ and Realtek 1.1.18+.",
+            b"CN7PE/CN7HEVPE/CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.7+ and Realtek 1.1.19+.",
         )
         descriptor = descriptor.replace(b'name=Korea Projection CN7NPE USB Test\n',
                                         f'name={PROJECTION_NAME}\n'.encode("ascii"))
         descriptor = descriptor.replace(b'os="CN7NPE.KOR.*.260902"\n',
                                         f'os="{",".join(PRODUCTS)}"\n'.encode("ascii"))
-        descriptor = descriptor.replace(b'models="cn7npe_kr"\n', b'models="cn7pe_kr,cn7npe_kr"\n')
+        descriptor = descriptor.replace(b'models="cn7npe_kr"\n', b'models="cn7pe_kr,cn7hevpe_kr,cn7npe_kr"\n')
         descriptor = descriptor.replace(b'Experimental wireless CarPlay for CN7NPE 260902 and A3000mini',
-                                        b'CN7PE/CN7NPE KOR 260902 USB wireless projection')
+                                        b'CN7PE/CN7HEVPE/CN7NPE KOR 260902 USB wireless projection')
         preinstall = allow_avante_products(package.read("scripts/preinstall.sh"))
         preinstall = preinstall.replace(b'Requires CN7NPE KOR V039.001.260902',
-                                        b'Requires CN7PE or CN7NPE KOR V039.001.260902')
+                                        b'Requires CN7PE, CN7HEVPE or CN7NPE KOR V039.001.260902')
         preinstall = preinstall.replace(
             b"grep -q '^name=Korea Projection CN7NPE USB Test$'",
-            b"grep -Eq '^name=Korea Projection (CN7NPE (USB Test|BETA)|CN7PE / CN7NPE BETA)$'",
+            b"grep -Eq '^name=Korea Projection (CN7NPE (USB Test|BETA)|CN7PE / (CN7HEVPE / )?CN7NPE BETA)$'",
         )
         preinstall = preinstall.replace(
             b"Install and launch the RTL8812BU driver v1.1.4 first.",
-            b"Install the RTL8812BU driver v1.1.18 or later first.",
+            b"Install the RTL8812BU driver v1.1.19 or later first.",
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31)$'",
         )
         old_version_guard = b'''grep -q '"version": "2.4.6"' "$mod/META-HMGAPI/manifest.json"'''
         if preinstall.count(old_version_guard) != 1:
             raise ValueError('Expected existing-author mod upgrade guard')
         preinstall = preinstall.replace(old_version_guard,
-            rb'''grep -Eq '"version": "2\.4\.([6-9]|10|11|12|13|14|15)"' "$mod/META-HMGAPI/manifest.json"''')
+            rb'''grep -Eq '"version": "2\.4\.([6-9]|10|11|12|13|14|15|16)"' "$mod/META-HMGAPI/manifest.json"''')
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
    ! { [ -r "$installed" ] && [ -f /data/nemesis/backup/korea.projection/mod.ours ] &&''',
@@ -393,30 +419,42 @@ done''',
         old_wireless = package.read('hmgapi/wireless-carplay-aa.zip')
         if hashlib.sha256(old_wireless).hexdigest() != WIRELESS_BASE_SHA256:
             raise ValueError('Expected the original CN7NPE wireless mod 2.4.6')
-        verify_mod(wireless)
+        standard_files, author = verify_mod(wireless)
+        hybrid_payload, hybrid_author = verify_mod(hybrid, HYBRID_VERSION)
+        if author != hybrid_author or hybrid_payload != hybrid_files(standard_files, hybrid_payload['hooks.jar']):
+            raise ValueError("The hybrid mod must match the expected CN7HEVPE variant")
         hotspot = add_network_upgrade(add_station_counts(changes['svc/hotspot.sh']))
         hotspot, changes['bin/status.sh'] = add_session_diagnostics(hotspot, changes['bin/status.sh'])
         changes['bin/status.sh'] = changes['bin/status.sh'].replace(b'$W/mod-apply.txt', b'$W/mod-apply.txt $W/usb-audio-apply.log $W/usb-mod-files-check.log $W/usb-boot-setup.log')
         hotspot, changes['bin/status.sh'] = add_boot_timing(hotspot, changes['bin/status.sh'])
-        hotspot, changes['bin/status.sh'] = check_cn7pe_map_before_start(hotspot, changes['bin/status.sh'])
         old_digest = hashlib.md5(old_wireless, usedforsecurity=False).hexdigest().encode()
         new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
         if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:
             raise ValueError('Expected mod version and checksum installer hooks')
-        changes['svc/hotspot.sh'] = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.15').replace(
+        hotspot = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.15').replace(
             b'MOD_MD5=' + old_digest, b'MOD_MD5=' + new_digest)
+        hybrid_digest = hashlib.md5(hybrid, usedforsecurity=False).hexdigest()
+        changes['svc/hotspot.sh'], changes['bin/status.sh'] = check_avante_map_before_start(
+            hotspot, changes['bin/status.sh'], hybrid_digest)
         changes['hmgapi/wireless-carplay-aa.zip'] = wireless
-        with zipfile.ZipFile(io.BytesIO(wireless)) as signed_mod:
-            checksums = ''.join(hashlib.md5(signed_mod.read(name), usedforsecurity=False).hexdigest() +
-                                '  ' + name + '\n' for name in sorted(signed_mod.namelist()))
+        required = set(json.loads(hybrid_payload['mod.json'])['hooks']['points'])
+        required.add('dipo.carplay.native_iap_send')
+        hmg_files = {}
+        for prefix, mod in (('hmgapi/', wireless), ('hmgapi/cn7hevpe/', hybrid)):
+            with zipfile.ZipFile(io.BytesIO(mod)) as signed_mod:
+                checksums = ''.join(hashlib.md5(signed_mod.read(name), usedforsecurity=False).hexdigest() +
+                                    '  ' + name + '\n' for name in sorted(signed_mod.namelist()))
+            hmg_files[prefix + 'usb-mod-files.md5'] = checksums.encode("ascii")
+        hmg_files['hmgapi/cn7hevpe/wireless-carplay-aa.zip'] = hybrid
+        hmg_files['hmgapi/cn7hevpe/required-hooks.txt'] = ('\n'.join(sorted(required)) + '\n').encode("ascii")
         # Use the original source commit so the notice survives release tag cleanup.
         source_notice = package.read("licenses/Source.md")
         old_ref = b"/tree/kp-usb-test-v0.1.4/projection-usb"
         if source_notice.count(old_ref) != 1:
             raise ValueError("Expected the Korea Projection source link in the base package")
-        changes["licenses/Source.md"] = source_notice.replace(b"Korea Projection CN7NPE USB Test", b"Korea Projection CN7PE / CN7NPE BETA").replace(
+        changes["licenses/Source.md"] = source_notice.replace(b"Korea Projection CN7NPE USB Test", PROJECTION_NAME.encode("ascii")).replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        ) + b'\nWireless mod 2.4.15 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.25/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.25/bundle\n'
+        ) + b'\nWireless mod 2.4.15 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.26/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.26/bundle\n'
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -429,10 +467,11 @@ done''',
                 entry.create_system = 3
                 entry.external_attr = 0o100755 << 16
                 updated.writestr(entry, data, compress_type=zipfile.ZIP_DEFLATED)
-            entry = zipfile.ZipInfo('hmgapi/usb-mod-files.md5', date_time=(1980, 1, 1, 0, 0, 0))
-            entry.create_system = 3
-            entry.external_attr = 0o100644 << 16
-            updated.writestr(entry, checksums.encode('ascii'), compress_type=zipfile.ZIP_DEFLATED)
+            for name, data in hmg_files.items():
+                entry = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+                entry.create_system = 3
+                entry.external_attr = 0o100644 << 16
+                updated.writestr(entry, data, compress_type=zipfile.ZIP_DEFLATED)
         return output.getvalue()
 
 
@@ -443,7 +482,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.7 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7PE-CN7NPE-260902-Bundle-v0.1.25-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-Avante-260902-Bundle-v0.1.26-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,
@@ -453,6 +492,8 @@ def main():
                         help="Android ARMv7 helper with the scoped EHCI recovery command")
     parser.add_argument('--wireless-mod', required=True, type=Path,
                         help='Same-author signed wireless mod 2.4.15 with session callbacks and local TCP/UDP rules')
+    parser.add_argument('--hybrid-wireless-mod', required=True, type=Path,
+                        help='Same-author CN7HEVPE wireless mod 2.4.16')
     parser.add_argument('--station-counter', required=True, type=Path,
                         help='Android ARMv7 read-only hostapd station counter')
     parser.add_argument('--link-diagnostics', required=True, type=Path,
@@ -477,7 +518,9 @@ def main():
             "INSTALL-KO.md": (guide / "INSTALL-KO.md").read_bytes(),
             "licenses/HMG-API-AGPL-3.0.txt": (guide / "licenses" / "HMG-API-AGPL-3.0.txt").read_bytes(),
             PACKAGE_PATH: driver,
-            PROJECTION: build_projection_package(projection_base, args.wireless_mod.read_bytes(), args.station_counter.read_bytes(), args.link_diagnostics.read_bytes()),
+            PROJECTION: build_projection_package(projection_base, args.wireless_mod.read_bytes(),
+                                                 args.hybrid_wireless_mod.read_bytes(),
+                                                 args.station_counter.read_bytes(), args.link_diagnostics.read_bytes()),
             HMG_API: read_verified_release(args.hmg_api, HMG_API_SHA256),
         })
         args.output.parent.mkdir(parents=True, exist_ok=True)

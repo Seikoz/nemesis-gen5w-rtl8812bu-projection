@@ -50,3 +50,9 @@ PY
 sha256sum "$out/hooks.jar"
 python3 "$src/test_rc8_package.py" "$out/hooks.jar" cn7npe
 python3 "$src/test_rc8_package.py" "$out/hooks.jar" cn7pe
+python3 "$src/patch_hybrid_rc8.py" "$mod/src/hmgapi/mods/wireless"
+mkdir -p "$work/hybrid-classes"
+javac --release 8 -cp "$ANDROID_JAR:$work/runtime:$work/mod-stubs" -d "$work/hybrid-classes" $(find "$mod/src" -name '*.java')
+"$d8" --release --min-api 19 --lib "$ANDROID_JAR" --classpath "$work/runtime" --classpath "$work/mod-stubs" --output "$out/hooks-hybrid.jar" $(find "$work/hybrid-classes" -name '*.class')
+sha256sum "$out/hooks-hybrid.jar"
+python3 "$src/test_rc8_package.py" "$out/hooks.jar" cn7hevpe "$out/hooks-hybrid.jar"
