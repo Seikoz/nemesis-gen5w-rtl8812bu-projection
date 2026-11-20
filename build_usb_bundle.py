@@ -174,6 +174,14 @@ def add_station_counts(hotspot):
 
 
 def add_network_upgrade(hotspot):
+    update = '  log "무선 모드 업데이트함: $_iv → $MOD_VER"\n'.encode()
+    if hotspot.count(update) != 1:
+        raise ValueError('Expected successful wireless mod upgrade hook')
+    hotspot = hotspot.replace(update, update + b'''  if usb_target && ! usb_network allow > "$W/usb-network.log" 2>&1; then
+    log "USB wireless network setup failed; see usb-network.log."
+    return 1
+  fi
+''')
     start = hotspot.index(b'\nplan_only_mod() {') + 1
     end = hotspot.index(b'\n}\n', start) + 3
     hotspot = hotspot[:start] + (ROOT / 'bundle/usb-mod-plan.sh').read_bytes() + hotspot[end:]
@@ -259,7 +267,7 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         if preinstall.count(old_version_guard) != 1:
             raise ValueError('Expected existing-author mod upgrade guard')
         preinstall = preinstall.replace(old_version_guard,
-            rb'''grep -Eq '"version": "2\.4\.([6-9]|10)"' "$mod/META-HMGAPI/manifest.json"''')
+            rb'''grep -Eq '"version": "2\.4\.([6-9]|10|11)"' "$mod/META-HMGAPI/manifest.json"''')
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
    ! { [ -r "$installed" ] && [ -f /data/nemesis/backup/korea.projection/mod.ours ] &&''',
@@ -296,7 +304,7 @@ done''',
         new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
         if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:
             raise ValueError('Expected mod version and checksum installer hooks')
-        changes['svc/hotspot.sh'] = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.10').replace(
+        changes['svc/hotspot.sh'] = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.11').replace(
             b'MOD_MD5=' + old_digest, b'MOD_MD5=' + new_digest)
         changes['hmgapi/wireless-carplay-aa.zip'] = wireless
         # Use the original source commit so the notice survives release tag cleanup.
@@ -306,7 +314,7 @@ done''',
             raise ValueError("Expected the Korea Projection source link in the base package")
         changes["licenses/Source.md"] = source_notice.replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        ) + b'\nWireless mod 2.4.10 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/bundle\n'
+        ) + b'\nWireless mod 2.4.11 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/bundle\n'
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -338,7 +346,7 @@ def main():
     parser.add_argument("--usb-reset-helper", required=True, type=Path,
                         help="Android ARMv7 helper with the scoped EHCI recovery command")
     parser.add_argument('--wireless-mod', required=True, type=Path,
-                        help='Same-author signed wireless mod 2.4.10 with session callbacks and local TCP/UDP rules')
+                        help='Same-author signed wireless mod 2.4.11 with session callbacks and local TCP/UDP rules')
     parser.add_argument('--station-counter', required=True, type=Path,
                         help='Android ARMv7 read-only hostapd station counter')
     parser.add_argument('--link-diagnostics', required=True, type=Path,

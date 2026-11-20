@@ -14,6 +14,8 @@ download() {
 download mod https://codeload.github.com/Open-HMG/hmgapi-wireless-cp-aa/zip/c47c0bbf8513e725c9852acb932bdde39e3d7edc 5954b64ca3f962542192c2956e37d61c19f68c3f4dcf1d03b3c4f5bf141df59a
 download core https://codeload.github.com/Open-HMG/HMG-API/zip/5732e261f544ef780bc0e4a5f7400ccc1b98edaa d0fa2e5135adb120e7f43f36d30a436eb39c86ead332ec1aaecc626f790f7347
 download old https://codeload.github.com/StopDragon/HMG-API/zip/b573ac624e284cd7d6e0a7b9fa6c32862c528988 989d99692c66f5e9ac49ec40081668aa6f31a5c90f9e7f39f358d6dd0d2c78f5
+download sdk https://github.com/Open-HMG/HMG-API/releases/download/v1.1.0-rc.7/hmgapi-mod-sdk-1.1.0-rc.7.zip ea5a9b2b84a48ebf25fe09b2a34bf22162b8b06f8b0f9bd6b43ff4aae234070a
+export HMGAPI_SDK="$work/sdk"
 mod="$work/mod/hmgapi-wireless-cp-aa-c47c0bbf8513e725c9852acb932bdde39e3d7edc/wireless-carplay-aa"
 core="$work/core/HMG-API-5732e261f544ef780bc0e4a5f7400ccc1b98edaa"
 old="$work/old/HMG-API-b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa"
@@ -45,3 +47,4 @@ with zipfile.ZipFile(sys.argv[1]) as z:
         assert token in dex,token
 PY
 sha256sum "$out/hooks.jar"
+python3 "$src/test_rc8_package.py" "$out/hooks.jar"

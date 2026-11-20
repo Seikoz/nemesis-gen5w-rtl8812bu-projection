@@ -1,4 +1,4 @@
-"""Build a same-author wireless-mod update from the published 2.4.6 payload."""
+"""Rebase the signed RTL8812BU mod on official wireless 2.2.0-rc.8."""
 import argparse
 import base64
 import hashlib
@@ -16,7 +16,16 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.10'
+VERSION = '2.4.11'
+UPSTREAM_SHA256 = '4837efbfc1e71a7f30c65c7d914dc7d00aa788cc7ab4ea17b1a1860e6e96d4ee'
+UPSTREAM_AUTHOR = '7251ce71-a146-8a1e-958b-dbffc6af7359'
+PREVIOUS_SHA256 = 'd434b002668558ebad10a84e6cbf12312fb3d95a9cc3e7ff1461e760819d8141'
+UNMAPPED_RC4 = {
+    'framework.activity.start_activity_for_result', 'gpm.receiver_service.on_create',
+    'framework.pp_service.connect_pp', 'framework.pp_service.send_connect_pp_from_bt',
+    'framework.pp_service.disconnect_pp', 'framework.pp_service.cancel_connection_pp',
+    'framework.pp_service.on_wireless_connected', 'framework.pp_service.on_wireless_disconnected',
+}
 
 
 def dynamic_tcp_rules():
@@ -42,7 +51,7 @@ def json_bytes(value):
     return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
 
 
-def verify_mod(data, version=VERSION):
+def verify_mod(data, version=VERSION, author=AUTHOR):
     with zipfile.ZipFile(io.BytesIO(data)) as package:
         names = package.namelist()
         if len(names) != len(set(names)) or package.testzip() is not None:
@@ -52,15 +61,15 @@ def verify_mod(data, version=VERSION):
     signature = base64.b64decode(files.pop('META-HMGAPI/signature'), validate=False)
     manifest = json.loads(manifest_bytes)
     mod = json.loads(files['mod.json'])
-    if manifest['uuid'] != AUTHOR or manifest['id'] != MOD or manifest['version'] != version:
+    if manifest['uuid'] != author or manifest['id'] != MOD or manifest['version'] != version:
         raise ValueError('Unexpected wireless mod author, ID or version')
     if mod['id'] != MOD or mod['version'] != version:
         raise ValueError('Signed manifest does not match mod metadata')
     public = base64.b64decode(manifest['key'], validate=True)
-    author = bytearray(hashlib.sha256(public).digest()[:16])
-    author[6] = (author[6] & 0x0f) | 0x80
-    author[8] = (author[8] & 0x3f) | 0x80
-    if str(uuid.UUID(bytes=bytes(author))) != AUTHOR:
+    derived = bytearray(hashlib.sha256(public).digest()[:16])
+    derived[6] = (derived[6] & 0x0f) | 0x80
+    derived[8] = (derived[8] & 0x3f) | 0x80
+    if str(uuid.UUID(bytes=bytes(derived))) != author:
         raise ValueError('Signing key does not match the existing author')
     key = serialization.load_der_public_key(public)
     if not isinstance(key, ec.EllipticCurvePublicKey) or not isinstance(key.curve, ec.SECP256R1):
@@ -71,28 +80,69 @@ def verify_mod(data, version=VERSION):
     return files, public
 
 
-def build_mod(base, hooks, key_path):
-    if hashlib.sha256(base).hexdigest() != BASE_SHA256:
-        raise ValueError('Expected the published CN7NPE wireless mod 2.4.6')
-    files, public = verify_mod(base, '2.4.6')
+def rebase_files(base, hooks, previous):
+    if hashlib.sha256(base).hexdigest() != UPSTREAM_SHA256:
+        raise ValueError('Expected official wireless 2.2.0-rc.8')
+    if hashlib.sha256(previous).hexdigest() != PREVIOUS_SHA256:
+        raise ValueError('Expected the verified previous USB mod 2.4.10')
+    files, _ = verify_mod(base, '2.2.0-rc.8', UPSTREAM_AUTHOR)
+    old_files, public = verify_mod(previous, '2.4.10')
     with zipfile.ZipFile(io.BytesIO(hooks)) as jar:
         dex = jar.read('classes.dex')
         if (jar.testzip() is not None or not dex.startswith(b'dex\n035\0') or
                 b'rtwlan0\0' not in dex or b'\x05wlan0\0' in dex or
                 b'USB hotspot ready; starting Bluetooth iAP2' not in dex or
                 b'USB_CP_EVENT ' not in dex or b'sys.kp.cp_session' not in dex or
-                b'USB_CP_HANDOVER stage=spp-down-preserved raw_transport=' not in dex):
-            raise ValueError('Expected Android API 19 USB AP wait hooks')
+                b'USB_CP_HANDOVER stage=spp-down-preserved raw_transport=' not in dex or
+                b'UsbAp;' not in dex or b'ParkCp;' not in dex or b'CpTx;' not in dex):
+            raise ValueError('Expected Android API 19 rc.8 USB hooks')
+    mod = json.loads(files['mod.json'])
+    mod['version'] = VERSION
+    mod['name'] = 'RTL8812BU USB Wireless (based on 2.2.0-rc.8)'
+    mod['description'] = 'Official rc.8 rebased for the checked CN7NPE KOR 260902 map and Korea Projection rtwlan0 AP.'
+    mod['hmgapi'] = '>=1.1.0-rc.7'
+    mod['system'] = json.loads(old_files['mod.json'])['system']
+    mod.pop('wifi')  # built-in wlan0/SDIO management must not own the USB hostapd
+    mod['hooks']['points'] = {k:v for k,v in mod['hooks']['points'].items() if k not in UNMAPPED_RC4}
+    mod['network'] = json.loads(old_files['mod.json'])['network']
+    mod['network']['rules'].append({
+        'chain':'input','in':'rtwlan0','from':'192.168.43.0/24','to':'192.168.43.1',
+        'ip':4,'proto':'tcp','ports':[40515],'state':['new'],'action':'accept','when':'settings.aa_firewall',
+    })
+    patches = json.loads(files['patches.json'])
+    patches['cars'] = {'CN7NPE.KOR.':'usb_cn7npe'}
+    patches['changes'].insert(0,json.loads(old_files['patches.json'])['changes'][0])
+    files['patches/usb_cn7npe/stock'] = b''
+    files['patches/usb_cn7npe/expect'] = b''
+    files['patches.json'] = json_bytes(patches)
+    settings = json.loads(files['settings.json'])
+    settings['settings'] = [x for x in settings['settings'] if x['key'] != 'cp_firewall']
+    for entry in settings['settings']:
+        if entry['key'] == 'aa_firewall': entry['default'] = True
+    keys = {x['key'] for x in settings['settings']}
+    for entry in json.loads(old_files['settings.json'])['settings']:
+        if entry['key'] in ('aa_ap','aa_ready_resend') and entry['key'] not in keys:
+            settings['settings'].append(entry)
+    files['settings.json'] = json_bytes(settings)
+    files['USB-SOURCE.md'] = (
+        'RTL8812BU USB mod 2.4.11 (local upgrade version), based on official 2.2.0-rc.8.\n'
+        'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
+        'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
+        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\n'
+        'AGPL-3.0. Signed by the existing local author; not an unmodified official package.\n'
+        'Eight hooks newer than the checked 351-point map are omitted; their consumers are not registered.\n'
+    ).encode()
+    files['mod.json'] = json_bytes(mod)
+    files['hooks.jar'] = hooks
+    return files, public
+
+
+def build_mod(base, hooks, previous, key_path):
+    files, public = rebase_files(base, hooks, previous)
     key = serialization.load_pem_private_key(key_path.read_bytes(), None)
     if key.public_key().public_bytes(serialization.Encoding.DER,
                                      serialization.PublicFormat.SubjectPublicKeyInfo) != public:
         raise ValueError('Use the existing mod author key to preserve upgrade compatibility')
-    mod = json.loads(files['mod.json'])
-    mod['version'] = VERSION
-    mod['network']['rules'].extend(dynamic_tcp_rules())
-    mod['network']['rules'].extend(ipv6_udp_rules())
-    files['mod.json'] = json_bytes(mod)
-    files['hooks.jar'] = hooks
     manifest = json_bytes({
         'format': 1, 'id': MOD, 'version': VERSION, 'uuid': AUTHOR,
         'key': base64.b64encode(public).decode(),
@@ -109,10 +159,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base-mod', type=Path, required=True)
     parser.add_argument('--hooks', type=Path, required=True)
+    parser.add_argument('--previous-mod', type=Path, required=True)
     parser.add_argument('--key', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
-    content = build_mod(args.base_mod.read_bytes(), args.hooks.read_bytes(), args.key)
+    content = build_mod(args.base_mod.read_bytes(), args.hooks.read_bytes(), args.previous_mod.read_bytes(), args.key)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(content)
     print('Built wireless mod', VERSION)
