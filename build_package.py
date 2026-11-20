@@ -102,7 +102,7 @@ def build_driver_package(modules, helper, *, diagnostics=False):
             name = path.relative_to(package_dir).as_posix()
             text = path.read_text(encoding="utf-8")
             if diagnostics and name == "NEMESIS.data":
-                text = text.replace("package-version=1.1.9\n", "package-version=1.1.17\n")
+                text = text.replace("package-version=1.1.9\n", "package-version=1.1.18\n")
             if diagnostics and name == "MODULE-SOURCE.txt":
                 text = (
                     "The Gen5W diagnostic modules are based on GRT47 v2.0.7. "

@@ -48,7 +48,7 @@ echo 480 > "$PWD/usb/4-1/speed"
             setup=r'''
 PATH=$TEST_BIN
 package_dir="$PWD/app"
-is_cn7npe_boot_reset_target() { return 0; }
+is_avante_boot_reset_target() { return 0; }
 read_boot_id() { boot_id=a1111111-1111-1111-1111-111111111111; }
 identify_dongle() {
  vendor=0bda product=b812
@@ -83,7 +83,7 @@ recover_high_speed; echo second=$?
         self.assertEqual(files['called'].count('--high-speed'),1)
 
     def test_already_480_or_other_target_does_not_execute_or_chmod(self):
-        for command in ('echo 480 > usb/3-1/speed','is_cn7npe_boot_reset_target() { return 1; }'):
+        for command in ('echo 480 > usb/3-1/speed','is_avante_boot_reset_target() { return 1; }'):
             out,err,files,markers,mode=self.run_case(commands=command+'\nrecover_high_speed; echo rc=$?')
             self.assertEqual(err,'');self.assertIn('rc=0',out)
             self.assertNotIn('called',files);self.assertEqual(markers,[]);self.assertEqual(mode,0o644)

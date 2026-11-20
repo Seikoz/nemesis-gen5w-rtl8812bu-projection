@@ -86,7 +86,9 @@ check_korea_projection() {
     [ -r "$descriptor" ] || return 0
     while IFS= read -r line || [ -n "$line" ]; do
         case "$line" in
-            'name=Korea Projection CN7NPE USB Test'|'name="Korea Projection CN7NPE USB Test"')
+            'name=Korea Projection CN7NPE USB Test'|'name="Korea Projection CN7NPE USB Test"'|\
+            'name=Korea Projection CN7NPE BETA'|'name="Korea Projection CN7NPE BETA"'|\
+            'name=Korea Projection CN7PE / CN7NPE BETA'|'name="Korea Projection CN7PE / CN7NPE BETA"')
                 projection_usb_test=1
                 ;;
             package-version=*)
@@ -107,9 +109,10 @@ projection_rejects_usb() {
     return 1
 }
 
-is_cn7npe_boot_reset_target() {
+is_avante_boot_reset_target() {
     [ "$platform" = tcc803x ] || return 1
     case "$(getprop ro.build.product)" in
+        CN7PE.KOR.0000.V039.001.260902|CN7PE.KOR.S5W_M.V039.001.260902|\
         CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902) return 0 ;;
     esac
     return 1
@@ -188,7 +191,7 @@ recovery_kernel_log() {
 recover_high_speed() (
     local boot_id usb_speed lock marker attempt wait_count helper_rc limit result=1 recovery_uptime _
     local log_dir=/data/nemesis/logs/realtek.88x2bu
-    is_cn7npe_boot_reset_target && read_boot_id && identify_dongle &&
+    is_avante_boot_reset_target && read_boot_id && identify_dongle &&
         [ "$vendor:$product" = 0bda:b812 ] &&
         read -r usb_speed < "$usb/speed" && [ "$usb_speed" = 12 ] || return 0
     case "$boot_id" in ''|*[!0-9a-f-]*) return 1 ;; esac
@@ -409,7 +412,7 @@ report_interface() {
     elif [ "$boot_phase" = --boot ] && identify_dongle &&
          [ "$vendor:$product" = 0bda:b812 ] && [ ! -L "$usb_interface/driver" ] &&
          claim_boot_recovery; then
-        if is_cn7npe_boot_reset_target; then
+        if is_avante_boot_reset_target; then
             local reset_result
             if reset_result=$(reset_boot_dongle 2>&1); then
                 boot_reset="$reset_result"
@@ -432,7 +435,7 @@ report_interface() {
         fi
     fi
     if [ "$ready" -eq 1 ] && [ "$vendor:$product" = 0bda:b812 ] &&
-       is_cn7npe_boot_reset_target && read -r usb_speed < "$usb/speed" &&
+       is_avante_boot_reset_target && read -r usb_speed < "$usb/speed" &&
        [ "$usb_speed" != 480 ]; then
         message="A3000mini USB speed is ${usb_speed}Mbps; waiting for 480Mbps. See speed.log."
         save_launch_log "$message" failure

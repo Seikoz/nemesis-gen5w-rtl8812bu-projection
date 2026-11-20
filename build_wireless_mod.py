@@ -16,7 +16,7 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.14'
+VERSION = '2.4.15'
 DISPLAY_NAME = 'HMG-API Wireless Mode'
 UPSTREAM_SHA256 = '4837efbfc1e71a7f30c65c7d914dc7d00aa788cc7ab4ea17b1a1860e6e96d4ee'
 UPSTREAM_AUTHOR = '7251ce71-a146-8a1e-958b-dbffc6af7359'
@@ -101,9 +101,9 @@ def rebase_files(base, hooks, previous):
     mod = json.loads(files['mod.json'])
     mod['version'] = VERSION
     mod['name'] = DISPLAY_NAME
-    mod['description'] = 'Official rc.8 rebased for the checked CN7NPE KOR 260902 map and Korea Projection rtwlan0 AP.'
+    mod['description'] = 'Official rc.8 adapted for CN7PE and CN7NPE KOR 260902 and the Korea Projection rtwlan0 AP.'
     mod['hmgapi'] = '>=1.1.0-rc.7'
-    mod['system'] = json.loads(old_files['mod.json'])['system']
+    mod['system'] = [{'model': ['CN7PE', 'CN7NPE'], 'region': 'KOR', 'firmware': '260902'}]
     mod.pop('wifi')  # built-in wlan0/SDIO management must not own the USB hostapd
     mod['hooks']['points'] = {k:v for k,v in mod['hooks']['points'].items() if k not in UNMAPPED_RC4}
     mod['network'] = json.loads(old_files['mod.json'])['network']
@@ -112,10 +112,12 @@ def rebase_files(base, hooks, previous):
         'ip':4,'proto':'tcp','ports':[40515],'state':['new'],'action':'accept','when':'settings.aa_firewall',
     })
     patches = json.loads(files['patches.json'])
-    patches['cars'] = {'CN7NPE.KOR.':'usb_cn7npe'}
+    patches['cars'] = {'CN7NPE.KOR.': 'usb_cn7npe', 'CN7PE.KOR.': 'usb_cn7pe'}
     patches['changes'].insert(0,json.loads(old_files['patches.json'])['changes'][0])
     files['patches/usb_cn7npe/stock'] = b''
     files['patches/usb_cn7npe/expect'] = b''
+    files['patches/usb_cn7pe/stock'] = b''
+    files['patches/usb_cn7pe/expect'] = b''
     files['patches.json'] = json_bytes(patches)
     settings = json.loads(files['settings.json'])
     settings['settings'] = [x for x in settings['settings'] if x['key'] != 'cp_firewall']
@@ -127,7 +129,7 @@ def rebase_files(base, hooks, previous):
             settings['settings'].append(entry)
     files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] = (
-        'HMG-API USB wireless mod 2.4.14 (local upgrade version), based on official 2.2.0-rc.8.\n'
+        'HMG-API USB wireless mod 2.4.15 (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
         'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\n'

@@ -48,4 +48,5 @@ with zipfile.ZipFile(sys.argv[1]) as z:
         assert token in dex,token
 PY
 sha256sum "$out/hooks.jar"
-python3 "$src/test_rc8_package.py" "$out/hooks.jar"
+python3 "$src/test_rc8_package.py" "$out/hooks.jar" cn7npe
+python3 "$src/test_rc8_package.py" "$out/hooks.jar" cn7pe

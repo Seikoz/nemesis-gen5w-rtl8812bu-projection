@@ -72,7 +72,7 @@ while :; do
             attempt=$((attempt + 1))
             echo "Automatic Launch $attempt for $vendor:$product on $device."
             if [ "$attempt" -eq 2 ] && [ "$vendor:$product" = 0bda:b812 ] &&
-               is_cn7npe_boot_reset_target; then
+               is_avante_boot_reset_target; then
                 output=$(/system/bin/sh "$loader" --boot 2>&1)
             else
                 output=$(/system/xbin/nemesis pkg-launch realtek.88x2bu 2>&1)
