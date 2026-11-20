@@ -2,12 +2,12 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
-**[USB 설치 ZIP v0.1.15 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.15/NEMESIS-CN7NPE-260902-Bundle-v0.1.15-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.15) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.16 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.16/NEMESIS-CN7NPE-260902-Bundle-v0.1.16-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.16) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.20 |
-| Realtek RTL8812BU USB Driver | 1.1.14 |
+| Korea Projection CN7NPE USB Test | 1.7.4.21 |
+| Realtek RTL8812BU USB Driver | 1.1.15 |
 | HMG-API 본체 | 1.1.0-rc.4 |
 | HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.10 |
 
@@ -52,10 +52,15 @@ v0.1.15는 USB가 OHCI 12Mbps로 인식된 상태에서 EHCI 복구 도구가 `P
 
 여기의 **12/480Mbps는 USB 버스 인식 속도이며 Wi-Fi 링크 속도나 실제 전송량이 아닙니다.** 물리 연결이나 장치 상태 때문에 480Mbps를 확인하지 못하면 AP 시작을 계속 대기하고 `speed.log`에 결과를 남깁니다. 실차의 480Mbps 인식과 카플레이 연결 지속 여부는 확인이 필요합니다. 무선 모드 **2.4.10**의 세션 판정·iAP2 이관과 기존 드라이버 커널 모듈은 유지합니다.
 
+v0.1.16은 소유권 반환 뒤에도 USB 12Mbps가 유지되면 **외부 OHCI/EHCI 컨트롤러를 EHCI 우선 순서로 다시 초기화하는 두 번째 단계**를 자동 시도합니다. 직결 A3000mini 한 대, 단일 포트의 유일한 외부 플랫폼 컨트롤러 쌍, 비어 있는 EHCI와 내려간 인터페이스를 확인한 경우에만 진행합니다. 내부 `tcc-ehci`, 다른 장치가 연결된 루트, 허브·복수 컨트롤러·활성 인터페이스는 제외합니다.
+
+Realtek **1.1.15**와 Korea Projection **1.7.4.21**을 포함합니다. 기존 소유권 반환 한 번과 새 재초기화 한 번으로 부팅당 횟수를 제한하고, 실제 USB 속도 480을 확인한 경우에만 AP를 시작합니다. 호스트 드라이버 재등록은 물리 VBUS 전원 차단을 보장하지 않습니다. 차량 보드의 바인딩 지원·PHY 동작에 따라 결과가 달라지므로 실차에서 480Mbps 전환을 확인해야 합니다.
+
 ## 버전별 변경 사항
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.16 | 소유권 반환 후 12Mbps가 유지되면 외부 OHCI/EHCI를 EHCI 우선 순서로 재초기화, 대상 범위·복원·실제 480 확인 |
 | v0.1.15 | USB 12→480Mbps 복구 도구의 실행 권한 누락 수정, 준비 실패 시 시도 예산 보존, 조회·진단 도구 실행 권한 복구 |
 | v0.1.14 | 확인된 USB-AP Bluetooth 세션의 transport=0 판정, SPP 종료 후 iAP2 이관, 이전 세션의 예약 작업·전송 차단 |
 | v0.1.13 | IPv6 UDP 6031 허용, 실제 방화벽 규칙·순서·카운터와 mDNS 진단, 실제 카플레이 세션 기준 연결 표시 |
@@ -74,6 +79,12 @@ v0.1.15는 USB가 OHCI 12Mbps로 인식된 상태에서 EHCI 복구 도구가 `P
 | v0.1.0 | Korea Projection CN7NPE USB 테스트판과 Realtek 드라이버를 하나의 USB 설치 ZIP으로 제공 |
 
 자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
+
+## v0.1.16 배포 검증
+
+- [실제 C 코드의 외부 호스트 재초기화 모의 검사·기존 EHCI 검사·23개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44677378486)를 통과했습니다. 해제/등록 효과와 실패·SIGTERM을 모의해 순서·내부 호스트 보존·복원을 확인했습니다.
+- 29개 셸 문법, 새 의존성·helper ELF·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 실차 480Mbps 자동 전환은 확인이 필요합니다.
+- USB ZIP SHA-256: `74022f1af7b88e1a6130ab4e4417afeb30e3805505375511a410acc301424e78`
 
 ## v0.1.15 배포 검증
 

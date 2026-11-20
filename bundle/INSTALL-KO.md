@@ -2,8 +2,8 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE USB Test **1.7.4.20** 및 무선 모드 **2.4.10**
-- Realtek RTL8812BU USB Driver **1.1.14**
+- Korea Projection CN7NPE USB Test **1.7.4.21** 및 무선 모드 **2.4.10**
+- Realtek RTL8812BU USB Driver **1.1.15**
 - HMG-API 본체 **1.1.0-rc.4**, NEMESIS 패키지 버전 **1.0.99.4**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.4)
 
 ## 설치 및 업데이트
@@ -35,7 +35,7 @@ v0.1.13은 IPv6 UDP 6031을 추가 허용하고 **실제 무선 카플레이 세
 
 ARM 모듈과 USB 패키지 구조를 검증했습니다. 실차에서 부팅 인식과 무선 카플레이 연결을 확인하는 진단판입니다.
 
-[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.15/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
+[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.16/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
 
 ## v0.1.13 연결 진단
 
@@ -66,3 +66,13 @@ Korea Projection만 설치/업데이트하고 NEMESIS 설치 계획에 **Realtek
 Realtek Launch를 누르거나 동글을 재장착하기 전에 약 2분 기다립니다. `speed.log`의 `repairing mode to 0755`, `EHCI ownership request exit=0`, `Verified usb=... speed_after=480` 기록으로 실제 복구를 구분합니다. 실행 권한이 이미 있거나 처음부터 USB 480Mbps인 경우에는 권한 복구/속도 복구 기록이 없을 수 있습니다. USB 480Mbps는 실제 Wi-Fi 전송 속도 480Mbps를 뜻하지 않습니다.
 
 여전히 USB 12Mbps 대기라면 같은 부팅에서 제보 파일을 만든 뒤 `3-log.txt`와 Realtek의 `speed.log`, `boot.log`, `launch.log`(있는 경우)를 보내 주세요. `speed.log`에 새 권한·SELinux·마운트 정보가 포함됩니다. 실차에서 물리 재열거가 성공하는지는 별도 확인이 필요합니다. 이전 릴리즈·태그·ZIP은 GitHub에서 유지합니다.
+
+## v0.1.16 외부 USB 호스트 재초기화 시험
+
+Korea Projection만 설치/업데이트하고 설치 계획에 **Realtek 1.1.15**가 포함되는지 확인합니다. 설치를 마친 뒤 A3000mini를 직결한 채 내비게이션을 완전히 재부팅합니다. 첫 시험에는 재장착이나 Realtek Launch를 누르지 않고 약 2분 기다립니다.
+
+부팅 시 12Mbps라면 첫 소유권 반환을 시도하고, 계속 12Mbps면 외부 플랫폼 호스트를 EHCI 우선 순서로 재초기화합니다. 동글만 연결된 단일 포트와 유일한 외부 컨트롤러 쌍을 확인해야 하므로 허브·다른 장치·활성 인터페이스·제어 파일 미지원 상태에서는 새 단계를 거부합니다. 컨트롤러가 다시 등록되면서 USB 버스 번호나 장치 번호가 바뀌거나 재사용될 수 있습니다.
+
+`speed.log`에서 `Recovery stage=external-host-restart EHCI-first`, `USB cold recovery: validated`, `restore ehci-platform ... result=1`, `restore ohci-platform ... result=1`, 이어서 `Verified usb=... speed_after=480` 순서를 확인합니다. restore의 result=1은 바인딩 복원 성공이며 실제 속도 성공은 마지막 speed_after=480으로 판단합니다. request_exit=0만으로 480Mbps라고 판단하지 않습니다.
+
+속도 대기가 계속되면 **재부팅 전에** 제보 USB로 바꾸고 제보 파일을 만듭니다. `3-log.txt`와 Realtek `speed.log`, `boot.log`, `launch.log`(있는 경우)를 보내 주세요. 컨트롤러 복원 실패가 기록되면 내비게이션을 완전히 재부팅해 정상 바인딩 복원을 확인합니다. 드라이버 재등록은 물리 전원 차단을 보장하지 않으며 실차의 480Mbps 전환 성공은 확인이 필요합니다. 12/480Mbps는 USB 버스 인식 속도입니다.

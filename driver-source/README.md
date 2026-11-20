@@ -1,5 +1,15 @@
 # RTL88x2BU 대응 소스
 
+## USB 합본 v0.1.16: 외부 호스트 EHCI 우선 재초기화
+
+Realtek **1.1.15**는 `--restart-hosts`로 소유권 반환 후에도 12Mbps가 유지되는 경우를 처리합니다. 현재 A3000mini만 있는 단일 포트 OHCI와 유일하고 비어 있는 단일 포트 EHCI의 `ohci-platform`/`ehci-platform` 바인딩만 대상으로 합니다. 내부 `tcc-ehci`, 허브·다른 장치·복수 후보·UP/확인 불가 인터페이스는 제외합니다. 네 개 제어 FD를 미리 열고 정체성을 다시 확인한 뒤 OHCI/EHCI 해제 → 1.5초 → EHCI 등록 → 1초 → OHCI 등록 순서로 진행합니다.
+
+실패·일반 종료 신호에도 두 바인딩 복원을 시도합니다. 이미 시작된 커널 호출의 중단, SIGKILL 또는 전원 차단 때 복원까지 보장하지는 않습니다. 로더는 부팅당 한 번의 소유권 반환과 한 번의 호스트 재초기화만 요청하고 실제 sysfs 속도 480을 확인해야 성공으로 기록합니다. 물리 VBUS 차단이나 보드 PHY의 동작은 이 API만으로 보장되지 않습니다.
+
+Linux 3.18의 [bind/unbind](https://github.com/torvalds/linux/blob/v3.18/drivers/base/bus.c), [EHCI platform remove/probe](https://github.com/torvalds/linux/blob/v3.18/drivers/usb/host/ehci-platform.c), [OHCI platform remove/probe](https://github.com/torvalds/linux/blob/v3.18/drivers/usb/host/ohci-platform.c)를 참조했습니다. 실제 차량의 드라이버가 같은 제어 파일을 제공하고 바인딩을 허용해야 합니다.
+
+[실제 C 코드의 모의 호스트 검사](test_usb_hosts.py) · [Linux 검사·23개 회귀 검사와 Android 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44677378486). bind/unbind 효과와 실패·SIGTERM을 모의해 순서·내부 호스트 보존·복원을 확인했습니다. 커널 모듈은 그대로 유지합니다. helper SHA-256: `d48abec3c50a6dfe42c2d4534a333bbe08d75754b69d569b31c058119a6905f9`. 실차 480Mbps 전환은 미확인입니다.
+
 ## USB 합본 v0.1.15: EHCI 도구 실행 권한 복구
 
 Realtek **1.1.14**는 [common.sh](../package/scripts/common.sh)의 high-speed 경로가 실행 권한 확인 없이 helper를 호출하던 누락을 수정합니다. 해당 파일이 정상 패키지 파일인지 확인하고 필요할 때 `0755`로 복구한 후 시도 마커를 만듭니다. 실행 준비 실패는 하드웨어 시도 횟수로 세지 않습니다. 실제 480Mbps 재열거 확인·부팅당 최대 두 번·기존 native 도구의 장치/컨트롤러 범위는 유지합니다. 권한을 복구해도 실행을 거부하면 진단 정보를 남기며 SELinux/noexec 정책은 변경하지 않습니다.
