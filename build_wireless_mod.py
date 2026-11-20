@@ -16,7 +16,7 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.13'
+VERSION = '2.4.14'
 DISPLAY_NAME = 'HMG-API Wireless Mode'
 UPSTREAM_SHA256 = '4837efbfc1e71a7f30c65c7d914dc7d00aa788cc7ab4ea17b1a1860e6e96d4ee'
 UPSTREAM_AUTHOR = '7251ce71-a146-8a1e-958b-dbffc6af7359'
@@ -95,7 +95,8 @@ def rebase_files(base, hooks, previous):
                 b'USB hotspot ready; starting Bluetooth iAP2' not in dex or
                 b'USB_CP_EVENT ' not in dex or b'sys.kp.cp_session' not in dex or
                 b'USB_CP_HANDOVER stage=spp-down-preserved raw_transport=' not in dex or
-                b'UsbAp;' not in dex or b'ParkCp;' not in dex or b'CpTx;' not in dex):
+                b'USB_CP_HANDOVER stage=first-native-send' not in dex or
+                b'USB_CP_HANDOVER stage=first-peer-data' not in dex or b'UsbAp;' not in dex or b'ParkCp;' not in dex or b'CpTx;' not in dex):
             raise ValueError('Expected Android API 19 rc.8 USB hooks')
     mod = json.loads(files['mod.json'])
     mod['version'] = VERSION
@@ -126,7 +127,7 @@ def rebase_files(base, hooks, previous):
             settings['settings'].append(entry)
     files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] = (
-        'HMG-API USB wireless mod 2.4.13 (local upgrade version), based on official 2.2.0-rc.8.\n'
+        'HMG-API USB wireless mod 2.4.14 (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
         'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\n'

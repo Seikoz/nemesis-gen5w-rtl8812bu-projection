@@ -30,6 +30,9 @@ def patch(mod, old):
     static volatile boolean sUsbBtConfirmed;
     static volatile String sUsbCpGeneration;
     static volatile int sUsbCpTransport = -1;
+    static Object sUsbCpFallback;
+    static volatile Object sUsbCpRxLogged;
+    static volatile Object sUsbCpTxLogged;
     static int sUsbCpAttempts;
     static volatile String sAddr;''')
     text = method(text, 'static void onSppUp(final String addr)', '''    static synchronized void onSppUp(final String addr) {
@@ -114,6 +117,7 @@ def patch(mod, old):
         sReattach.sessionEnd(); sCpTx.reset("new CarPlay session", false);
         synchronized (sPendingIn) { sPendingIn.clear(); }
         sUsbCpSession = new Object(); sUsbDetachFence = new Object();
+        sUsbCpFallback = null; sUsbCpRxLogged = null; sUsbCpTxLogged = null;
         sUsbCpGeneration = prop("sys.kp.cp_gen", "off"); sUsbCpAttempts = 0;
         sUsbCpTransport = -1; sCpWireless = false; sCpClient = false; sCpConnected = false;
         SessionStatus.emit("created", -1);''')
@@ -124,12 +128,22 @@ def patch(mod, old):
         log("USB_CP_ORIGIN raw_transport=" + transport + " confirmed_bt=" + sUsbBtConfirmed + " wireless=" + sCpWireless);''')
     text = once(text, '    static void onCpSessionFinalized(int type) {', '''    static synchronized void onCpSessionFinalized(int type) {
         sUsbCpSession = null; sUsbBtConfirmed = false; sUsbApRequest = null;
+        sUsbCpFallback = null; sUsbCpRxLogged = null; sUsbCpTxLogged = null;
         SessionStatus.emit("finalized", type);''')
     text = once(text, '            if (cp != null) sCp = cp;', '''            if (!usbCpApCurrent() || (sCp != null && cp != null && cp != sCp)) return;
             if (cp != null) sCp = cp;''')
+    text = once(text, '            if (!sCpClient) startCpClient("iAP2 data from CarPlay channel");', '''            final Object session = sUsbCpSession;
+            if (session != null && sUsbCpRxLogged != session) {
+                sUsbCpRxLogged = session;
+                log("USB_CP_HANDOVER stage=first-peer-data len=" + len + " client=" + sCpClient);
+            }
+            if (!sCpClient) startCpClient("iAP2 data from CarPlay channel");''')
+    text = once(text, '    static void startCpClient(final String why) {',
+                '    static synchronized void startCpClient(final String why) {')
     text = once(text, '        if (sCpClient) return;\n        sCpClient = true;', '''        if (sCpClient || !usbCpApCurrent() || sAddr == null || sCp == null ||
                 (!sCpWireless && !sUsbBtConfirmed) || sUsbCpAttempts >= 2) return;
         sUsbCpAttempts++;
+        sUsbCpFallback = null;
         sCpClient = true;''')
     # Both initial handover and upstream re-attach retain their native send/watchdog logic.
     for start_signature, end_signature in (
@@ -147,14 +161,46 @@ def patch(mod, old):
         text=text[:start]+block+text[end:]
     text=once(text, '        sCpConnected = true;\n        IIap2Service',
               '        if (!sCpClient || !usbCpApCurrent()) return;\n        sCpConnected = true;\n        log("USB_CP_HANDOVER stage=component5-connected");\n        IIap2Service')
-    text=once(text, '            Object r = nativeSend().invoke(cp, b, len);',
-              '            if (cp != sCp || !sCpClient || !usbCpApCurrent()) return -1;\n            Object r = nativeSend().invoke(cp, b, len);')
+    text = once(text, '            Object r = nativeSend().invoke(cp, b, len);\n            return r instanceof Integer ? (Integer) r : -1;', '''            final Object session = sUsbCpSession;
+            if (session == null || cp != sCp || !sCpClient || !usbCpApCurrent()) return -1;
+            final boolean peerSeen = sUsbCpRxLogged == session;
+            Object r = nativeSend().invoke(cp, b, len);
+            int rc = r instanceof Integer ? (Integer) r : -1;
+            if (sUsbCpSession == session && sUsbCpTxLogged != session) {
+                sUsbCpTxLogged = session;
+                log("USB_CP_HANDOVER stage=first-native-send rc=" + rc + " len=" + len + " peer_seen=" + peerSeen);
+            }
+            return rc;''')
     text=once(text, '    static void onSppDown(String addr) {', '    static synchronized void onSppDown(String addr) {')
     text=once(text, '        if (sCpWireless) {\n            sSession = false;', '''        sUsbApRequest = null;
         sUsbBtConfirmed = false;
         if (sCpWireless && usbCpApCurrent()) {
             log("USB_CP_HANDOVER stage=spp-down-preserved raw_transport=" + sUsbCpTransport);
             sSession = false;''')
+    text = once(text, '            startCpClient("bluetooth dropped during wireless CarPlay");', '''            if (sUsbCpTransport == 0) waitForUsbCpPeer();
+            else startCpClient("bluetooth dropped during wireless CarPlay");''')
+    text = once(text, '    static void sendDetach() {', '''    // A transport-0 session may start before the tunneled iAP2 channel is ready.
+    // Let a peer packet win, then keep the accessory-initiated fallback.
+    static void waitForUsbCpPeer() {
+        final Object session = sUsbCpSession;
+        if (session == null || sCpClient || sUsbCpFallback == session) return;
+        sUsbCpFallback = session;
+        log("USB_CP_HANDOVER stage=waiting-for-peer timeout_ms=1200");
+        handler().postDelayed(new Runnable() {
+            @Override public void run() {
+                synchronized (Bridge.class) {
+                    if (sUsbCpFallback != session || sUsbCpSession != session) return;
+                    sUsbCpFallback = null;
+                    if (!sCpClient && sCpWireless && usbCpApCurrent()) {
+                        log("USB_CP_HANDOVER stage=peer-wait-expired");
+                        startCpClient("peer wait expired after wireless Bluetooth handover");
+                    }
+                }
+            }
+        }, 1200);
+    }
+
+    static void sendDetach() {''')
     text=once(text, '    static void sendDetach() {\n        handler()',
               '    static void sendDetach() {\n        final Object fence = sUsbDetachFence;\n        handler()')
     text=once(text, '                    Intent i = new Intent(ACTION_DETACH);',

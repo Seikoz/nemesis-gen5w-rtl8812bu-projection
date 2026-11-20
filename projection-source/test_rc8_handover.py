@@ -17,10 +17,10 @@ s=Path(sys.argv[1]).read_text(encoding='utf-8')
 signatures=(
  'synchronized void onCpSessionCreated(', 'synchronized void onCpSessionStarted(',
  'synchronized void onCpSessionFinalized(', 'boolean usbCpApCurrent(',
- 'synchronized void onUsbIapConnected(', 'void startCpClient(', 'void onCpClientConnected(',
+ 'synchronized void onUsbIapConnected(', 'synchronized void startCpClient(', 'void onCpClientConnected(',
  'synchronized void onSppDown(', 'void sendDetach(', 'boolean dipoIgnoreDisconnect(',
  'void onCpIapIn(',
- 'void writeCp(', 'boolean wirelessTransport(', 'void reattachCpClient(',
+ 'void writeCp(', 'boolean wirelessTransport(', 'void reattachCpClient(', 'void waitForUsbCpPeer(',
 )
 methods='\n'.join(method(s,x) for x in signatures)
 harness=r'''
@@ -47,6 +47,7 @@ class Context {
 class Handler {
  ArrayDeque<Runnable> queue=new ArrayDeque<Runnable>();
  void post(Runnable r){queue.add(r);}
+ void postDelayed(Runnable r,long delay){if(delay!=1200)throw new AssertionError("Unexpected grace period");post(r);}
  void runAll(){int n=0;while(!queue.isEmpty()){if(++n>10)throw new AssertionError("Unbounded jobs");queue.remove().run();}}
 }
 class IIap2Service {
@@ -71,7 +72,7 @@ public class Bridge {
  static final String ACTION_ATTACH="attach",ACTION_DETACH="detach",IAP2_PKG="iap2";
  static final int COMPONENT_USB=1,COMPONENT_BT_CARPLAY=4,COMPONENT_CARPLAY_CLIENT=5,MAX_PENDING=64;
  static volatile boolean sUsb,sSession,sCpClient,sCpConnected,sCpWireless,sUsbBtConfirmed;
- static Object sCp,sUsbCpSession,sUsbDetachFence,sUsbApRequest;
+ static Object sCp,sUsbCpSession,sUsbDetachFence,sUsbApRequest,sUsbCpFallback,sUsbCpRxLogged,sUsbCpTxLogged;
  static String sCpSerial;
  static final Reattach sReattach=new Reattach();
  static final CpTx sCpTx=new CpTx();
@@ -120,7 +121,7 @@ public class Bridge {
   reset();begin(true);onCpSessionStarted(0);
   check(sCpWireless && SessionStatus.state.equals("started") && SessionStatus.raw==0,"Transport 0 lost confirmed wireless origin");
   onSppDown("phone-A");onSppDown("phone-A");
-  check(sCpClient && handler.queue.size()==1,"Duplicate handover or no handover");
+  check(!sCpClient && handler.queue.size()==1 && attaches==0,"Duplicate or premature handover");
   handler.runAll();
   check(attaches==1 && detaches==0 && sCpConnected && sCpWireless,"SPP loss detached live CarPlay");
   onCpIapIn(sCp,new byte[]{1,2,3},2);
@@ -172,6 +173,15 @@ public class Bridge {
   reset();begin(true);onCpSessionStarted(0);onSppDown("phone-A");handler.runAll();
   reattachCpClient(1);onCpSessionFinalized(0);handler.runAll();
   check(attaches==1,"Stale upstream re-attach survived finalization");
+
+  reset();begin(true);onCpSessionStarted(0);onSppDown("phone-A");
+  onCpIapIn(sCp,new byte[]{1,2,3},3);
+  check(sCpClient && sPendingIn.size()==1,"Peer packet did not start or buffer handover");
+  handler.runAll();
+  check(attaches==1 && sIap2.reads.size()==1,"Timer duplicated peer handover or lost the packet");
+  reset();begin(true);onCpSessionStarted(1);onSppDown("phone-A");
+  check(sCpClient,"Legacy transport 1 must keep immediate handover");
+  handler.runAll();check(attaches==1,"Legacy transport 1 attach failed");
   System.out.println("Actual rc.8 Bridge transport-0/SPP-loss replay, iAP2 forwarding, cancellation and reconnect isolation passed");
  }
 }
