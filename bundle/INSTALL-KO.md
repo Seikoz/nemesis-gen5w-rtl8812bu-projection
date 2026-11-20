@@ -2,7 +2,7 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE USB Test **1.7.4.23** 및 무선 모드 **2.4.11** (공식 2.2.0-rc.8 기반 USB 이식판)
+- Korea Projection CN7NPE USB Test **1.7.4.24** 및 무선 모드 **2.4.11** (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek RTL8812BU USB Driver **1.1.16**
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
 
@@ -10,7 +10,7 @@
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7NPE USB Test**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek 1.1.16이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.23`은 업데이트할 수 있습니다.
+3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek 1.1.16이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.24`은 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드가 재부팅을 요청하면 재부팅합니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 페어링합니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
@@ -86,3 +86,13 @@ A3000mini를 꽂은 채 Korea Projection 상태 화면의 **지금 재부팅**�
 기존 차량 로컬 지도는 `state/local-map.json`에 보존됩니다. 확인된 351개 지도와 맞지 않는 신규 8개 훅 선언은 제외하며, 새 다중 폰 제어·AA 주차는 등록하지 않습니다. 카플레이 주차 기능도 지도에 해당 점이 있어야 켜집니다. 이전 한국판 전용 `tbt_fit`·별표 팝업 건너뛰기는 이번 무선 모드에 이식하지 않았습니다. 공식 원본 ZIP을 따로 설치하면 기존 서명/USB AP 처리와 맞지 않으므로 이 합본에서 업데이트합니다.
 
 실제 480Mbps·카플레이 연결 유지 여부는 차량에서 확인해야 합니다. 실패하면 Korea Projection 제보 파일과 Realtek `speed.log`, `boot.log`, `launch.log`를 함께 보냅니다. rc.7의 **Logs → Record a problem**도 사용할 수 있습니다. [호환성 검토](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.18/docs/compatibility-rc7-rc8-usb.md).
+
+## v0.1.19 오디오 지원 파일 자동 적용
+
+Korea Projection **1.7.4.24**만 Update합니다. HMG-API rc.7·무선 모드 2.4.11·Realtek 1.1.16은 v0.1.18과 같습니다. 설치 후 메모리를 빼고 A3000mini를 연결해 상태 화면을 엽니다.
+
+이미 무선 모드 2.4.11이 설치됐어도 새 오디오 지원 파일이 적용되지 않았다면, 같은 합본의 소유 파일과 전체 설치 파일 해시·현재 적용 계획을 확인한 뒤 AP 시작 전에 자동 적용합니다. **“오디오 지원 파일을 자동 적용했습니다. 지금 재부팅을 눌러 주세요.”**가 나오면 반드시 **지금 재부팅**을 누릅니다. 같은 부팅에서 서비스를 다시 시작해도 재적용하지 않고 재부팅을 기다립니다. 적용할 파일이 이미 모두 맞으면 이 단계는 생략합니다.
+
+다른 모드의 변경·문제·되돌리기, 고정한 모드, 수정되거나 다른 파일, 적용 실패가 있으면 자동 적용을 보류합니다. 이 경우 HMG-API 변경 사항을 직접 확인하고 `usb-audio-apply.log`, `usb-mod-files-check.log`, `mod-apply.txt`가 포함된 제보 파일을 수집합니다. 자동 재부팅은 하지 않습니다.
+
+재부팅 후에는 재장착이나 Realtek Launch 없이 먼저 시험합니다. 이번 이전 로그에서는 수동 재장착 전에 이미 480Mbps·rtwlan0 준비를 통과했고, 이후 HMG-API 설정을 기다렸습니다. 새 로그의 **USB readiness passed**와 오디오 적용/모드 준비 단계를 구분해 확인합니다. 지원 파일을 적용한 뒤에도 멜론이 휴대폰에서 재생되면, 연결 직전부터 HMG-API **Logs → Record a problem**을 켜고 증상 재현 후 종료해 함께 보내주세요. 실제 무음 해소와 전체 자동 부팅 결과는 실차 확인이 필요합니다.
