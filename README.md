@@ -1,68 +1,229 @@
 # NEMESIS RTL8812BU Gen5W
 
-현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
+현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜의 부팅 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. Korea Projection과 HMG-API를 포함한 완성 USB 설치 ZIP을 제공합니다. 차량에서 따로 빌드할 필요는 없습니다.
 
-**[USB 설치 ZIP v0.1.18 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.18/NEMESIS-CN7NPE-260902-Bundle-v0.1.18-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.18) · [전체 변경 이력](CHANGELOG.md)
+**[v0.1.18 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.18/NEMESIS-CN7NPE-260902-Bundle-v0.1.18-USB.zip)** · [릴리스 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.18) · [전체 변경 이력](CHANGELOG.md)
 
-| 구성 | 버전 |
+> **실차 시험용 패키지입니다.** 부팅 시 USB 12Mbps 인식과 카플레이 연결·끊김 문제가 보고됐습니다. v0.1.18의 자동 480Mbps 전환과 지속적인 화면·음성 정상 동작은 아직 실차에서 확인되지 않았습니다. 설치 전 아래 대상·경고·제한 사항을 확인하세요.
+
+[시험 대상](#프로젝트와-시험-대상) · [경고 사항](#경고-사항) · [패키지 구성](#패키지-구성) · [작동 원리](#작동-원리) · [설치 순서](#설치-및-업데이트-순서) · [상태 표시](#상태-표시-읽는-법) · [알려진 문제](#알려진-문제점과-제한-사항) · [미확인 사항](#미확인-사항) · [로그 수집](#문제-발생-시-로그-수집) · [검증 범위](#검증-범위) · [버전 이력](#버전별-변경-사항)
+
+## 프로젝트와 시험 대상
+
+프로젝트의 핵심은 **RTL8812BU 드라이버와 USB AP의 실제 작동**입니다. 무선 카플레이는 USB 인식부터 AP·Bluetooth·iAP2·카플레이 세션까지 이어지는 검증 대상입니다.
+
+| 항목 | 현재 시험 기준 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.23 |
-| Realtek RTL8812BU USB Driver | 1.1.16 |
-| HMG-API 본체 | 1.1.0-rc.7 |
-| RTL8812BU USB 무선 모드 | 2.4.11 (공식 2.2.0-rc.8 기반) |
+| 차량 | 2024년식 아반떼 N 페이스리프트 |
+| 펌웨어 | `CN7NPE.KOR.S5W_M.V039.001.260902` — 로그에는 `CN7NPE.KOR.0000.V039.001.260902`로도 표시 |
+| 플랫폼 / 커널 | TCC803x / `3.18.24-tcc` |
+| 무선랜 | ipTIME A3000mini, USB ID `0bda:b812` |
+| 네트워크 인터페이스 | `rtwlan0` |
+| 설치 관리자 | NEMESIS Manager 1.16.7 이상, 이미 설치된 상태 |
 
-## USB 설치
+다른 차량·지역·펌웨어·동글의 호환성은 확인하지 않았습니다. 같은 RTL8812BU 칩셋이라는 이유만으로 동일하게 동작한다고 판단하지 않습니다. `CN7PE` 지도와 `CN7NPE` 지도도 구분합니다.
 
-1. ZIP을 FAT32 USB 메모리 최상위에 풉니다. 아래처럼 `NEMESIS.data`가 루트에 있고 `packages/` 안의 ZIP 세 개가 압축 상태여야 합니다.
-2. 주차 상태에서 내비게이션의 데이터 USB 포트에 메모리를 연결합니다. **NEMESIS → Package Store → USB → Korea Projection CN7NPE USB Test**에서 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. NEMESIS는 필요한 HMG-API와 Realtek을 같은 USB에서 먼저 설치하거나 업데이트합니다. 무선 모드가 재부팅을 요청하면 내비를 재부팅합니다.
-4. 설치 USB를 빼고 A3000mini를 꽂습니다. Korea Projection 상태 화면에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone을 내비게이션 Bluetooth에 페어링하고 CarPlay를 허용합니다.
+## 경고 사항
+
+- **주차 상태에서 설치·재부팅·연결 시험을 진행하세요.** 시스템 훅과 커널 모듈을 사용하는 시험판이며, 내비게이션 재부팅이나 기능 오류가 생길 수 있습니다.
+- **기존 NEMESIS가 필요합니다.** 이 ZIP은 NEMESIS 자체나 차량 순정 펌웨어를 설치하는 패키지가 아닙니다.
+- **공식 무선 모드 원본을 추가로 덮어쓰지 마세요.** 합본은 `rtwlan0`용 이식판과 기존 합본 작성자 서명을 사용합니다. 공식 원본은 작성자 서명·버전·기본 핫스폿 경로가 다릅니다.
+- **실제 USB 480Mbps 확인 전에는 AP 시작을 대기합니다.** 12/480Mbps는 USB 버스 속도이며 Wi-Fi 링크 속도나 실제 전송 속도가 아닙니다.
+- **AP 준비나 연결 표시만으로 카플레이 성공을 판단하지 마세요.** 화면·음악·통화가 실제로 유지되는지도 확인해야 합니다.
+- **이전 ZIP 보존과 자동 다운그레이드는 별개입니다.** 이전 버전 ZIP을 설치하는 것만으로 본체·모드·설정이 모두 되돌아간다고 가정하지 마세요. 제거할 때는 Korea Projection을 먼저 제거하고 [설치·제거 안내](bundle/INSTALL-KO.md)를 확인하세요.
+- **필요한 로그는 다음 재부팅 전에 저장하세요.** 공유 전에는 휴대폰 이름·주소 등 개인 정보가 남아 있는지 확인하세요.
+
+## 패키지 구성
+
+| 구성 요소 | v0.1.18 버전 | 역할 |
+| --- | --- | --- |
+| Korea Projection CN7NPE USB Test | **1.7.4.23** | 설치 의존성, USB AP·DHCP 운영, 상태 표시·제보 수집 |
+| Realtek RTL8812BU USB Driver | **1.1.16** | 커널 모듈 로드, 동글 바인딩, 부팅 감시와 제한된 USB 고속 복구 |
+| HMG-API 본체 | **1.1.0-rc.7** / NEMESIS 패키지 **1.0.99.7** | 시스템 훅·차량 지도·모드 설치 및 적용 |
+| RTL8812BU USB 무선 모드 | **2.4.11** | 공식 **2.2.0-rc.8** 기반 USB 이식판, AP 대기·카플레이 세션·iAP2 처리 |
+
+**2.4.11은 이 프로젝트의 로컬 업데이트 버전**입니다. 공식 상위 버전 번호와 직접 비교하지 않습니다. HMG-API 본체는 공식 ZIP을 그대로 포함하고, 무선 모드는 상위 소스를 USB용으로 수정·빌드해 같은 합본 작성자로 서명합니다. Realtek 패키지는 v0.1.17과 동일합니다.
+
+USB에 풀었을 때의 기본 구조는 다음과 같습니다.
 
 ```text
 USB/
 ├── NEMESIS.data
 ├── INSTALL-KO.md
+├── licenses/
 └── packages/
     ├── hmgapi.zip
     ├── korea.projection.zip
     └── realtek.88x2bu.zip
 ```
 
-기존 합본에서 업데이트하거나 설치 중 오류가 발생하면 [합본 설치·업데이트 안내](bundle/INSTALL-KO.md)를 확인하세요.
+`packages/` 안의 ZIP 세 개는 압축 상태로 둡니다. 무선 모드 ZIP과 실행 도구는 Korea Projection 패키지에 포함돼 있으므로 따로 설치할 파일을 찾을 필요가 없습니다.
 
-## 부팅과 재장착 결과 제보
+## 작동 원리
 
-1. A3000mini를 꽂은 채 내비게이션을 완전히 재부팅하고, **Realtek Launch**를 누르기 전에 약 2분 기다립니다.
-2. 연결이 실패하면 같은 부팅에서 동글을 한 번 뺐다 꽂고 Korea Projection 상태를 다시 확인합니다. 필요한 경우 Realtek **Launch**를 한 번 누릅니다. v0.1.10은 먼저 USB 480Mbps 복구를 자동 시도합니다.
-3. 재부팅하기 전에 USB 메모리로 바꿔 꽂고 **NEMESIS → My Packages → Korea Projection CN7NPE USB Test → Launch → 제보 파일 만들기**를 누릅니다. USB의 `KoreaProjection-report/3-log.txt`에 첫 USB 감지와 장치 번호 변경 후 각각의 UP 시도, 커널 로그, `hostapd` 권한 정보와 실패 로그가 들어갑니다. `1-report.md`와 `2-car-report.json`이 만들어졌다면 함께 첨부해 주세요.
+### 설치 의존성과 모드 적용
 
-v0.1.11 실차 로그에서 AP 준비 후 Bluetooth iAP2 시작까지 확인했습니다. 이후 동적 TCP 포트의 연결 재시도가 기록됐으며, 기존 단말 수 집계는 Realtek 접속을 놓칠 수 있었습니다. v0.1.12는 `rtwlan0`의 AP IPv4 대역과 IPv6 링크 로컬 대역에서 동적 TCP를 허용하고, hostapd 인증 목록 또는 Realtek의 현재 연결 테이블로 단말 수를 표시합니다. 읽지 못하면 0대 대신 **확인 불가**로 표시합니다.
+USB Package Store에서 **Korea Projection 하나를 선택**합니다. NEMESIS가 의존성을 확인해 필요한 HMG-API와 Realtek을 먼저 설치/업데이트합니다. 이후 Korea Projection이 포함된 무선 모드를 설치하거나 갱신하고 적용합니다. 본체 런타임과 무선 모드는 재부팅 후 새 코드가 로드됩니다.
 
-v0.1.13은 IPv6 링크 로컬 피어의 UDP 6031을 추가 허용합니다. **AP 준비·Wi-Fi 단말 접속과 카플레이 연결 완료를 구분**하며, 실제 무선 세션 시작 콜백을 받은 경우에만 연결됨으로 표시합니다. 생성·시작·종료 콜백과 현재 부팅·AP 세대·DiPO 프로세스 시작 시각을 대조하므로 이전 세션 기록으로 연결됐다고 판단하지 않습니다. 갱신은 보통 다음 점검 주기(약 30초)에 반영됩니다.
+### USB 인식과 AP 시작
 
-제보 파일 `3-log.txt`에 `usb-carplay-events.log`, `usb-cp-capture.log`, `usb-connection-first.log`, `usb-connection-latest.log`를 포함합니다. 방화벽의 실제 규칙·점프 순서·패킷/바이트 카운터와 IPv6 UDP 6031 항목 수, mDNS 조회 결과·서비스 포트, TCP 소켓 상태를 확인할 수 있습니다. 첫 스냅샷과 최근 스냅샷을 보존하므로 동글을 빼고 제보 USB로 바꾼 뒤에도 직전 기록을 볼 수 있습니다. mDNS 응답 없음만으로 서비스 부재나 연결 실패를 단정하지 않습니다.
+```mermaid
+flowchart TD
+    A["A3000mini를 꽂은 채 부팅"] --> B["Realtek 모듈 로드 · USB 장치 확인"]
+    B --> C{"실제 USB 속도 480Mbps?"}
+    C -->|예| D["rtwlan0 활성화 · hostapd와 DHCP 시작"]
+    C -->|12Mbps| E["범위를 검증한 EHCI 복구 시도"]
+    E --> F{"480Mbps 전환 확인?"}
+    F -->|예| D
+    F -->|아니오| G["AP 시작 대기 · speed.log 기록"]
+    D --> H["AP 신호 · 세대 · 인터페이스와 주소 확인"]
+    H --> I["Bluetooth iAP2 시작 · 카플레이 세션 전환"]
+    I --> J["실제 세션 콜백으로 상태 기록"]
+```
 
-동글 연결 후 무선 모드가 **2.4.10로 업데이트되고 적용된 것을 확인한 뒤** 완전히 재부팅합니다. 실차의 카플레이 연결 성공은 아직 미확인입니다.
+동글이 외부 OHCI에서 12Mbps로 잡히면 한 부팅에서 **EHCI 소유권 반환 1회**, 계속 실패하면 **외부 OHCI/EHCI 재초기화 1회**를 요청합니다. 직결 A3000mini 한 대·단일 포트·유일한 외부 컨트롤러 쌍·비어 있는 EHCI·내려간 인터페이스가 확인된 경우에만 진행합니다. 내부 `tcc-ehci`, 허브, 다른 장치가 연결된 루트와 활성 인터페이스는 복구 대상에서 제외합니다.
 
-v0.1.14는 `transport=0`으로 시작한 실제 무선 세션이 SPP 종료 직후 `BT_DETACHED`로 끊기던 경로를 수정합니다. USB iAP2 연결이 없고, 이 브리지가 요청한 Bluetooth iAP2(컴포넌트 4)의 기기 일치와 같은 `rtwlan0` AP 준비를 확인한 경우에만 해당 세션을 무선으로 인정합니다. SPP가 끝나면 카플레이 채널(컴포넌트 5)로 이관합니다. 실제 USB 연결과 확인되지 않은 세션은 구분합니다.
+재초기화에서는 OHCI를 해제한 채 EHCI 아래 A3000mini의 480Mbps·구성 완료를 최대 12초 확인한 뒤 OHCI 복원을 시도합니다. Korea Projection의 NEMESIS 드라이버 호출 제한은 90초입니다. **호스트 재등록 성공은 실제 480Mbps 성공과 다르며, 물리 VBUS 전원 차단이나 보드 PHY 초기화를 보장하지 않습니다.**
 
-종료·재연결·AP 변경 뒤 이전 작업이 실행되지 않도록 attach/detach와 대기 중인 iAP2 전송을 세션별로 확인합니다. 상태 기록과 15초 갱신에서도 원래 `transport=0` 값을 보존합니다. HMG-API 본체와 Realtek 드라이버를 따로 재설치할 필요는 없습니다. 실차의 연결 유지 여부는 확인이 필요합니다.
+### 무선 세션과 방화벽
 
-v0.1.15는 USB가 OHCI 12Mbps로 인식된 상태에서 EHCI 복구 도구가 `Permission denied`로 실행되지 않던 경로를 수정합니다. Realtek **1.1.14**는 패키지 도구의 실행 권한을 확인·복구한 뒤 기존 EHCI 복구를 요청하고, 실제 재열거 후 **USB 480Mbps**를 확인합니다. 실행 준비 실패는 하드웨어 시도 횟수에 포함하지 않습니다. Korea Projection **1.7.4.20** 설치 시 같은 USB의 새 Realtek 패키지가 먼저 설치/업데이트됩니다.
+무선 모드는 AP 준비 신호, 유효한 AP 세대, UP 상태의 `rtwlan0`과 `192.168.43.1`을 확인한 뒤 Bluetooth iAP2를 시작합니다. AP 대기는 최대 약 180초이며 Bluetooth 해제·모드 비활성화·유선 연결·세션 교체 시 취소합니다.
 
-여기의 **12/480Mbps는 USB 버스 인식 속도이며 Wi-Fi 링크 속도나 실제 전송량이 아닙니다.** 물리 연결이나 장치 상태 때문에 480Mbps를 확인하지 못하면 AP 시작을 계속 대기하고 `speed.log`에 결과를 남깁니다. 실차의 480Mbps 인식과 카플레이 연결 지속 여부는 확인이 필요합니다. 무선 모드 **2.4.10**의 세션 판정·iAP2 이관과 기존 드라이버 커널 모듈은 유지합니다.
+USB iAP2가 없고 이 브리지의 Bluetooth 출처와 같은 AP가 확인된 세션에 한해 `transport=0`도 무선 세션으로 인정합니다. SPP가 끝나면 카플레이 채널로 iAP2를 이관하며, 이전 세션이나 AP에 속한 예약 작업과 전송을 구분합니다. `transport=0`을 모든 차량의 무선 연결로 해석하는 방식은 아닙니다.
 
-v0.1.16은 소유권 반환 뒤에도 USB 12Mbps가 유지되면 **외부 OHCI/EHCI 컨트롤러를 EHCI 우선 순서로 다시 초기화하는 두 번째 단계**를 자동 시도합니다. 직결 A3000mini 한 대, 단일 포트의 유일한 외부 플랫폼 컨트롤러 쌍, 비어 있는 EHCI와 내려간 인터페이스를 확인한 경우에만 진행합니다. 내부 `tcc-ehci`, 다른 장치가 연결된 루트, 허브·복수 컨트롤러·활성 인터페이스는 제외합니다.
+방화벽 정책은 `rtwlan0`의 차량 AP IPv4 대역 `192.168.43.0/24`와 IPv6 링크 로컬 대역을 중심으로 적용합니다. 기존 TCP/UDP에 동적 TCP 포트와 IPv6 UDP 6031을 포함하며, AA TCP 40515 규칙도 USB 대역으로 제한합니다. 실제 적용 규칙·순서·카운터는 제보 로그로 확인합니다.
 
-Realtek **1.1.15**와 Korea Projection **1.7.4.21**을 포함합니다. 기존 소유권 반환 한 번과 새 재초기화 한 번으로 부팅당 횟수를 제한하고, 실제 USB 속도 480을 확인한 경우에만 AP를 시작합니다. 호스트 드라이버 재등록은 물리 VBUS 전원 차단을 보장하지 않습니다. 차량 보드의 바인딩 지원·PHY 동작에 따라 결과가 달라지므로 실차에서 480Mbps 전환을 확인해야 합니다.
+## 설치 및 업데이트 순서
 
-v0.1.17은 EHCI 등록 1초 뒤 OHCI를 복원하던 고정 지연을 바꾸어, **EHCI 아래 A3000mini의 실제 480Mbps·구성 완료를 최대 12초 확인한 뒤 OHCI를 복원**합니다. 버스 번호 대신 검증한 플랫폼 장치를 따라가고, 준비되지 않아도 제한 시간 뒤 호스트 복원을 시도합니다. Korea Projection의 드라이버 호출 제한을 20초에서 90초로 늘립니다. 복구별 시작 uptime과 버스 번호 변경 전후의 커널 메시지를 `speed.log`에 남깁니다. Realtek **1.1.16**, Korea Projection **1.7.4.22**를 포함하며 실차 전환 결과는 확인이 필요합니다.
+1. **다운로드·압축 해제:** 위의 v0.1.18 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages/`가 USB 루트에 있는지 확인합니다.
+2. **Korea Projection 선택:** 주차 상태에서 설치 USB를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7NPE USB Test → Install / Update**를 선택합니다.
+3. **의존성 설치 확인:** 설치 계획을 확인하고 진행합니다. 필요한 HMG-API rc.7과 Realtek 1.1.16은 같은 USB에서 먼저 설치/업데이트됩니다. 이미 조건을 충족하면 다시 설치하지 않을 수 있습니다.
+4. **동글로 교체:** 설치가 끝나면 설치 USB를 빼고 A3000mini를 꽂아 둡니다.
+5. **OS 재부팅:** **NEMESIS → My Packages → Korea Projection → Launch**로 상태 화면을 열고 **지금 재부팅**을 누릅니다. 이 버튼은 `sync` 후 시스템 `reboot`를 요청합니다.
+6. **본체·모드 버전 확인:** HMG-API 앱에서 **1.1.0-rc.7 / Hooks on(훅 활성)**, 무선 모드 **2.4.11**을 확인합니다. 첫 재부팅 뒤 모드 업데이트·적용 안내가 나오면 완료 후 **한 번 더 재부팅**합니다.
+7. **자동 부팅 시험:** A3000mini를 꽂은 채 약 2분 기다립니다. 첫 시험에는 동글을 재장착하거나 Realtek Launch를 누르지 않습니다.
+8. **연결 시험:** `USB Wi-Fi AP ready (rtwlan0)`를 확인한 뒤 iPhone의 Wi-Fi·Bluetooth를 켜고 내비게이션과 페어링해 CarPlay를 허용합니다. 화면·음악·통화가 유지되는지 확인합니다.
 
-v0.1.18은 **HMG-API 본체 1.1.0-rc.7**과 **공식 무선 모드 2.2.0-rc.8 기반 USB 이식판 2.4.11**을 포함합니다. Korea Projection **1.7.4.23**만 설치/업데이트하면 필요한 본체가 같은 USB에서 먼저 업데이트되고, 기존 모드도 같은 합본 작성자 서명으로 교체됩니다. `rtwlan0`·USB AP 준비 대기·확인된 transport=0 세션·iAP2 이관·방화벽 진단을 최신 소스에 이식했습니다. Realtek **1.1.16**은 그대로입니다.
+HMG-API가 응답하지 않거나 `Operation failed`가 나오면 현재 설치 버전과 실패 문구를 기록하고 [상세 설치·업데이트 안내](bundle/INSTALL-KO.md)를 확인하세요. 오류 문구만으로 원인을 단정하거나 본체·모드를 반복 제거하지 마세요.
 
-기존 차량 지도의 351개 훅에 없는 신규 8개 선언은 모드 전체가 비활성화되는 것을 막기 위해 제외했습니다. 새 다중 휴대폰 제어·AA 주차 기능은 이 대상 빌드에서 등록하지 않으며, 카플레이 주차 기능도 추가 지도 점이 있어야 작동합니다. 이전 한국판의 `tbt_fit`·별표 팝업 건너뛰기는 이번 상위 소스에 이식하지 않았습니다. [호환성 검토와 제한 사항](docs/compatibility-rc7-rc8-usb.md)을 확인하세요.
+## 상태 표시 읽는 법
 
-설치 후 완전히 재부팅하고 HMG-API **1.1.0-rc.7 / Hooks on**, 무선 모드 **2.4.11**을 확인합니다. 모드 교체/적용 뒤 재부팅 안내가 나오면 한 번 더 재부팅하세요. USB 480Mbps 전환과 카플레이의 화면·음성·연결 유지는 실차에서 확인이 필요합니다.
+| 관측한 상태 | 확인된 것 | 추가 확인할 것 |
+| --- | --- | --- |
+| 드라이버 로드됨 | 커널 모듈 로드 | 동글 바인딩·실제 USB 속도·인터페이스 생성 |
+| USB 480Mbps | USB 고속 열거 | AP 활성화와 Wi-Fi 접속 |
+| `rtwlan0` 존재 | 네트워크 인터페이스 생성 | 480Mbps, UP 상태, AP·DHCP 시작 |
+| AP ready | AP 준비 조건 충족 | iPhone 접속과 카플레이 세션 시작 |
+| Wi-Fi 단말 수 증가 | hostapd 인증 또는 Realtek 연결 테이블에서 접속 관측 | 카플레이 프로토콜·화면·음성 |
+| 세션 연결됨 / `started` | 실제 무선 세션 시작 콜백 및 부팅·프로세스·AP 세대 검증 | 화면·음악·통화의 정상 유지 |
+| 단말 수 확인 불가 | 조회 경로에서 접속 수를 읽지 못함 | 미접속 0대와 구분해 로그 확인 |
+
+상태는 보통 약 30초 점검 주기에 갱신됩니다. 제보 USB로 바꾸려고 동글을 빼면 현재 상태가 AP lost/미연결로 바뀔 수 있으므로, 같은 부팅에서 저장된 직전 기록을 함께 봅니다.
+
+## 알려진 문제점과 제한 사항
+
+과거 실차 관측과 현재 코드의 대응을 구분합니다. 수정 코드가 있다는 사실이 v0.1.18에서 해결됐다는 실차 확인을 뜻하지는 않습니다.
+
+| 항목 | 관측·제한 | 현재 대응 또는 확인 방법 |
+| --- | --- | --- |
+| USB 12Mbps 인식 | v0.1.16까지 부팅·수동 재장착 후에도 12Mbps였던 로그가 있음 | v0.1.17의 EHCI 대기/호출 제한 수정을 유지. `speed.log`의 실제 `speed_after=480` 확인 필요 |
+| 부팅 후 인터페이스 대기 | 과거에는 재장착·Realtek Launch 뒤에만 인식되는 사례가 있었음 | 부팅 감시와 Korea Projection의 드라이버 호출을 사용. 첫 시험은 수동 조작 없이 기록 |
+| 연결 창만 표시 / 연결·끊김 반복 | 과거 AP 준비·세션 시작 뒤에도 연결 실패나 반복 종료가 보고됨 | AP·접속 단말·실제 세션·화면/음성을 분리해 관측. 최신 무선 모드 이식 결과는 실차 확인 필요 |
+| 인터페이스 UP / hostapd 오류 | 과거 `Operation not permitted`와 AP 시작 실패가 보고됨 | UP 전후 커널 로그·hostapd 권한/종료 로그 수집. 재발 원인을 오류 문구만으로 단정하지 않음 |
+| 외부 호스트 복구 범위 | 허브·여러 후보·다른 장치·활성 인터페이스·제어 파일 부재 시 복구를 거부할 수 있음 | `speed.log`의 거부 사유·복원 결과 확인. 물리 전원 재인가와 같은 동작으로 간주하지 않음 |
+| 351개 차량 지도 | 공식 rc.8의 신규 훅 8개를 선언하면 모드 전체가 거부될 수 있음 | 이식판은 호환되는 41개 선언을 사용. 신규 다중 폰 제어·US/Canada 팝업·AA 주차 소비자는 등록하지 않음 |
+| 카플레이 주차·복귀 | 기존 351개 지도에는 필요한 종료·재광고 점도 없음 | 해당 점이 매핑된 경우에만 켜지는 구조. 현재 차량 지도에서 활성화됐다고 볼 수 없음 |
+| 이전 한국판 전용 옵션 | `tbt_fit`·별표 팝업 건너뛰기는 새 상위 소스에 이식하지 않음 | 저장된 설정이 남아 있어도 새 모드의 같은 기능으로 해석하지 않음 |
+
+상위 소스·서명·지도별 세부 검토는 [rc.7 / rc.8 USB 호환성 문서](docs/compatibility-rc7-rc8-usb.md)를 참고하세요.
+
+## 미확인 사항
+
+- v0.1.18에서 A3000mini를 꽂은 채 부팅했을 때 수동 조작 없이 **USB 480Mbps와 AP 준비까지 도달하는지**.
+- 카플레이의 장시간 연결, 화면·음악·Siri·통화, 주행 안내 및 계기판 표시가 안정적으로 유지되는지.
+- A3000mini 프리징의 재현 조건과 원인, USB·무선 링크의 실제 처리량. USB 12/480Mbps 표시는 처리량 측정값이 아닙니다.
+- 차량 순정 네이티브 라이브러리에 대한 새 무선 모드 레시피의 실제 적용·음성 동작. 해당 사유 라이브러리가 필요한 오프라인 검사는 파일 부재로 건너뛴 항목이 있습니다.
+- 최신 본체·로컬 차량 지도의 실차 호환성과 지도 의존 기능, Android Auto의 실제 연결·유지 동작.
+- 다른 차량·펌웨어·동글 조합 및 이전 버전으로의 전체 복원 결과.
+
+## 문제 발생 시 로그 수집
+
+### 부팅과 재장착을 비교하는 순서
+
+1. A3000mini를 꽂은 채 재부팅하고 약 2분 기다린 뒤 상태와 시간을 기록합니다.
+2. 실패하면 같은 부팅에서 동글을 한 번 뺐다 꽂고 **분리·재장착 시각**을 각각 기록합니다. 필요하면 Realtek Launch를 한 번 누르고 그 시각도 기록합니다.
+3. **다시 재부팅하기 전에** 동글을 제보 USB 메모리로 바꿉니다.
+4. **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 실행합니다.
+5. USB의 `KoreaProjection-report/3-log.txt`와 생성된 `1-report.md`, `2-car-report.json`을 함께 보냅니다. Realtek `speed.log`, `boot.log`, `preload.log`, `launch.log`도 확보할 수 있으면 첨부합니다.
+
+제보할 때 합본·본체·무선 모드 버전, 처음부터 동글을 꽂았는지, 실제 화면·음성 증상, 수동 조작 시각을 함께 적어주세요. USB 장치 번호 변경에는 자동 복구에 따른 재열거도 포함되므로 번호 변경만으로 수동 재장착을 판단하지 않습니다.
+
+### 로그에서 보는 항목
+
+| 로그·항목 | 확인 목적 |
+| --- | --- |
+| `speed.log` | EHCI 소유권·호스트 재초기화 단계, 열거 준비/시간 초과, USB 버스 변경 전후 커널 기록, 실제 480Mbps 확인 |
+| `boot.log` / `preload.log` / `launch.log` | 부팅 자동 실행, 모듈/동글 바인딩, 수동 Launch 결과 |
+| `usb-ap-up-boot.log` / `usb-ap-up-replug.log` | 첫 USB와 재열거 후 인터페이스 UP, 실제 속도·전후 커널 로그 |
+| `usb-hostapd-permissions-*.log` / `usb-hostapd-logcat-*.log` | hostapd의 UID·권한·SELinux 상태, 종료 코드·실패 순간 로그 |
+| `usb-carplay-events.log` / `usb-cp-capture.log` | 세션 생성·시작·종료와 수집 실패 여부 |
+| `usb-connection-first.log` / `usb-connection-latest.log` | 실제 방화벽 규칙·순서·카운터, mDNS·TCP 관측 |
+
+제보 파일은 위 진단 내용을 모아 줍니다. 파일이 없거나 0KB라면 화면의 복사 완료 문구만으로 수집 성공으로 판단하지 말고, 위 제보 경로로 다시 수집해 내용이 들어 있는지 확인하세요. mDNS 응답 없음이나 방화벽 카운터 하나만으로 실패 원인을 단정하지 않습니다.
+
+HMG-API rc.7에서는 **Logs → Record a problem**을 시작하고 증상을 재현한 뒤 종료하는 방법도 사용할 수 있습니다. USB 인식 분석에는 Korea Projection 제보와 Realtek 로그가 함께 필요합니다.
+
+## 검증 범위
+
+### v0.1.18에서 확인한 항목
+
+- [공식 SDK·회귀 24개·실제 수정 메서드/패치 엔진·351개 지도 호환 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44701743445) 통과. 상위 CpTx/재이관 91개와 경로 안내 60개 검사 포함.
+- 실제 rc.7 엔진의 CN7NPE KOR·SDIO 없는 모의 환경에서 설치 계획·적용·재적용·바이트 동일 복원과 USB 규칙 생성 확인.
+- 29개 셸 문법, 공식 본체 내부 파일/지도 493개 해시, 무선 모드 작성자·서명·업데이트 조건, 이전 rc.4 업데이트의 상태 보존 경로 확인.
+- 기존 Realtek/도구 보존, 동일 입력으로 만든 최종 ZIP의 바이트 동일성, 게시된 공개 다운로드와 SHA-256 확인.
+
+위 검사는 소스·빌드·모의 환경·배포 파일 검증입니다. 실제 차량의 RF 성능·USB PHY·화면·음성 정상 동작을 대신 검증한 결과가 아닙니다.
+
+**v0.1.18 USB ZIP SHA-256**
+
+```text
+c49b5052ed26fdaa428fbc89eed3df98b8e641423a3895fe9ff8859c95fe9a87
+```
+
+<details>
+<summary>이전 버전 배포 검증 기록</summary>
+
+### v0.1.17 배포 검증
+
+- [실제 C 코드의 EHCI 버스 재번호화·지연 준비·미구성/다른 장치·시간 초과·실패/신호 복원 검사, 24개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44680540924)를 통과했습니다.
+- 29개 셸 문법, 새 드라이버 의존성·90초 호출 제한·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서 실제 480Mbps 전환은 확인이 필요합니다.
+- USB ZIP SHA-256: `773ebcc1e222caddbe4497b45fa1777a7ad6f5918c0533b4f8e62c0f52dddab4`
+
+### v0.1.16 배포 검증
+
+- [실제 C 코드의 외부 호스트 재초기화 모의 검사·기존 EHCI 검사·23개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44677378486)를 통과했습니다. 해제/등록 효과와 실패·SIGTERM을 모의해 순서·내부 호스트 보존·복원을 확인했습니다.
+- 29개 셸 문법, 새 의존성·helper ELF·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 실차 480Mbps 자동 전환은 확인이 필요합니다.
+- USB ZIP SHA-256: `74022f1af7b88e1a6130ab4e4417afeb30e3805505375511a410acc301424e78`
+
+### v0.1.15 배포 검증
+
+- [Linux의 실행 비트 손실 재현·22개 회귀 검사·기존 EHCI 범위 검사와 Android API 19 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44668325705)를 통과했습니다.
+- 29개 셸 문법, 새 드라이버 의존성, 모드 서명과 기존 커널/실행 파일/카플레이 모드 보존 및 동일 입력 재빌드를 확인했습니다. 실차의 USB 480Mbps 복구와 Wi-Fi 처리량은 아직 확인되지 않았습니다.
+- USB ZIP SHA-256: `db9b9339939a9e560b81da5f1f1a1f1c2679641ffce496cdbecae7d7dbee78bb`
+
+### v0.1.14 배포 검증
+
+- [실제 수정 메서드의 끊김 재현·이관·세션 격리 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44665053112)를 통과했습니다. 16개 회귀 검사, 기존 AP 대기 검사와 원래 transport 값을 보존하는 상태 갱신 검사도 포함합니다.
+- 중첩 ZIP·29개 셸 문법·동일 작성자 서명, 2.4.6~2.4.10 업데이트/재설치 조건, 기존 드라이버·본체·네트워크 정책 보존을 확인했습니다. 동일 입력 재빌드의 파일 내용도 일치합니다. 실차의 연결 지속 여부는 확인이 필요합니다.
+- USB ZIP SHA-256: `ddac046fe0a26230b1a5548a44194b83d995f133ab7f6fc2c2adf2f6a25ad1f1`
+
+### v0.1.13 배포 검증 기록
+
+- [회귀 검사·세션 콜백·Android 훅 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44536318095), [mDNS 응답 해석 검사·ARMv7 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44535807005)를 통과했습니다.
+- 중첩 패키지·29개 셸 문법·모드 서명·드라이버/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서의 실제 방화벽 통과·카플레이 동작 확인은 남아 있습니다.
+- USB ZIP SHA-256: `340087b19afb6daaea24699776a1ebc80eed468da0ea121f5377129ab1b79f5c`
+
+</details>
 
 ## 버전별 변경 사항
 
@@ -90,48 +251,21 @@ v0.1.18은 **HMG-API 본체 1.1.0-rc.7**과 **공식 무선 모드 2.2.0-rc.8 �
 
 자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
 
-## v0.1.18 배포 검증
-
-- [공식 SDK·회귀 24개·실제 수정 메서드/패치 엔진·351개 지도 호환 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44701743445)를 통과했습니다. 상위 CpTx/재이관 91개와 경로 안내 60개 검사도 포함합니다. 사유 제조사 라이브러리가 필요한 네이티브 레시피 검사는 파일 부재로 건너뛰었습니다.
-- 29개 셸 문법, rc.7 내부 파일/지도 493개 해시, 모드 작성자/서명·업데이트 조건, 실제 rc.4 스크립트의 상태 보존, 기존 드라이버/도구 보존과 동일 입력 재빌드를 확인했습니다. 실차 USB 480Mbps·연결·음성은 확인이 필요합니다.
-- USB ZIP SHA-256: `c49b5052ed26fdaa428fbc89eed3df98b8e641423a3895fe9ff8859c95fe9a87`
-
-## v0.1.17 배포 검증
-
-- [실제 C 코드의 EHCI 버스 재번호화·지연 준비·미구성/다른 장치·시간 초과·실패/신호 복원 검사, 24개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44680540924)를 통과했습니다.
-- 29개 셸 문법, 새 드라이버 의존성·90초 호출 제한·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서 실제 480Mbps 전환은 확인이 필요합니다.
-- USB ZIP SHA-256: `773ebcc1e222caddbe4497b45fa1777a7ad6f5918c0533b4f8e62c0f52dddab4`
-
-## v0.1.16 배포 검증
-
-- [실제 C 코드의 외부 호스트 재초기화 모의 검사·기존 EHCI 검사·23개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44677378486)를 통과했습니다. 해제/등록 효과와 실패·SIGTERM을 모의해 순서·내부 호스트 보존·복원을 확인했습니다.
-- 29개 셸 문법, 새 의존성·helper ELF·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 실차 480Mbps 자동 전환은 확인이 필요합니다.
-- USB ZIP SHA-256: `74022f1af7b88e1a6130ab4e4417afeb30e3805505375511a410acc301424e78`
-
-## v0.1.15 배포 검증
-
-- [Linux의 실행 비트 손실 재현·22개 회귀 검사·기존 EHCI 범위 검사와 Android API 19 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44668325705)를 통과했습니다.
-- 29개 셸 문법, 새 드라이버 의존성, 모드 서명과 기존 커널/실행 파일/카플레이 모드 보존 및 동일 입력 재빌드를 확인했습니다. 실차의 USB 480Mbps 복구와 Wi-Fi 처리량은 아직 확인되지 않았습니다.
-- USB ZIP SHA-256: `db9b9339939a9e560b81da5f1f1a1f1c2679641ffce496cdbecae7d7dbee78bb`
-
-## v0.1.14 배포 검증
-
-- [실제 수정 메서드의 끊김 재현·이관·세션 격리 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44665053112)를 통과했습니다. 16개 회귀 검사, 기존 AP 대기 검사와 원래 transport 값을 보존하는 상태 갱신 검사도 포함합니다.
-- 중첩 ZIP·29개 셸 문법·동일 작성자 서명, 2.4.6~2.4.10 업데이트/재설치 조건, 기존 드라이버·본체·네트워크 정책 보존을 확인했습니다. 동일 입력 재빌드의 파일 내용도 일치합니다. 실차의 연결 지속 여부는 확인이 필요합니다.
-- USB ZIP SHA-256: `ddac046fe0a26230b1a5548a44194b83d995f133ab7f6fc2c2adf2f6a25ad1f1`
-
-## v0.1.13 배포 검증 기록
-
-- [회귀 검사·세션 콜백·Android 훅 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44536318095), [mDNS 응답 해석 검사·ARMv7 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44535807005)를 통과했습니다.
-- 중첩 패키지·29개 셸 문법·모드 서명·드라이버/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서의 실제 방화벽 통과·카플레이 동작 확인은 남아 있습니다.
-- USB ZIP SHA-256: `340087b19afb6daaea24699776a1ebc80eed468da0ea121f5377129ab1b79f5c`
-
 ## 릴리스 운영
 
-새 합본 ZIP은 GitHub의 **Latest**로 등록합니다. 테스트 상태는 영문 릴리스 제목과 본문에 표시하고 공개 다운로드와 SHA-256을 확인합니다. **이전 릴리스·태그·설치 ZIP은 삭제하지 않고 보존**하여 버전별로 내려받을 수 있게 합니다. 각 릴리스에는 완성된 USB 설치 ZIP 한 개를 올립니다. 변경 사항은 배포 전에 이 README와 CHANGELOG.md에 기록합니다. [Latest release](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)
+- 새 합본은 GitHub **Latest**로 등록하고 완성된 USB 설치 ZIP 한 개를 제공합니다.
+- **이전 릴리스·태그·설치 ZIP을 보존**해 버전별 다운로드를 유지합니다.
+- 영문 프로젝트/릴리스 이름을 사용하고, 변경 내용은 README와 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
+- 이 README의 현재 안내는 v0.1.18 기준입니다. 과거 버전 설치·검증 기록과 현재 구성을 구분하세요.
+
+[최신 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest) · [전체 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases)
 
 ## 소스와 라이선스
 
-- [Realtek 대응 소스·Gen5W 빌드 설정](driver-source/README.md) · [USB 리셋 도구](driver-source/usb_reset_a3000mini.c)
-- [Korea Projection 1.7.4 원본](https://github.com/StopDragon/korea-projection/tree/v1.7.4) · [CN7NPE USB 이식 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb) · [합본 진단 스크립트](bundle)
-- [HMG-API 1.1.0-rc.7](https://github.com/Open-HMG/HMG-API/tree/v1.1.0-rc.7) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md)
+- [Realtek 대응 소스·Gen5W 빌드 설정](driver-source/README.md) · [USB 복구 도구](driver-source/usb_reset_a3000mini.c)
+- [Korea Projection 1.7.4 원본](https://github.com/StopDragon/korea-projection/tree/v1.7.4) · [기존 CN7NPE USB 이식 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb) · [합본 스크립트](bundle)
+- [공식 HMG-API rc.7 소스](https://github.com/Open-HMG/HMG-API/tree/5732e261f544ef780bc0e4a5f7400ccc1b98edaa) · [공식 무선 모드 rc.8 소스](https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc)
+- [USB 무선 모드 이식·빌드](projection-source/README.md) · [모드 패키지·서명 처리](build_wireless_mod.py) · [호환성 검토](docs/compatibility-rc7-rc8-usb.md)
+- [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md)
+
+구성 요소별 라이선스와 대응 소스는 패키지의 라이선스 안내 및 위 소스를 확인하세요. 무선 모드 이식은 원본과 같은 AGPL-3.0을 따르며 개인 서명 키는 배포하지 않습니다.
