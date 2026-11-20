@@ -7,6 +7,15 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.20
+
+- NEMESIS USB 목록·설치 후 목록의 드라이버 이름을 **Realtek Wi-Fi Driver**로, HMG-API 안의 모드 이름을 **HMG-API Wireless Mode (USB)**로 정리합니다. HMG-API 본체와 Korea Projection 이름은 유지합니다. 기존 RTL8812BU USB Wireless는 본체가 아니라 무선 모드였습니다.
+- 기존 설치에서도 새 이름이 반영되도록 Korea Projection **1.7.4.25**, 드라이버 **1.1.17**, 무선 모드 **2.4.12**로 갱신합니다. Korea Projection 하나를 Update하면 같은 USB의 드라이버와 포함된 모드가 갱신됩니다. 본체는 **1.1.0-rc.7**을 유지합니다.
+- 패키지/모드 ID와 기존 작성자 키를 유지해 설정·업데이트 경로를 보존합니다. 먼저 제거할 필요가 없습니다. 무선 모드 갱신 뒤에는 재부팅하고 적용 안내가 나오면 완료 후 다시 재부팅합니다.
+- 드라이버는 NEMESIS 설명자만 변경합니다. 무선 모드는 기존 검증 ZIP의 mod.json에서 name/version만 변경하고 같은 작성자로 다시 서명합니다. 커널 모듈·드라이버 셸·hooks.jar·오디오 지원 파일·네트워크 정책은 v0.1.19와 바이트 단위로 동일합니다. Korea Projection의 버전·의존성·설치 허용 범위·모드 버전/체크섬을 함께 갱신합니다. 기능 수정이나 실차 증상 해결을 주장하는 배포는 아닙니다.
+- [기존 Linux 회귀 33개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44715211965), 최종 ZIP의 셸 29개 문법·이전 코드 보존·같은 ID/작성자 서명·업데이트 허용 범위·전체 모드 파일 체크섬·동일 입력 재빌드를 확인했습니다.
+- USB ZIP SHA-256: `b6f55de31ebfd1b22a7bef79d562cc6968710d6c259789d06f74450f065dc9c1`. 이전 릴리스·태그·ZIP을 보존하고 새 완성 USB ZIP 한 개를 **Latest**로 등록합니다.
+
 ## USB 합본 v0.1.19
 
 - Korea Projection **1.7.4.24**: rc.7이 출력하는 소유 모드의 parked/unparked/shutdown/wake 이벤트, `home Wi-Fi  off`, 정보용 `network  no cellular`를 자동 적용 필터에서 허용합니다. 다른 모드 변경·문제·되돌리기·알 수 없는 출력과 CLI 실패는 계속 거부합니다.
