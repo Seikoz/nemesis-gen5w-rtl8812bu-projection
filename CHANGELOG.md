@@ -7,6 +7,14 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.21
+
+- 무선 모드의 표시 이름을 **HMG-API Wireless Mode (USB)**에서 **HMG-API Wireless Mode**로, Korea Projection 패키지의 표시 이름을 **Korea Projection CN7NPE USB Test**에서 **Korea Projection CN7NPE BETA**로 변경합니다. USB 목록·설치 후 패키지/모드 목록·설치 및 제거 안내에 반영합니다.
+- 기존 설치에도 새 이름이 반영되도록 Korea Projection **1.7.4.26**, 무선 모드 **2.4.13**으로 갱신합니다. 기존 `USB Test`와 새 `BETA` 이름을 모두 기존 설치 확인 조건에서 허용하고, 같은 패키지/모드 ID·작성자 서명·설정을 유지합니다. Korea Projection CN7NPE BETA만 Update하고 재부팅하며, 모드 적용 안내가 나오면 완료 후 다시 재부팅합니다.
+- HMG-API 본체 **1.1.0-rc.7**와 Realtek Wi-Fi Driver **1.1.17** ZIP은 v0.1.20과 바이트 단위로 동일합니다. 무선 모드는 mod.json의 name/version과 서명 정보만 바꾸며 훅·오디오 파일·네트워크 정책은 그대로입니다. 기능 수정은 포함하지 않습니다.
+- [기존 Linux 회귀 33개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44717133899), 완성 ZIP의 셸 29개 문법·실행 파일/ID/작성자 보존·기존/신규 이름 업데이트 조건·전체 모드 체크섬·동일 입력 재빌드를 확인했습니다.
+- USB ZIP SHA-256: `00c7e4f1fef4e4edfbb579d82aaa694fb7577e3674471262d81582daa3037de4`. 이전 릴리스·태그·ZIP을 보존하고 새 완성 USB ZIP을 **Latest**로 등록합니다.
+
 ## USB 합본 v0.1.20
 
 - NEMESIS USB 목록·설치 후 목록의 드라이버 이름을 **Realtek Wi-Fi Driver**로, HMG-API 안의 모드 이름을 **HMG-API Wireless Mode (USB)**로 정리합니다. HMG-API 본체와 Korea Projection 이름은 유지합니다. 기존 RTL8812BU USB Wireless는 본체가 아니라 무선 모드였습니다.
