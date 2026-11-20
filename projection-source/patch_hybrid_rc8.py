@@ -16,7 +16,7 @@ def patch(root):
 
     dipo = root / 'dipo/Dipo.java'
     source = dipo.read_text(encoding='utf-8')
-    start = source.index('        if (Points.has("dipo.carplay.disable_bluetooth"))')
+    start = source.index('        final boolean stockBtHandoff')
     end = source.index("        // DiPO's own wireless CarPlay", start)
     dipo.write_text(source[:start] + source[end:], encoding='utf-8', newline='\n')
 

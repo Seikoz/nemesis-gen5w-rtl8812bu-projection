@@ -39,6 +39,11 @@ usb_connection_snapshot() {
     echo "WiFi_clients=${STA_COUNT:-unknown} source=${STA_SOURCE:-unavailable}"
     echo '=== Interface addresses and multicast membership ==='
     "$BB_OWN" timeout 2 ip addr show dev "$WIF" 2>&1
+    if [ -r "$PROC/net/dev" ]; then
+      "$BB" awk -F '[: ]+' '/^[[:space:]]*rtwlan0:/ {
+        sub(/^[[:space:]]+/, ""); print "rtwlan0 totals rx_bytes=" $2 " rx_packets=" $3 " rx_errors=" $4 " rx_dropped=" $5 " tx_bytes=" $10 " tx_packets=" $11 " tx_errors=" $12 " tx_dropped=" $13
+      }' "$PROC/net/dev"
+    fi
     for file in "$PROC/net/igmp" "$PROC/net/igmp6"; do
       [ ! -r "$file" ] || "$BB" awk '/rtwlan0/ {print}' "$file"
     done

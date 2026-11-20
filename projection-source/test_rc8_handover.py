@@ -13,7 +13,12 @@ def method(text, signature):
         end+=1
     return text[start:end]
 
-s=Path(sys.argv[1]).read_text(encoding='utf-8')
+bridge=Path(sys.argv[1])
+s=bridge.read_text(encoding='utf-8')
+dipo=bridge.with_name('Dipo.java').read_text(encoding='utf-8')
+hook_start=dipo.index('                    if (!Bridge.sCpWireless || "0".equals(Bridge.prop("persist.ev6.cpwl.keepbt", "1")))')
+hook_end=dipo.index('                }', dipo.index('                    p.setResult(null);', hook_start))
+bt_hook=dipo[hook_start:hook_end]
 signatures=(
  'synchronized void onCpSessionCreated(', 'synchronized void onCpSessionStarted(',
  'synchronized void onCpSessionFinalized(', 'boolean usbCpApCurrent(',
@@ -64,6 +69,7 @@ class CpTx {
  }});}
 }
 class NativeCp {int calls; public int send(byte[] b,int len){calls++;return 0;}}
+class Param {boolean skipped;void setResult(Object ignored){skipped=true;}}
 class SessionStatus {
  static String state; static int raw;
  static void emit(String s,int t){state=s;raw=t;}
@@ -96,6 +102,9 @@ public class Bridge {
  static boolean ensureHotspot(Context c){return apReady;}
  static String prop(String key,String fallback){return key.equals("sys.kp.cp_gen")?generation:fallback;}
  static void log(String s){} static void error(String s,Throwable t){}
+ static void bluetoothHandoff(Param p, boolean stockBtHandoff) {
+ BLUETOOTH_HOOK
+ }
  static String mask(String s){return "[mac]";}
  static void onUsbGone(){ended++;}
  static void flushPending(IIap2Service api){
@@ -182,10 +191,25 @@ public class Bridge {
   reset();begin(true);onCpSessionStarted(1);onSppDown("phone-A");
   check(sCpClient,"Legacy transport 1 must keep immediate handover");
   handler.runAll();check(attaches==1,"Legacy transport 1 attach failed");
+
+  reset();begin(true);onCpSessionStarted(0);
+  Param control=new Param();bluetoothHandoff(control,false);
+  check(control.skipped,"Default must keep the previous behavior");
+  Param trial=new Param();bluetoothHandoff(trial,true);
+  check(!trial.skipped,"Configured USB Wi-Fi session did not allow the stock handoff");
+  generation="replugged-ap";
+  Param stale=new Param();bluetoothHandoff(stale,true);
+  check(stale.skipped,"A stale AP inherited the trial");
+  reset();begin(false);onCpSessionStarted(1);
+  Param legacy=new Param();bluetoothHandoff(legacy,true);
+  check(legacy.skipped,"Non-USB wireless transport inherited the trial");
+  onUsbIapConnected(1,"usb-phone");
+  Param wired=new Param();bluetoothHandoff(wired,true);
+  check(!wired.skipped,"Trial intercepted a wired session");
   System.out.println("Actual rc.8 Bridge transport-0/SPP-loss replay, iAP2 forwarding, cancellation and reconnect isolation passed");
  }
 }
-'''.replace('METHODS',methods)
+'''.replace('METHODS',methods).replace('BLUETOOTH_HOOK',bt_hook)
 with tempfile.TemporaryDirectory() as td:
     p=Path(td);(p/'Bridge.java').write_text(harness,encoding='utf-8')
     subprocess.run(['javac','-d',str(p),str(p/'Bridge.java')],check=True)

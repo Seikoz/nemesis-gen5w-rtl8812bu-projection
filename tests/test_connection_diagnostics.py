@@ -5,6 +5,7 @@ import unittest
 from test_usb_stations import SH, ENV
 
 SCRIPT=(Path(__file__).resolve().parents[1]/'bundle/usb-connection-diagnostics.sh').read_text(encoding='utf-8')
+AUDIO=(Path(__file__).resolve().parents[1]/'bundle/usb-carplay-audio.sh').read_text(encoding='utf-8')
 
 class FirewallSnapshotTest(unittest.TestCase):
     def test_kernel_order_counters_and_ipv6_udp_scope_are_reported(self):
@@ -40,5 +41,54 @@ EOF
             self.assertIn('HMGAPI_input_jump_position=2 HMGAPI_output_jump_position=1',out)
             self.assertIn('IPv6_UDP6031_scoped_input_entries=1 output_entries=1',out)
             self.assertEqual(out.count('firewall_exit=0'),2)
+
+    def test_audio_capture_keeps_milestones_without_phone_or_raw_log(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root/'proc/sys/kernel/random').mkdir(parents=True)
+            boot = root/'proc/sys/kernel/random/boot_id'
+            boot.write_text('new-boot\n', newline='\n')
+            report = root/'usb-carplay-audio.log'
+            report.write_text('boot=old-boot\nold-event\n', newline='\n')
+            setup = r'''
+PATH=$TEST_BIN
+W="$PWD" PROC="$PWD/proc" BB=bb BB_OWN=bb UPTIME="$PWD/uptime"
+bb() { if [ "$1" = timeout ]; then shift 2; "$@"; else command "$@"; fi; }
+logcat() {
+  echo capture >> "$W/captures"
+  cat <<'EOF'
+11-21 12:01:00.001 123 456 I HMG-API : [wireless] USB_CP_AUDIO bluetooth_handoff=stock
+11-21 12:01:00.002 123 456 I TccCarPlay: Setup stream type: 102
+11-21 12:01:00.003 123 456 I TccCarPlay: Main audio setting up AAC-LC/48000 for Private iPhone
+11-21 12:01:00.004 123 456 I TccCarPlay: audio setup failed for Private iPhone
+11-21 12:01:00.005 123 456 I TccCarPlay: Setup stream type: 110
+11-21 12:01:00.006 123 456 I MediaFocusControl: AudioFocus requestAudioFocus() from com.daudio.av.app.btaudio.ui Private iPhone
+EOF
+}
+'''
+            run = r'''
+echo '100.50 1.00' > "$UPTIME"
+CP_COUNT=0
+usb_watch_carplay_audio
+CP_COUNT=1
+usb_watch_carplay_audio
+usb_watch_carplay_audio
+CP_COUNT=0
+usb_watch_carplay_audio
+usb_watch_carplay_audio
+'''
+            result = subprocess.run([SH, '-s'], input=(setup+AUDIO+run).encode(), env=ENV,
+                                    cwd=root, capture_output=True, check=True)
+            self.assertFalse(result.stderr, result.stderr)
+            out = report.read_text()
+            self.assertEqual((root/'captures').read_text().splitlines(), ['capture', 'capture'])
+            self.assertTrue(out.startswith('boot=new-boot\nlogcat_exit=0\n'))
+            self.assertIn('bluetooth_handoff=stock', out)
+            self.assertIn('audio_setup_request type=102', out)
+            self.assertEqual(out.count('audio_stream_reported stream=main codec=aac-lc'), 1)
+            self.assertIn('audio_setup_error', out)
+            self.assertIn('focus_request source=bluetooth-media', out)
+            for excluded in ('old-event', 'Private iPhone', 'type=110', 'com.daudio'):
+                self.assertNotIn(excluded, out)
 
 if __name__=='__main__': unittest.main()

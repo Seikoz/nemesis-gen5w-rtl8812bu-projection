@@ -99,6 +99,7 @@ cp_watch() {
     CP_LAST_STATE="$CP_STATE:$CP_COUNT"
   fi
   echo "$CP_COUNT" > "$CPN"
+  usb_watch_carplay_audio
   usb_client_progress
   usb_connection_tick
 }

@@ -10,13 +10,15 @@ import zipfile
 from pathlib import Path
 
 from build_package import MODULES, PACKAGE_PATH, RESET_HELPER_PATH, ROOT, archive, build_driver_package
-from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, HYBRID_VERSION, hybrid_files, verify_mod
+from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, HYBRID_VERSION, VERSION, hybrid_files, verify_mod
 
 
 PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "16bea991f1c541acccea658f766971fac0b9d41caf34d6ca7523c9007fc41a63"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
+BUNDLE_VERSION = "0.1.27"
+PROJECTION_VERSION = "1.7.4.32"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
                  for model in ("CN7PE", "CN7HEVPE", "CN7NPE") for variant in ("0000", "S5W_M"))
 BASE_PRODUCTS = b"CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902"
@@ -27,7 +29,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name={PROJECTION_NAME}
-short-desc=v1.7.4.31 - Installs HMG-API, wireless mode and Realtek driver
+short-desc=v{PROJECTION_VERSION} - Installs HMG-API, wireless mode and Realtek driver
 
 [package.1]
 path={HMG_API}
@@ -235,7 +237,7 @@ def add_session_diagnostics(hotspot, status):
     start = hotspot.index(b'\ncp_count() {') + 1
     end = hotspot.index(b'\n}\n', hotspot.index(b'\ncp_watch() {', start)) + 3
     definitions = b'\n'.join((ROOT / 'bundle' / name).read_bytes() for name in (
-        'usb-carplay-session.sh', 'usb-connection-diagnostics.sh'))
+        'usb-carplay-session.sh', 'usb-connection-diagnostics.sh', 'usb-carplay-audio.sh'))
     hotspot = hotspot[:start] + definitions + b'\n' + hotspot[end:]
     anchor = b'  if [ "$_a" = "$(getprop $AAPROP 2>/dev/null)" ]; then'
     if hotspot.count(anchor) != 1:
@@ -248,9 +250,9 @@ def add_session_diagnostics(hotspot, status):
     anchor = b'$W/usb-hostapd.log '
     if status.count(anchor) != 1:
         raise ValueError('Expected report file list')
-    status = status.replace(anchor, anchor + b'$W/usb-carplay-events.log $W/usb-cp-capture.log $W/usb-connection-first.log $W/usb-connection-latest.log ')
+    status = status.replace(anchor, anchor + b'$W/usb-carplay-events.log $W/usb-cp-capture.log $W/usb-carplay-audio.log $W/usb-connection-first.log $W/usb-connection-latest.log ')
     status = status.replace(b'"$W"/usb-ap-up-*.log|',
-                            b'"$W"/usb-carplay-events.log|"$W"/usb-cp-capture.log|"$W"/usb-connection-*.log|"$W"/usb-ap-up-*.log|')
+                            b'"$W"/usb-carplay-events.log|"$W"/usb-cp-capture.log|"$W"/usb-carplay-audio.log|"$W"/usb-connection-*.log|"$W"/usb-ap-up-*.log|')
     anchor = b'      lastmask 400 < "$_f"'
     if status.count(anchor) != 1:
         raise ValueError('Expected report snapshot size hook')
@@ -276,12 +278,12 @@ def add_boot_timing(hotspot, status):
          b'  usb_boot_mark ap_prerequisites_ready\n  while ! parse_conf "$SRC"; do\n'),
         (b'      usb_capture_running_hostapd\n      log "USB AP ready:',
          b'      usb_boot_mark ap_ready\n      usb_capture_running_hostapd\n      log "USB AP ready:'),
-        (b'  echo "$CP_COUNT" > "$CPN"\n  usb_client_progress',
+        (b'  echo "$CP_COUNT" > "$CPN"\n  usb_watch_carplay_audio',
          b'''  if [ "$CP_COUNT" = 1 ] && [ "$USB_CP_BOOT_RECORDED" != 1 ]; then
     usb_boot_mark carplay_observed && USB_CP_BOOT_RECORDED=1
   fi
   echo "$CP_COUNT" > "$CPN"
-  usb_client_progress'''),
+  usb_watch_carplay_audio'''),
     )
     for before, after in anchors:
         if hotspot.count(before) != 1:
@@ -328,7 +330,7 @@ def check_avante_map_before_start(hotspot, status, hybrid_digest):
         raise ValueError("Expected one AP service entry point")
     helper = (ROOT / 'bundle/usb-hybrid-map.sh').read_bytes()
     hotspot = hotspot.replace(definitions, b'\n' + helper + definitions)
-    version = b'MOD_VER=2.4.15\n'
+    version = f'MOD_VER={VERSION}\n'.encode('ascii')
     if hotspot.count(version) != 1:
         raise ValueError("Expected one standard wireless version")
     selected = f'''case "$(getprop ro.build.product)" in
@@ -355,7 +357,7 @@ def build_projection_package(source, wireless, hybrid, station_counter, link_dia
         raise ValueError('Expected the Android ARMv7 mDNS diagnostics helper')
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.31\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", f"package-version={PROJECTION_VERSION}\n".encode("ascii"))
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.7,realtek.88x2bu@>=1.1.19,!niro.carplay.hotspot"\n',
@@ -432,7 +434,7 @@ done''',
         new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
         if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:
             raise ValueError('Expected mod version and checksum installer hooks')
-        hotspot = hotspot.replace(b'MOD_VER=2.4.6', b'MOD_VER=2.4.15').replace(
+        hotspot = hotspot.replace(b'MOD_VER=2.4.6', f'MOD_VER={VERSION}'.encode('ascii')).replace(
             b'MOD_MD5=' + old_digest, b'MOD_MD5=' + new_digest)
         hybrid_digest = hashlib.md5(hybrid, usedforsecurity=False).hexdigest()
         changes['svc/hotspot.sh'], changes['bin/status.sh'] = check_avante_map_before_start(
@@ -455,7 +457,11 @@ done''',
             raise ValueError("Expected the Korea Projection source link in the base package")
         changes["licenses/Source.md"] = source_notice.replace(b"Korea Projection CN7NPE USB Test", PROJECTION_NAME.encode("ascii")).replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        ) + b'\nWireless mod 2.4.15 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.26/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.26/bundle\n'
+        ) + (
+            f"\nWireless mod {VERSION} and {HYBRID_VERSION}, scoped TCP/UDP policy and diagnostic sources (AGPL-3.0):\n"
+            f"https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v{BUNDLE_VERSION}/projection-source\n"
+            f"https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v{BUNDLE_VERSION}/bundle\n"
+        ).encode("ascii")
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -483,7 +489,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.7 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-Avante-260902-Bundle-v0.1.26-USB.zip",
+        default=ROOT / "dist" / f"NEMESIS-Avante-260902-Bundle-v{BUNDLE_VERSION}-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,
@@ -492,9 +498,9 @@ def main():
     parser.add_argument("--usb-reset-helper", required=True, type=Path,
                         help="Android ARMv7 helper with the scoped EHCI recovery command")
     parser.add_argument('--wireless-mod', required=True, type=Path,
-                        help='Same-author signed wireless mod 2.4.15 with session callbacks and local TCP/UDP rules')
+                        help=f'Same-author signed wireless mod {VERSION} for CN7PE and CN7NPE')
     parser.add_argument('--hybrid-wireless-mod', required=True, type=Path,
-                        help='Same-author CN7HEVPE wireless mod 2.4.16')
+                        help=f'Same-author CN7HEVPE wireless mod {HYBRID_VERSION}')
     parser.add_argument('--station-counter', required=True, type=Path,
                         help='Android ARMv7 read-only hostapd station counter')
     parser.add_argument('--link-diagnostics', required=True, type=Path,

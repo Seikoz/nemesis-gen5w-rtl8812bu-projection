@@ -16,8 +16,8 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.15'
-HYBRID_VERSION = '2.4.16'
+VERSION = '2.4.17'
+HYBRID_VERSION = '2.4.18'
 HYBRID_OMIT = {'btsettings.projection_helper.open_wireless_page', 'dipo.carplay.disable_bluetooth'}
 DISPLAY_NAME = 'HMG-API Wireless Mode'
 UPSTREAM_SHA256 = '4837efbfc1e71a7f30c65c7d914dc7d00aa788cc7ab4ea17b1a1860e6e96d4ee'
@@ -98,7 +98,8 @@ def rebase_files(base, hooks, previous):
                 b'USB_CP_EVENT ' not in dex or b'sys.kp.cp_session' not in dex or
                 b'USB_CP_HANDOVER stage=spp-down-preserved raw_transport=' not in dex or
                 b'USB_CP_HANDOVER stage=first-native-send' not in dex or
-                b'USB_CP_HANDOVER stage=first-peer-data' not in dex or b'UsbAp;' not in dex or b'ParkCp;' not in dex or b'CpTx;' not in dex):
+                b'USB_CP_HANDOVER stage=first-peer-data' not in dex or b'UsbAp;' not in dex or b'ParkCp;' not in dex or b'CpTx;' not in dex or
+                b'USB_CP_AUDIO bluetooth_handoff=stock' not in dex or b'stock_bt_handoff' not in dex):
             raise ValueError('Expected Android API 19 rc.8 USB hooks')
     mod = json.loads(files['mod.json'])
     mod['version'] = VERSION
@@ -129,12 +130,19 @@ def rebase_files(base, hooks, previous):
     for entry in json.loads(old_files['settings.json'])['settings']:
         if entry['key'] in ('aa_ap','aa_ready_resend') and entry['key'] not in keys:
             settings['settings'].append(entry)
+    settings['settings'].append({
+        'key': 'stock_bt_handoff',
+        'type': 'toggle',
+        'default': False,
+        'title': 'Stock Bluetooth handoff (CarPlay audio test)',
+        'description': 'CN7PE/CN7NPE KOR 260902 only. For a confirmed USB Wi-Fi CarPlay session, allow the head unit to handle the iPhone Bluetooth handoff when requested. Compare audio and connection stability. Turn off to restore the previous behavior. Takes effect after the head unit restarts.',
+    })
     files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] = (
-        'HMG-API USB wireless mod 2.4.15 (local upgrade version), based on official 2.2.0-rc.8.\n'
+        f'HMG-API USB wireless mod {VERSION} (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
-        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\n'
+        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.27/projection-source\n'
         'AGPL-3.0. Signed by the existing local author; not an unmodified official package.\n'
         'Eight hooks newer than the checked 351-point map are omitted; their consumers are not registered.\n'
     ).encode()
@@ -162,7 +170,7 @@ def hybrid_files(files, hooks):
     with zipfile.ZipFile(io.BytesIO(hooks)) as jar:
         dex = jar.read('classes.dex')
         if (jar.testzip() is not None or not dex.startswith(b'dex\n035\0') or
-                b'stage=first-native-send' not in dex or b'rtwlan0\0' not in dex or
+                b'stage=first-native-send' not in dex or b'rtwlan0\0' not in dex or b'stock_bt_handoff' in dex or
                 any(point.rsplit('.', 1)[-1].encode() in dex for point in HYBRID_OMIT)):
             raise ValueError('Expected the CN7HEVPE hooks with the two optional consumers removed')
     files = dict(files)
@@ -182,9 +190,12 @@ def hybrid_files(files, hooks):
     for name in ('stock', 'expect'):
         files[f'patches/usb_cn7hevpe/{name}'] = b''
     files['patches.json'] = json_bytes(patches)
+    settings = json.loads(files['settings.json'])
+    settings['settings'] = [entry for entry in settings['settings'] if entry['key'] != 'stock_bt_handoff']
+    files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] += (
-        '\nCN7HEVPE variant 2.4.16: separate hybrid patch set and hook declaration.\n'
-        'Source: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.26\n'
+        f'\nCN7HEVPE variant {HYBRID_VERSION}: separate hybrid patch set and hook declaration.\n'
+        'Source: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.27\n'
     ).encode()
     return files
 
@@ -212,7 +223,7 @@ if __name__ == '__main__':
     parser.add_argument('--hooks', type=Path)
     variants = parser.add_mutually_exclusive_group()
     variants.add_argument('--rename-only', action='store_true', help='Relabel the verified 2.4.12 mod without rebuilding code')
-    variants.add_argument('--hybrid', action='store_true', help='Adapt the signed 2.4.15 mod for CN7HEVPE')
+    variants.add_argument('--hybrid', action='store_true', help=f'Adapt the signed {VERSION} mod for CN7HEVPE')
     parser.add_argument('--previous-mod', type=Path, required=True)
     parser.add_argument('--key', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)

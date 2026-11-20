@@ -213,6 +213,21 @@ def patch(mod, old):
     for name in ('UsbAp.java','SessionStatus.java'):
         (path.parent/name).write_bytes((HERE/name).read_bytes())
 
+    path = root / 'dipo/Dipo.java'
+    text = path.read_text(encoding='utf-8')
+    text = once(text, '        // the CarPlay library\'s disableBluetooth:', '''        final boolean stockBtHandoff = mod.settingBoolean("stock_bt_handoff", false);
+        // the CarPlay library's disableBluetooth:''')
+    text = once(text, '                    log("DiPO: Bluetooth kept up for wireless CarPlay (disableBluetooth skipped)");',
+                '''                    if (stockBtHandoff && Bridge.sUsbCpTransport == 0 && Bridge.usbCpApCurrent()) {
+                        log("USB_CP_AUDIO bluetooth_handoff=stock");
+                        return;
+                    }
+                    if (Bridge.sUsbCpTransport == 0 && Bridge.usbCpApCurrent()) {
+                        log("USB_CP_AUDIO bluetooth_handoff=preserved");
+                    }
+                    log("DiPO: Bluetooth kept up for wireless CarPlay (disableBluetooth skipped)");''')
+    path.write_text(text, encoding='utf-8', newline='\n')
+
     # The car's checked 351-point map predates these eight points. Declaring them
     # would refuse the whole mod, not just the optional feature. Do not register
     # their consumers in this target build (metadata is restricted by the signer).
