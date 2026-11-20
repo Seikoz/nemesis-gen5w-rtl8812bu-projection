@@ -2,8 +2,8 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE BETA **1.7.4.27** — 설치·AP·연결 관리
-- HMG-API Wireless Mode **2.4.13** — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
+- Korea Projection CN7NPE BETA **1.7.4.28** — 설치·AP·연결 관리
+- HMG-API Wireless Mode **2.4.14** — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek Wi-Fi Driver **1.1.17** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
 
@@ -11,7 +11,7 @@
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek Wi-Fi Driver 1.1.17이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.27`는 업데이트할 수 있습니다.
+3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek Wi-Fi Driver 1.1.17이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.28`는 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드가 재부팅을 요청하면 재부팅합니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 페어링합니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
@@ -124,3 +124,11 @@ USB 목록에서 **Korea Projection CN7NPE BETA → Update**만 선택합니다.
 Korea Projection CN7NPE BETA **1.7.4.27**로 Update합니다. 처음 설치했거나 모드·권한 복구가 필요한 부팅은 기존 확인 절차를 따릅니다. 기존 설정이 완료됐고 HMG-API 적용 계획·관리 파일 상태·지도 확인 기록이 맞으면, USB 480Mbps와 rtwlan0 준비 뒤 기존 120초 권한 복구 대기를 생략합니다.
 
 A3000mini를 그대로 꽂고 재부팅합니다. 제보의 ap.log에서 USB 준비, `USB boot: existing wireless setup checked`, `USB AP ready` 시각을 비교합니다. 대기 경로를 탔다면 `using delayed HMG-API setup`과 `usb-boot-setup.log`를 확인합니다. 단축 시간은 차량에서 측정해야 합니다. 멜론 음악 출력은 별개로 시험합니다.
+
+## v0.1.23 iAP2 전환 시험
+
+Korea Projection CN7NPE BETA **1.7.4.28**로 Update한 뒤 무선 모드 **2.4.14**의 적용·재부팅 안내를 따릅니다. 무선으로 확인된 transport 0 세션은 Bluetooth SPP 종료 뒤 휴대폰의 CarPlay 채널 데이터를 최대 1.2초 기다립니다. 데이터가 오면 즉시 전달을 시작하고, 시간 안에 오지 않으면 차량 쪽에서 기존 전환을 요청합니다.
+
+연결 전에 HMG-API **Logs → Record a problem**을 시작합니다. 멜론을 재생하고 아이폰에 차량 출력이 나타나는지, 차량 스피커에서 재생되는지 각각 확인합니다. 실패하면 기록 파일과 `3-log.txt`를 저장합니다. 무선 모드 설정에서 **CarPlay's own log (troubleshooting)**를 켠 뒤 재부팅해 비교하면, 수집 가능한 경우 순정 CarPlay의 스트림 협상 로그도 얻을 수 있습니다. 시험 뒤에는 이 설정을 끄고 로그 공유 전 기기 이름을 가립니다.
+
+`first-peer-data`, `peer-wait-expired`, `first-native-send`와 `iAP2 connect success comp=5` 순서를 확인합니다. `component5-connected`는 연결 콜백이며, 식별 완료는 별도 단계입니다. 새 전환 순서의 효과와 실제 오디오 출력은 실차 확인이 필요합니다.

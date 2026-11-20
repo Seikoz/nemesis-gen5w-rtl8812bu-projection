@@ -2,7 +2,7 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜의 부팅 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. Korea Projection과 HMG-API를 포함한 완성 USB 설치 ZIP을 제공합니다. 차량에서 따로 빌드할 필요는 없습니다.
 
-**[v0.1.22 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.22/NEMESIS-CN7NPE-260902-Bundle-v0.1.22-USB.zip)** · [릴리스 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.22) · [전체 변경 이력](CHANGELOG.md)
+**[v0.1.23 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.23/NEMESIS-CN7NPE-260902-Bundle-v0.1.23-USB.zip)** · [릴리스 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.23) · [전체 변경 이력](CHANGELOG.md)
 
 > **실차 시험용 패키지입니다.** v0.1.18 로그에서는 수동 재장착 전에 자동 480Mbps 전환과 드라이버 준비를 통과했습니다. 이후 HMG-API 설정 대기가 있었고, 카플레이 화면이 연결돼도 멜론 소리가 휴대폰에서 나오는 문제가 보고됐습니다. v0.1.19는 오디오 지원 파일 자동 적용을 수정하며, 재장착 없는 전체 부팅과 실제 음성 정상 동작은 실차 확인이 필요합니다.
 
@@ -35,14 +35,14 @@
 
 ## 패키지 구성
 
-| 구성 요소 / 표시 이름 | v0.1.22 버전 | 역할 |
+| 구성 요소 / 표시 이름 | v0.1.23 버전 | 역할 |
 | --- | --- | --- |
-| Korea Projection CN7NPE BETA | **1.7.4.27** | 설치 의존성, 오디오 파일 자동 적용, USB AP·DHCP 운영, 상태 표시·제보 수집 |
+| Korea Projection CN7NPE BETA | **1.7.4.28** | 설치 의존성, 오디오 파일 자동 적용, USB AP·DHCP 운영, 상태 표시·제보 수집 |
 | Realtek Wi-Fi Driver | **1.1.17** | RTL8812BU 커널 모듈 로드, 동글 바인딩, 부팅 감시와 제한된 USB 고속 복구 |
 | HMG-API 본체 | **1.1.0-rc.7** / NEMESIS 패키지 **1.0.99.7** | 시스템 훅·차량 지도·모드 설치 및 적용 |
-| HMG-API Wireless Mode | **2.4.13** | HMG-API 안의 무선 모드. 공식 **2.2.0-rc.8** 기반 USB 이식판, AP 대기·카플레이 세션·iAP2 처리 |
+| HMG-API Wireless Mode | **2.4.14** | HMG-API 안의 무선 모드. 공식 **2.2.0-rc.8** 기반 USB 이식판, AP 대기·카플레이 세션·iAP2 처리 |
 
-**2.4.13은 이 프로젝트의 로컬 업데이트 버전**입니다. 공식 상위 버전 번호와 직접 비교하지 않습니다. HMG-API 본체는 공식 ZIP을 그대로 포함하고, 무선 모드는 상위 소스를 USB용으로 수정·빌드해 같은 합본 작성자로 서명합니다. v0.1.21은 이름과 업데이트용 버전을 정리한 배포입니다. 본체 ZIP과 드라이버·무선 모드의 실행 코드는 v0.1.19와 동일합니다.
+**2.4.14는 이 프로젝트의 로컬 업데이트 버전**입니다. 같은 작성자로 서명한 공식 rc.8 기반 이식판이며, v0.1.23에서 iAP2 전환과 관련 로그를 수정했습니다. HMG-API 본체는 공식 rc.7 ZIP을 사용합니다.
 
 **Korea Projection CN7NPE BETA**는 기존 **Korea Projection CN7NPE USB Test**의 새 이름입니다. **HMG-API Wireless Mode (USB)**도 **HMG-API Wireless Mode**로 줄였습니다. Realtek Wi-Fi Driver 1.1.17과 HMG-API 본체는 v0.1.20과 같습니다. 기존 **Realtek RTL8812BU USB Driver**는 **Realtek Wi-Fi Driver**로, HMG-API 모드 목록의 **RTL8812BU USB Wireless**는 **HMG-API Wireless Mode**로 표시합니다. 후자는 HMG-API 본체와 별개인 모드입니다. 패키지 ID·모드 ID·작성자 서명을 유지하므로 먼저 제거할 필요 없이 Korea Projection 하나를 Update합니다.
 
@@ -96,6 +96,8 @@ flowchart TD
 
 ### 무선 세션과 방화벽
 
+v0.1.23은 무선 출처와 현재 AP가 확인된 transport 0 세션에서 SPP 종료 뒤 첫 CarPlay 채널 데이터를 최대 1.2초 기다립니다. 첫 데이터로 전환이 시작되거나 시간 만료 시 차량 쪽에서 전환을 요청합니다. 첫 수신과 첫 네이티브 송신 결과는 `USB_CP_HANDOVER`에서 확인합니다.
+
 무선 모드는 AP 준비 신호, 유효한 AP 세대, UP 상태의 `rtwlan0`과 `192.168.43.1`을 확인한 뒤 Bluetooth iAP2를 시작합니다. AP 대기는 최대 약 180초이며 Bluetooth 해제·모드 비활성화·유선 연결·세션 교체 시 취소합니다.
 
 USB iAP2가 없고 이 브리지의 Bluetooth 출처와 같은 AP가 확인된 세션에 한해 `transport=0`도 무선 세션으로 인정합니다. SPP가 끝나면 카플레이 채널로 iAP2를 이관하며, 이전 세션이나 AP에 속한 예약 작업과 전송을 구분합니다. `transport=0`을 모든 차량의 무선 연결로 해석하는 방식은 아닙니다.
@@ -104,12 +106,12 @@ USB iAP2가 없고 이 브리지의 Bluetooth 출처와 같은 AP가 확인된 �
 
 ## 설치 및 업데이트 순서
 
-1. **다운로드·압축 해제:** 위의 v0.1.22 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages/`가 USB 루트에 있는지 확인합니다.
+1. **다운로드·압축 해제:** 위의 v0.1.23 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages/`가 USB 루트에 있는지 확인합니다.
 2. **Korea Projection 선택:** 주차 상태에서 설치 USB를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7NPE BETA → Install / Update**를 선택합니다.
 3. **의존성 설치 확인:** 설치 계획을 확인하고 진행합니다. 필요한 HMG-API rc.7과 Realtek Wi-Fi Driver 1.1.17은 같은 USB에서 먼저 설치/업데이트됩니다. 이미 조건을 충족하면 다시 설치하지 않을 수 있습니다.
 4. **동글로 교체:** 설치가 끝나면 설치 USB를 빼고 A3000mini를 꽂아 둡니다.
 5. **OS 재부팅:** **NEMESIS → My Packages → Korea Projection → Launch**로 상태 화면을 열고 **지금 재부팅**을 누릅니다. 이 버튼은 `sync` 후 시스템 `reboot`를 요청합니다.
-6. **본체·모드 버전 확인:** HMG-API 앱에서 **1.1.0-rc.7 / Hooks on(훅 활성)**, **HMG-API Wireless Mode 2.4.13**를 확인합니다. 모드 업데이트·적용 또는 **오디오 지원 파일 자동 적용** 안내가 나오면 완료 후 **한 번 더 지금 재부팅**을 누릅니다. 자동 적용 보류가 나오면 HMG-API 변경 사항과 제보 로그를 확인합니다.
+6. **본체·모드 버전 확인:** HMG-API 앱에서 **1.1.0-rc.7 / Hooks on(훅 활성)**, **HMG-API Wireless Mode 2.4.14**를 확인합니다. 모드 업데이트·적용 또는 **오디오 지원 파일 자동 적용** 안내가 나오면 완료 후 **한 번 더 지금 재부팅**을 누릅니다. 자동 적용 보류가 나오면 HMG-API 변경 사항과 제보 로그를 확인합니다.
 7. **자동 부팅 시험:** A3000mini를 꽂은 채 약 2분 기다립니다. 첫 시험에는 동글을 재장착하거나 Realtek Launch를 누르지 않습니다.
 8. **연결 시험:** `USB Wi-Fi AP ready (rtwlan0)`를 확인한 뒤 iPhone의 Wi-Fi·Bluetooth를 켜고 내비게이션과 페어링해 CarPlay를 허용합니다. 화면·음악·통화가 유지되는지 확인합니다.
 
@@ -188,6 +190,11 @@ HMG-API rc.7에서는 **Logs → Record a problem**을 시작하고 증상을 �
 
 ## 검증 범위
 
+### v0.1.23 iAP2 전환 검사
+
+- [Android API 19 빌드 및 회귀 검사](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44740466978) 통과. Linux 검사 36개, 실제 수정된 전환 코드, rc.7 설치 계획·적용·복원과 지도 호환을 확인했습니다.
+- 기존 작성자 서명·부팅 대기 코드·오디오 지원 파일 보존, 완성 ZIP의 셸 문법 29개와 재현 빌드를 확인했습니다. 실제 iAP2 식별과 차량 음악 출력은 차량에서 측정해야 합니다.
+
 ### v0.1.22 부팅 대기 검사
 
 - [Linux 회귀 36개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44733065568) 통과. 적용·권한 복구가 필요 없는 기존 설치의 대기 생략과, 설정 미완료·변경 대기·검증 실패 시 기존 절차를 확인했습니다.
@@ -213,10 +220,10 @@ HMG-API rc.7에서는 **Logs → Record a problem**을 시작하고 증상을 �
 
 위 검사는 소스·빌드·모의 환경·배포 파일 검증입니다. 실제 차량의 RF 성능·USB PHY·화면·음성 정상 동작을 대신 검증한 결과가 아닙니다.
 
-**v0.1.22 USB ZIP SHA-256**
+**v0.1.23 USB ZIP SHA-256**
 
 ```text
-a15e3bdf88779175368adff279beb9f4e0878ea6d79d5e2ae1f907a470c85e69
+16fe8ba4f483e71ecdff1bb0e12f203d83a98e7619ca0163b14e5afbda8134a4
 ```
 
 <details>
@@ -258,6 +265,7 @@ a15e3bdf88779175368adff279beb9f4e0878ea6d79d5e2ae1f907a470c85e69
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.23 | 확인된 transport 0 무선 세션의 SPP 종료 뒤 최대 1.2초 첫 수신 대기, 첫 수신·네이티브 송신 반환값 기록 |
 | v0.1.22 | 기존 설정이 검증된 부팅에서 120초 권한 복구 대기 생략, 부팅 기록 추가 |
 | v0.1.21 | HMG-API Wireless Mode / Korea Projection CN7NPE BETA로 이름 확정, 기존 USB Test·BETA 이름의 업데이트 호환 유지 |
 | v0.1.20 | 표시 이름을 Realtek Wi-Fi Driver / HMG-API Wireless Mode (USB)로 구분. 기존 설치 갱신용 버전 증가와 동일 ID·작성자 유지, 실행 코드 보존 |
@@ -289,7 +297,7 @@ a15e3bdf88779175368adff279beb9f4e0878ea6d79d5e2ae1f907a470c85e69
 - 새 합본은 GitHub **Latest**로 등록하고 완성된 USB 설치 ZIP 한 개를 제공합니다.
 - **이전 릴리스·태그·설치 ZIP을 보존**해 버전별 다운로드를 유지합니다.
 - 영문 프로젝트/릴리스 이름을 사용하고, 변경 내용은 README와 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
-- 이 README의 현재 안내는 v0.1.22 기준입니다. 과거 버전 설치·검증 기록과 현재 구성을 구분하세요.
+- 이 README의 현재 안내는 v0.1.23 기준입니다. 과거 버전 설치·검증 기록과 현재 구성을 구분하세요.
 
 [최신 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest) · [전체 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases)
 
