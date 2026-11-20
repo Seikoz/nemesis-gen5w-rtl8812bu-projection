@@ -45,6 +45,7 @@ usb_audio_marker() {
 usb_audio_reconcile() {
   local marked_boot= marked_version= marked_state= safe=0
   USB_AUDIO_STATUS=none
+  USB_AUDIO_PLAN_SAFE=0
   usb_target || return 0
   echo "boot=$BID expected_mod=$MOD_VER audio setup before AP startup"
   [ ! -f "$HMGDATA/mods/$MOD_ID/.disabled" ] || return 0
@@ -59,6 +60,7 @@ usb_audio_reconcile() {
     fi
   fi
   plan_only_mod && safe=1
+  USB_AUDIO_PLAN_SAFE=$safe
   [ -s "$W/plan.txt" ] || { USB_AUDIO_STATUS=plan-unavailable; return 2; }
   usb_audio_pending
   [ "$USB_AUDIO_PENDING" = 1 ] || return 0

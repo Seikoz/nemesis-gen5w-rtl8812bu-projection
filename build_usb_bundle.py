@@ -22,7 +22,7 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE BETA
-short-desc=v1.7.4.26 - Installs HMG-API, wireless mode and Realtek driver
+short-desc=v1.7.4.27 - Installs HMG-API, wireless mode and Realtek driver
 
 [package.1]
 path={HMG_API}
@@ -187,6 +187,13 @@ def add_network_upgrade(hotspot):
     end = hotspot.index(b'\n}\n', start) + 3
     hotspot = hotspot[:start] + (ROOT / 'bundle/usb-mod-plan.sh').read_bytes() + b'\n' + (
         ROOT / 'bundle/usb-audio-apply.sh').read_bytes() + hotspot[end:]
+    worker = b'  if ! fix_running; then\n    fix_perms &'
+    if hotspot.count(worker) != 1:
+        raise ValueError('Expected delayed permission worker')
+    hotspot = hotspot[:start] + (ROOT / 'bundle/usb-boot-setup.sh').read_bytes() + b'\n' + hotspot[start:]
+    hotspot = hotspot.replace(worker, b'''  if ! fix_running && ! usb_boot_setup_complete; then
+    log "USB boot: using delayed HMG-API setup and permission checks."
+    fix_perms &''')
     gate = '  # 시계가 맞춰진 뒤의 시각으로 다시 잡는다(경과 시간)\n'.encode()
     if hotspot.count(gate) != 1:
         raise ValueError('Expected startup gate after live USB readiness')
@@ -264,7 +271,7 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         raise ValueError('Expected the Android ARMv7 mDNS diagnostics helper')
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.26\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.27\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
             b'depends="hmgapi@>=1.0.99.7,realtek.88x2bu@>=1.1.17,!niro.carplay.hotspot"\n',
@@ -285,7 +292,7 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27)$'",
         )
         old_version_guard = b'''grep -q '"version": "2.4.6"' "$mod/META-HMGAPI/manifest.json"'''
         if preinstall.count(old_version_guard) != 1:
@@ -324,7 +331,7 @@ done''',
         verify_mod(wireless)
         hotspot = add_network_upgrade(add_station_counts(changes['svc/hotspot.sh']))
         hotspot, changes['bin/status.sh'] = add_session_diagnostics(hotspot, changes['bin/status.sh'])
-        changes['bin/status.sh'] = changes['bin/status.sh'].replace(b'$W/mod-apply.txt', b'$W/mod-apply.txt $W/usb-audio-apply.log $W/usb-mod-files-check.log')
+        changes['bin/status.sh'] = changes['bin/status.sh'].replace(b'$W/mod-apply.txt', b'$W/mod-apply.txt $W/usb-audio-apply.log $W/usb-mod-files-check.log $W/usb-boot-setup.log')
         old_digest = hashlib.md5(old_wireless, usedforsecurity=False).hexdigest().encode()
         new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
         if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:
@@ -342,7 +349,7 @@ done''',
             raise ValueError("Expected the Korea Projection source link in the base package")
         changes["licenses/Source.md"] = source_notice.replace(b"Korea Projection CN7NPE USB Test", b"Korea Projection CN7NPE BETA").replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        ) + b'\nWireless mod 2.4.13 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.21/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.21/bundle\n'
+        ) + b'\nWireless mod 2.4.13 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.22/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.22/bundle\n'
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -369,7 +376,7 @@ def main():
     parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.7 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.21-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.22-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,
