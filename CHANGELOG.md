@@ -7,6 +7,13 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.22
+
+- Korea Projection **1.7.4.27**에서 USB 480Mbps와 `rtwlan0` 준비 후, 기존 설정의 적용 계획·관리 파일·지도 확인 기록을 검사합니다. 복구할 항목이 없으면 기존 120초 권한 확인 대기를 생략합니다. 첫 설치, 업데이트 대기, 설정 불일치, 재부팅 필요 또는 확인 실패 시에는 기존 절차를 따릅니다.
+- `ap.log`에 대기 생략 또는 기존 절차 사용 여부를 남기고, 제보 파일에 `usb-boot-setup.log`를 포함합니다. 드라이버와 HMG-API 본체 및 무선 모드 ZIP을 그대로 사용합니다.
+- v0.1.21 실차 로그의 첫 부팅에서 USB 고속 열거는 부팅 약 10초, AP 준비는 약 148초였습니다. v0.1.22의 실제 단축 시간은 차량에서 측정합니다.
+- [Linux 회귀 36개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44733065568), 셸 문법 29개, 전체 ZIP 재현 빌드를 확인했습니다. SHA-256 `a15e3bdf88779175368adff279beb9f4e0878ea6d79d5e2ae1f907a470c85e69`.
+
 ## USB 합본 v0.1.21
 
 - 무선 모드의 표시 이름을 **HMG-API Wireless Mode (USB)**에서 **HMG-API Wireless Mode**로, Korea Projection 패키지의 표시 이름을 **Korea Projection CN7NPE USB Test**에서 **Korea Projection CN7NPE BETA**로 변경합니다. USB 목록·설치 후 패키지/모드 목록·설치 및 제거 안내에 반영합니다.

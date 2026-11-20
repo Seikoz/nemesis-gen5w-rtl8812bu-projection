@@ -2,7 +2,7 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE BETA **1.7.4.26** — 설치·AP·연결 관리
+- Korea Projection CN7NPE BETA **1.7.4.27** — 설치·AP·연결 관리
 - HMG-API Wireless Mode **2.4.13** — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek Wi-Fi Driver **1.1.17** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
@@ -11,7 +11,7 @@
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek Wi-Fi Driver 1.1.17이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.26`는 업데이트할 수 있습니다.
+3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek Wi-Fi Driver 1.1.17이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.27`는 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드가 재부팅을 요청하면 재부팅합니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 페어링합니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
@@ -118,3 +118,9 @@ Korea Projection **1.7.4.25**만 Update하면 드라이버 **1.1.17**과 무선 
 - **Realtek Wi-Fi Driver 1.1.17**, **HMG-API 1.1.0-rc.7**은 그대로입니다.
 
 USB 목록에서 **Korea Projection CN7NPE BETA → Update**만 선택합니다. 기존 USB Test 이름과 새 BETA 이름을 모두 업데이트 대상으로 인정합니다. 기존 패키지·모드 ID와 작성자 서명을 유지하므로 먼저 제거할 필요가 없습니다. 설치 후 재부팅하고 모드 갱신/적용 안내가 나오면 완료 후 다시 재부팅합니다. 표시 이름·업데이트 버전만 바꾸며 무선 연결·오디오·드라이버 동작은 v0.1.20과 같습니다.
+
+## v0.1.22 부팅 대기 단축 시험
+
+Korea Projection CN7NPE BETA **1.7.4.27**로 Update합니다. 처음 설치했거나 모드·권한 복구가 필요한 부팅은 기존 확인 절차를 따릅니다. 기존 설정이 완료됐고 HMG-API 적용 계획·관리 파일 상태·지도 확인 기록이 맞으면, USB 480Mbps와 rtwlan0 준비 뒤 기존 120초 권한 복구 대기를 생략합니다.
+
+A3000mini를 그대로 꽂고 재부팅합니다. 제보의 ap.log에서 USB 준비, `USB boot: existing wireless setup checked`, `USB AP ready` 시각을 비교합니다. 대기 경로를 탔다면 `using delayed HMG-API setup`과 `usb-boot-setup.log`를 확인합니다. 단축 시간은 차량에서 측정해야 합니다. 멜론 음악 출력은 별개로 시험합니다.
