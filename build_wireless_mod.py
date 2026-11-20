@@ -135,6 +135,7 @@ def rebase_files(base, hooks, previous):
         'type': 'toggle',
         'default': False,
         'title': 'Stock Bluetooth handoff (CarPlay audio test)',
+        'apply': 'restart',
         'description': 'CN7PE/CN7NPE KOR 260902 only. For a confirmed USB Wi-Fi CarPlay session, allow the head unit to handle the iPhone Bluetooth handoff when requested. Compare audio and connection stability. Turn off to restore the previous behavior. Takes effect after the head unit restarts.',
     })
     files['settings.json'] = json_bytes(settings)

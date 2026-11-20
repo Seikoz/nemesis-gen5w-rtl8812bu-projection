@@ -7,6 +7,13 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.27
+
+- HMG-API Wireless Mode **2.4.17**에 **Stock Bluetooth handoff (CarPlay audio test)**를 추가했습니다. 기본값은 꺼짐입니다. CN7PE·CN7NPE에서 사용자가 켜고 재부팅하면, 확인된 USB 무선 CarPlay 세션에서 아이폰이 Bluetooth 종료를 요청할 때 차량의 기본 처리를 허용합니다. 다른 헤드유닛에서 Bluetooth와 CarPlay 오디오 경로가 충돌한 사례를 바탕으로 한 대조 시험입니다. [Autochips 사례](https://github.com/riazosama/headunit-carplay/blob/main/docs/GUIDE.md#status-honestly)
+- Korea Projection **1.7.4.32**는 새 부팅 단위의 `usb-carplay-audio.log`를 `3-log.txt`에 포함합니다. 관측된 Bluetooth 전환, 오디오 스트림 설정·오류와 오디오 우선권 요청을 정해진 항목으로 기록합니다. 연결 스냅샷에 `rtwlan0`의 송수신·오류·드롭 누적 카운터를 추가했습니다. [DiPlay의 오디오 수신 문제](https://github.com/shihabal3amri/DiPlay/issues/165)
+- 하이브리드 무선 모드 **2.4.18**은 기존 차량 지도 범위에서 제보 개선을 사용할 수 있습니다. Realtek **1.1.19**와 HMG-API 본체 **1.1.0-rc.7**을 포함합니다. 무선 오디오 출력과 전환 시 연결 유지 여부는 실차 시험 대상입니다.
+- Linux 회귀 42개, Android API 19 훅 빌드, rc.7 엔진의 세 차종 모의 적용·복원, 셸 문법 29개 및 USB ZIP 재현 빌드를 확인했습니다. SHA-256 `80242defd41a4bd0a0d580d584003965d8476cf8ff13475423d5b8d76c075032`. [빌드와 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44772680009)
+
 ## USB 합본 v0.1.26
 
 - 국내형 아반떼 하이브리드 **CN7HEVPE `V039.001.260902`**(Gen5W TCC803x)를 설치 대상으로 추가합니다. **Korea Projection 1.7.4.31**과 **Realtek 1.1.19**가 설치·시작·외부 USB 복구 조건에 하이브리드를 포함합니다.

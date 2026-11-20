@@ -2,8 +2,8 @@
 
 대상은 국내형 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x), ipTIME A3000mini(`0bda:b812`)입니다. CN7HEVPE는 실차 시험 대상입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.31** — 설치·AP·연결 관리
-- HMG-API Wireless Mode **2.4.15** (CN7PE·CN7NPE) / **2.4.16** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
+- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.32** — 설치·AP·연결 관리
+- HMG-API Wireless Mode **2.4.17** (CN7PE·CN7NPE) / **2.4.18** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek Wi-Fi Driver **1.1.19** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
 
@@ -166,3 +166,13 @@ CN7PE의 실제 자동 인식, 핫스팟, 무선 카플레이·안드로이드 �
 A3000mini를 꽂고 기다립니다. 하이브리드는 내비 자체 파일을 읽어 HMG-API 차량 지도를 생성한 뒤, 필요한 훅이 있으면 지도 검증을 거쳐 하이브리드용 무선 모드 **2.4.16**을 적용합니다. 첫 지도 생성에는 수분이 걸릴 수 있습니다. 화면에 재부팅 안내가 나오면 적용 후 재부팅합니다. 이미 있는 차량 지도는 검증해 사용합니다.
 
 지도 확인에서 멈추면 같은 부팅의 **HMG-API Car Report**와 `usb-cn7hevpe-map.log`가 포함된 Korea Projection `3-log.txt`를 저장합니다. 하이브리드판은 무선 설정 페이지 대체와 카플레이 시작 시 Bluetooth 유지 훅 없이 시험합니다. 실차의 USB 인식, 무선 연결·유지, 차량 오디오는 확인이 필요합니다.
+
+## v0.1.27 무선 카플레이 오디오 비교
+
+1. Korea Projection을 **Update**하고 아반떼 N·일반형에서는 무선 모드 **2.4.17**이 적용될 때까지 재부팅 안내를 따릅니다.
+2. 주차 상태에서 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth handoff (CarPlay audio test)**를 켭니다. 오디오 스트림 로그도 필요하면 **CarPlay's own log (troubleshooting)**를 켭니다. 설정을 적용하고 내비게이션을 재부팅합니다.
+3. A3000mini를 꽂은 상태에서 무선 카플레이를 연결합니다. 멜론, 내비 안내, 통화를 각각 시험하고 어느 스피커에서 나오는지, 아이폰에 차량이 출력으로 표시되는지, 연결이 유지되는지를 기록합니다.
+4. 문제가 남으면 동글을 제보 USB로 교체하고 Korea Projection의 `3-log.txt`를 저장합니다. `usb-carplay-audio.log`에서 `bluetooth_handoff=stock`, 오디오 스트림 설정·오류와 오디오 우선권 요청을 확인할 수 있습니다. 원본 CarPlay 상세 로그가 필요하면 연결 전부터 HMG-API **Logs → Record a problem**도 사용합니다.
+5. 대조 시험은 같은 메뉴에서 **Stock Bluetooth handoff**를 끄고 재부팅한 뒤 반복합니다. 시험 설정 기본값은 꺼짐입니다. 켠 상태에서 연결이 반복해서 끊기면 끄고 재부팅하세요.
+
+전환 시험은 CN7PE·CN7NPE의 확인된 USB 무선 CarPlay 세션에 적용됩니다. 하이브리드 **2.4.18**에서는 새 제보 기록을 사용할 수 있습니다. `rtwlan0`의 패킷·드롭 카운터는 인터페이스 전체 통계이며 음성 패킷 자체의 손실률과는 별개의 수치입니다. 공유 전에 원본 로그에서 기기 이름과 주소를 가리세요.
