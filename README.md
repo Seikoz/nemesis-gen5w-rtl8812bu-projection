@@ -2,12 +2,12 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
-**[USB 설치 ZIP v0.1.14 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.14/NEMESIS-CN7NPE-260902-Bundle-v0.1.14-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.14) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.15 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.15/NEMESIS-CN7NPE-260902-Bundle-v0.1.15-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.15) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.19 |
-| Realtek RTL8812BU USB Driver | 1.1.13 |
+| Korea Projection CN7NPE USB Test | 1.7.4.20 |
+| Realtek RTL8812BU USB Driver | 1.1.14 |
 | HMG-API 본체 | 1.1.0-rc.4 |
 | HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.10 |
 
@@ -48,10 +48,15 @@ v0.1.14는 `transport=0`으로 시작한 실제 무선 세션이 SPP 종료 직�
 
 종료·재연결·AP 변경 뒤 이전 작업이 실행되지 않도록 attach/detach와 대기 중인 iAP2 전송을 세션별로 확인합니다. 상태 기록과 15초 갱신에서도 원래 `transport=0` 값을 보존합니다. HMG-API 본체와 Realtek 드라이버를 따로 재설치할 필요는 없습니다. 실차의 연결 유지 여부는 확인이 필요합니다.
 
+v0.1.15는 USB가 OHCI 12Mbps로 인식된 상태에서 EHCI 복구 도구가 `Permission denied`로 실행되지 않던 경로를 수정합니다. Realtek **1.1.14**는 패키지 도구의 실행 권한을 확인·복구한 뒤 기존 EHCI 복구를 요청하고, 실제 재열거 후 **USB 480Mbps**를 확인합니다. 실행 준비 실패는 하드웨어 시도 횟수에 포함하지 않습니다. Korea Projection **1.7.4.20** 설치 시 같은 USB의 새 Realtek 패키지가 먼저 설치/업데이트됩니다.
+
+여기의 **12/480Mbps는 USB 버스 인식 속도이며 Wi-Fi 링크 속도나 실제 전송량이 아닙니다.** 물리 연결이나 장치 상태 때문에 480Mbps를 확인하지 못하면 AP 시작을 계속 대기하고 `speed.log`에 결과를 남깁니다. 실차의 480Mbps 인식과 카플레이 연결 지속 여부는 확인이 필요합니다. 무선 모드 **2.4.10**의 세션 판정·iAP2 이관과 기존 드라이버 커널 모듈은 유지합니다.
+
 ## 버전별 변경 사항
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.15 | USB 12→480Mbps 복구 도구의 실행 권한 누락 수정, 준비 실패 시 시도 예산 보존, 조회·진단 도구 실행 권한 복구 |
 | v0.1.14 | 확인된 USB-AP Bluetooth 세션의 transport=0 판정, SPP 종료 후 iAP2 이관, 이전 세션의 예약 작업·전송 차단 |
 | v0.1.13 | IPv6 UDP 6031 허용, 실제 방화벽 규칙·순서·카운터와 mDNS 진단, 실제 카플레이 세션 기준 연결 표시 |
 | v0.1.12 | USB AP 대역의 동적 TCP 허용, 현재 접속 단말 수·확인 불가 표시, 기존 설치의 포트 정책 자동 적용 |
@@ -69,6 +74,12 @@ v0.1.14는 `transport=0`으로 시작한 실제 무선 세션이 SPP 종료 직�
 | v0.1.0 | Korea Projection CN7NPE USB 테스트판과 Realtek 드라이버를 하나의 USB 설치 ZIP으로 제공 |
 
 자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
+
+## v0.1.15 배포 검증
+
+- [Linux의 실행 비트 손실 재현·22개 회귀 검사·기존 EHCI 범위 검사와 Android API 19 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44668325705)를 통과했습니다.
+- 29개 셸 문법, 새 드라이버 의존성, 모드 서명과 기존 커널/실행 파일/카플레이 모드 보존 및 동일 입력 재빌드를 확인했습니다. 실차의 USB 480Mbps 복구와 Wi-Fi 처리량은 아직 확인되지 않았습니다.
+- USB ZIP SHA-256: `db9b9339939a9e560b81da5f1f1a1f1c2679641ffce496cdbecae7d7dbee78bb`
 
 ## v0.1.14 배포 검증
 

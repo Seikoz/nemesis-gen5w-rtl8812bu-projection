@@ -2,8 +2,8 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE USB Test **1.7.4.19** 및 무선 모드 **2.4.10**
-- Realtek RTL8812BU USB Driver **1.1.13**
+- Korea Projection CN7NPE USB Test **1.7.4.20** 및 무선 모드 **2.4.10**
+- Realtek RTL8812BU USB Driver **1.1.14**
 - HMG-API 본체 **1.1.0-rc.4**, NEMESIS 패키지 버전 **1.0.99.4**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.4)
 
 ## 설치 및 업데이트
@@ -35,7 +35,7 @@ v0.1.13은 IPv6 UDP 6031을 추가 허용하고 **실제 무선 카플레이 세
 
 ARM 모듈과 USB 패키지 구조를 검증했습니다. 실차에서 부팅 인식과 무선 카플레이 연결을 확인하는 진단판입니다.
 
-[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.14/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
+[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.15/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
 
 ## v0.1.13 연결 진단
 
@@ -58,3 +58,11 @@ A3000mini를 꽂은 채 부팅하고 약 2분 기다린 뒤 연결을 시도합�
 `3-log.txt`의 HMG-API 기록에서 `USB_CP_ORIGIN raw_transport=0 ... confirmed_bt_usb_ap=true wireless=true`, `USB_CP_HANDOVER stage=spp-down-preserved`, `stage=requested`, `stage=component5-connected` 순서를 확인합니다. 컴포넌트 5 연결은 iAP2 서버 연결 알림이며 프로토콜 식별·화면·음성 정상 동작까지 보장하는 표시는 아닙니다. 이관 전송 실패·취소도 같은 로그에 남습니다. 기존 방화벽·mDNS 스냅샷과 실제 세션 이벤트는 계속 제보 파일에 포함됩니다.
 
 이전 릴리즈와 설치 ZIP도 GitHub에 보존합니다. 이전 버전으로 내리는 작업은 이번 업데이트 설치 절차와 별개입니다.
+
+## v0.1.15 USB 12Mbps 복구 확인
+
+Korea Projection만 설치/업데이트하고 NEMESIS 설치 계획에 **Realtek 1.1.14**가 포함됐는지 확인합니다. 같은 USB에서 의존성을 먼저 업데이트합니다. 설치 완료 후 A3000mini를 꽂은 채 내비게이션을 완전히 재부팅합니다. 무선 모드 **2.4.10**은 그대로 유지되며 HMG-API 본체는 별도로 재설치할 필요가 없습니다.
+
+Realtek Launch를 누르거나 동글을 재장착하기 전에 약 2분 기다립니다. `speed.log`의 `repairing mode to 0755`, `EHCI ownership request exit=0`, `Verified usb=... speed_after=480` 기록으로 실제 복구를 구분합니다. 실행 권한이 이미 있거나 처음부터 USB 480Mbps인 경우에는 권한 복구/속도 복구 기록이 없을 수 있습니다. USB 480Mbps는 실제 Wi-Fi 전송 속도 480Mbps를 뜻하지 않습니다.
+
+여전히 USB 12Mbps 대기라면 같은 부팅에서 제보 파일을 만든 뒤 `3-log.txt`와 Realtek의 `speed.log`, `boot.log`, `launch.log`(있는 경우)를 보내 주세요. `speed.log`에 새 권한·SELinux·마운트 정보가 포함됩니다. 실차에서 물리 재열거가 성공하는지는 별도 확인이 필요합니다. 이전 릴리즈·태그·ZIP은 GitHub에서 유지합니다.

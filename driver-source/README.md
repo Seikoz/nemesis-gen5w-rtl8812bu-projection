@@ -1,5 +1,11 @@
 # RTL88x2BU 대응 소스
 
+## USB 합본 v0.1.15: EHCI 도구 실행 권한 복구
+
+Realtek **1.1.14**는 [common.sh](../package/scripts/common.sh)의 high-speed 경로가 실행 권한 확인 없이 helper를 호출하던 누락을 수정합니다. 해당 파일이 정상 패키지 파일인지 확인하고 필요할 때 `0755`로 복구한 후 시도 마커를 만듭니다. 실행 준비 실패는 하드웨어 시도 횟수로 세지 않습니다. 실제 480Mbps 재열거 확인·부팅당 최대 두 번·기존 native 도구의 장치/컨트롤러 범위는 유지합니다. 권한을 복구해도 실행을 거부하면 진단 정보를 남기며 SELinux/noexec 정책은 변경하지 않습니다.
+
+[실행 비트 손실 재현 및 22개 회귀 검사, EHCI 조건 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44668325705). [권한 회귀 검사](../tests/test_usb_recovery_permissions.py). 커널 모듈과 native 복구 도구는 이전 버전과 동일하며, 도구 SHA-256은 `d74f898158c27e2999148343f23cf23d3ff0a2a49811dd8808bc9ef0081a6d1e`입니다. 실제 차량의 12→480Mbps 전환 및 Wi-Fi 처리량 개선은 아직 검증되지 않았습니다.
+
 ## USB 합본 v0.1.10 USB 속도 복구 도구
 
 Realtek **1.1.13**에 포함한 `usb-reset-a3000mini`의 `--high-speed` 명령은 직결 A3000mini, USB 12Mbps, 단일 포트의 외부 OHCI와 비어 있는 EHCI 컨트롤러를 확인합니다. 대상 EHCI의 `companion` 파일에 `-1`을 써 포트 소유권을 되돌리고, 로더가 재열거 후 실제 속도를 검사합니다. 인터페이스가 이미 UP이면 도구는 요청을 거부합니다.
