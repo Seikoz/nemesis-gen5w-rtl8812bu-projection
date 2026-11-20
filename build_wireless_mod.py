@@ -16,8 +16,8 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.12'
-DISPLAY_NAME = 'HMG-API Wireless Mode (USB)'
+VERSION = '2.4.13'
+DISPLAY_NAME = 'HMG-API Wireless Mode'
 UPSTREAM_SHA256 = '4837efbfc1e71a7f30c65c7d914dc7d00aa788cc7ab4ea17b1a1860e6e96d4ee'
 UPSTREAM_AUTHOR = '7251ce71-a146-8a1e-958b-dbffc6af7359'
 PREVIOUS_SHA256 = 'd434b002668558ebad10a84e6cbf12312fb3d95a9cc3e7ff1461e760819d8141'
@@ -126,7 +126,7 @@ def rebase_files(base, hooks, previous):
             settings['settings'].append(entry)
     files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] = (
-        'HMG-API USB wireless mod 2.4.12 (local upgrade version), based on official 2.2.0-rc.8.\n'
+        'HMG-API USB wireless mod 2.4.13 (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
         'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\n'
@@ -145,7 +145,7 @@ def build_mod(base, hooks, previous, key_path):
 
 def rename_mod(previous, key_path):
     """Update only display metadata, retaining all published executable payloads."""
-    files, public = verify_mod(previous, '2.4.11')
+    files, public = verify_mod(previous, '2.4.12')
     mod = json.loads(files['mod.json'])
     mod.update(name=DISPLAY_NAME, version=VERSION)
     files['mod.json'] = json_bytes(mod)
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base-mod', type=Path)
     parser.add_argument('--hooks', type=Path)
-    parser.add_argument('--rename-only', action='store_true', help='Relabel the verified 2.4.11 mod without rebuilding code')
+    parser.add_argument('--rename-only', action='store_true', help='Relabel the verified 2.4.12 mod without rebuilding code')
     parser.add_argument('--previous-mod', type=Path, required=True)
     parser.add_argument('--key', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
