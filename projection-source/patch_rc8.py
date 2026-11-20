@@ -23,6 +23,8 @@ def patch(mod, old):
     root = mod / 'src/hmgapi/mods/wireless'
     path = root / 'dipo/Bridge.java'
     text = path.read_text(encoding='utf-8')
+    text = once(text, 'return !"0".equals(prop("persist.ev6.cpwl.enable", "1"));',
+                'return !UsbAp.parked && !"0".equals(prop("persist.ev6.cpwl.enable", "1"));')
     text = once(text, '    static volatile String sAddr;', '''    static volatile Object sUsbApRequest, sUsbCpSession;
     static volatile Object sUsbDetachFence = new Object();
     static volatile boolean sUsbBtConfirmed;
@@ -86,8 +88,8 @@ def patch(mod, old):
     }
 
     static boolean wirelessTransport(int transport) {
-        return !sUsb && (transport == 1 || (transport == 0 && sUsbBtConfirmed && sSession &&
-                sAddr != null && usbCpApCurrent()));
+        return !sUsb && (transport == 1 || (transport == 0 && usbCpApCurrent() &&
+                ((sUsbBtConfirmed && sSession && sAddr != null) || (sCpWireless && sUsbCpTransport == 0))));
     }
 
     static synchronized void onUsbIapConnected(int component, String serial) {

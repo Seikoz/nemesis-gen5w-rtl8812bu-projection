@@ -27,6 +27,7 @@ d8=$(find "$ANDROID_HOME/build-tools" -name d8 | sort -V | tail -1)
 python3 -m unittest discover -s "$src/../tests" -v
 python3 "$src/test_rc8_handover.py" "$mod/src/hmgapi/mods/wireless/dipo/Bridge.java"
 python3 "$src/test_rc8_ap.py" "$mod/src/hmgapi/mods/wireless"
+python3 "$src/test_rc8_park.py" "$mod/src/hmgapi/mods/wireless/dipo/ParkCp.java"
 python3 "$src/test_session_status.py"
 # The upstream sender's blocked-call/generation tests and reconnection tests.
 for suite in reattach recipes projection cn7npe; do
