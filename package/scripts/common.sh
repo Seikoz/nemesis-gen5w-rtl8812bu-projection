@@ -163,9 +163,30 @@ reset_boot_dongle() {
     "$package_dir/bin/usb-reset-a3000mini" "$usb"
 }
 
+recovery_kernel_log() {
+    # Host reprobe reassigns bus numbers. Do not filter by the old USB port.
+    { dmesg 2>/dev/null; echo "dmesg_exit=$?"; } | awk -v since="$1" '
+      /^dmesg_exit=/ { status=substr($0,12); next }
+      {
+        line=$0; lower=tolower(line)
+        if (lower ~ /serialnumber|hexdump|ssid|passphrase|password|wpa_psk|secret/) next
+        ts=line; sub(/^<[0-9]+>/,"",ts)
+        if (ts !~ /^\[[[:space:]]*[0-9]+\.[0-9]+\]/) next
+        sub(/^\[/,"",ts); if (ts+0 < since+0) next
+        if (lower ~ /ehci|ohci|88x2bu|rtwlan0|usb [0-9]+-[0-9]+:/)
+          rows[n++ % 180]=substr(line,1,512)
+      }
+      END {
+        print "Recovery kernel messages (all USB bus numbers, uptime timestamps):"
+        if (status != "0") print "dmesg unavailable (exit " status ")"
+        else if (!n) print "No matching kernel messages."
+        for(i=(n>180?n-180:0);i<n;i++) print rows[i%180]
+      }'
+}
+
 # Return a full-speed A3000mini's external port to EHCI before the AP starts.
 recover_high_speed() (
-    local boot_id usb_speed lock marker attempt wait_count helper_rc limit result=1
+    local boot_id usb_speed lock marker attempt wait_count helper_rc limit result=1 recovery_uptime _
     local log_dir=/data/nemesis/logs/realtek.88x2bu
     is_cn7npe_boot_reset_target && read_boot_id && identify_dongle &&
         [ "$vendor:$product" = 0bda:b812 ] &&
@@ -193,7 +214,9 @@ recover_high_speed() (
                 read -r usb_speed < "$usb/speed" || break
             [ "$usb_speed" != 480 ] || { result=0; break; }
             [ "$usb_speed" = 12 ] || break
-            echo "Attempt $attempt: usb=${usb##*/} speed_before=$usb_speed"
+            recovery_uptime=0
+            read -r recovery_uptime _ < /proc/uptime || recovery_uptime=0
+            echo "Attempt $attempt: usb=${usb##*/} speed_before=$usb_speed uptime=$recovery_uptime"
             if [ "$attempt" = 1 ]; then
                 echo "Recovery stage=EHCI-ownership"
                 "$package_dir/bin/usb-reset-a3000mini" --high-speed "$usb"
@@ -207,7 +230,10 @@ recover_high_speed() (
             fi
             echo "USB recovery request exit=$helper_rc"
             case "$helper_rc" in 126|127) reset_helper_diagnostics ;; esac
-            [ "$helper_rc" -eq 0 ] || break
+            if [ "$helper_rc" -ne 0 ]; then
+                recovery_kernel_log "$recovery_uptime"
+                break
+            fi
             wait_count=0
             while [ "$wait_count" -lt "$limit" ]; do
                 sleep 1
@@ -219,6 +245,7 @@ recover_high_speed() (
                 fi
                 wait_count=$((wait_count + 1))
             done
+            recovery_kernel_log "$recovery_uptime"
             [ "$result" -ne 0 ] || break
             echo "480Mbps was not observed after attempt $attempt."
         done

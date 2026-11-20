@@ -62,7 +62,8 @@ usb_ap_kernel_log() {
       }
       if (lower ~ /88x2bu|rtwlan0|(^|[[:space:]])rtw:/ ||
           lower ~ /avc:.*denied.*(hostapd|net_admin|rfkill)/ ||
-          (port != "" && index(line, "usb " port ":") &&
+          lower ~ /ehci-platform|ohci-platform|ehci-mux|ohci-mux/ ||
+          (lower ~ /usb [0-9]+-1:/ &&
            lower ~ /new .*usb device|idvendor|descriptor|disconnect|reset|error|config|unable|failed/)) {
         rows[n++ % limit] = substr(line,1,512)
       }

@@ -286,6 +286,41 @@ static int host_restore(struct host_control *host, const char *label)
     return ok;
 }
 
+/* Root bus numbers change during reprobe. Follow the validated platform device,
+ * and wait for a configured target, rather than a root hub or a new bus number. */
+static int ehci_target_ready(const struct host_control *host)
+{
+    DIR *dir = opendir(host->device);
+    if (!dir) return 0;
+    struct dirent *entry;
+    int ready = 0;
+    while ((entry = readdir(dir))) {
+        const char *name = entry->d_name;
+        char root[PATH_MAX], child[PATH_MAX], leaf[64];
+        if (strncmp(name, "usb", 3) || !name[3] ||
+            strspn(name + 3, "0123456789") != strlen(name + 3) ||
+            !path_join(root, sizeof(root), host->device, name) ||
+            root_attribute(root, "idVendor", 16) != 0x1d6b ||
+            root_attribute(root, "idProduct", 16) != 2) continue;
+        int length = snprintf(leaf, sizeof(leaf), "%s-1", name + 3);
+        if (length <= 0 || (size_t)length >= sizeof(leaf) ||
+            !path_join(child, sizeof(child), root, leaf)) continue;
+        if (root_attribute(child, "idVendor", 16) == 0x0bda &&
+            root_attribute(child, "idProduct", 16) == 0xb812 &&
+            root_attribute(child, "authorized", 10) == 1 &&
+            root_attribute(child, "bConfigurationValue", 10) == 1 &&
+            root_attribute(child, "bNumInterfaces", 10) == 1 &&
+            root_attribute(child, "devnum", 10) >= 2 &&
+            root_attribute(child, "speed", 10) == 480) {
+            printf("USB cold recovery: EHCI target configured usb=%s speed=480\n", leaf);
+            ready = 1;
+            break;
+        }
+    }
+    closedir(dir);
+    return ready;
+}
+
 /* Reprobe only the unique external single-port platform pair, EHCI first.
  * Internal tcc-ehci, occupied roots, hubs and UP interfaces never qualify.
  * Driver remove/probe may reset the PHY; a physical VBUS power cut is not assumed. */
@@ -355,8 +390,16 @@ static int restart_external_hosts(const char *port)
     host_pause(1500);
     if (host_interrupted) goto restore;
     if (!host_restore(&ehci, "ehci-platform")) goto restore;
-    puts("USB cold recovery: EHCI first; pause_ms=1000");
-    host_pause(1000);
+    puts("USB cold recovery: stage=EHCI-enumeration wait_ms=12000 OHCI=unbound");
+    fflush(stdout);
+    int ready = 0;
+    for (int poll = 0; poll <= 24 && !host_interrupted; ++poll) {
+        if (ehci_target_ready(&ehci)) { ready = 1; break; }
+        if (poll < 24) host_pause(500);
+    }
+    printf("USB cold recovery: stage=EHCI-enumeration ready=%d interrupted=%d; restoring OHCI\n",
+           ready, (int)host_interrupted);
+    fflush(stdout);
     if (!host_interrupted && host_restore(&ohci, "ohci-platform")) result = 0;
 restore:
     /* Always attempt both restorations, even when one fails or a signal arrives. */

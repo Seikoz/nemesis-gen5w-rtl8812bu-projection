@@ -102,16 +102,16 @@ def build_driver_package(modules, helper, *, diagnostics=False):
             name = path.relative_to(package_dir).as_posix()
             text = path.read_text(encoding="utf-8")
             if diagnostics and name == "NEMESIS.data":
-                text = text.replace("package-version=1.1.9\n", "package-version=1.1.15\n")
+                text = text.replace("package-version=1.1.9\n", "package-version=1.1.16\n")
             if diagnostics and name == "MODULE-SOURCE.txt":
                 text = (
                     "The Gen5W diagnostic modules are based on GRT47 v2.0.7. "
                     "See MODULE-LICENSE.txt.\n"
                     "Corresponding source, diagnostic patch and build instructions:\n"
-                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.16/driver-source\n"
+                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.17/driver-source\n"
                     "USB recovery helper and loader source:\n"
-                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.16/driver-source/usb_reset_a3000mini.c\n"
-                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.16/package/scripts\n"
+                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.17/driver-source/usb_reset_a3000mini.c\n"
+                    "https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.17/package/scripts\n"
                 )
             if name == "scripts/common.sh":
                 if text.count("@USB_IDS@") != 1:

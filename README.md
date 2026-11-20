@@ -2,12 +2,12 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
-**[USB 설치 ZIP v0.1.16 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.16/NEMESIS-CN7NPE-260902-Bundle-v0.1.16-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.16) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.17 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.17/NEMESIS-CN7NPE-260902-Bundle-v0.1.17-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.17) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.21 |
-| Realtek RTL8812BU USB Driver | 1.1.15 |
+| Korea Projection CN7NPE USB Test | 1.7.4.22 |
+| Realtek RTL8812BU USB Driver | 1.1.16 |
 | HMG-API 본체 | 1.1.0-rc.4 |
 | HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.10 |
 
@@ -56,10 +56,13 @@ v0.1.16은 소유권 반환 뒤에도 USB 12Mbps가 유지되면 **외부 OHCI/E
 
 Realtek **1.1.15**와 Korea Projection **1.7.4.21**을 포함합니다. 기존 소유권 반환 한 번과 새 재초기화 한 번으로 부팅당 횟수를 제한하고, 실제 USB 속도 480을 확인한 경우에만 AP를 시작합니다. 호스트 드라이버 재등록은 물리 VBUS 전원 차단을 보장하지 않습니다. 차량 보드의 바인딩 지원·PHY 동작에 따라 결과가 달라지므로 실차에서 480Mbps 전환을 확인해야 합니다.
 
+v0.1.17은 EHCI 등록 1초 뒤 OHCI를 복원하던 고정 지연을 바꾸어, **EHCI 아래 A3000mini의 실제 480Mbps·구성 완료를 최대 12초 확인한 뒤 OHCI를 복원**합니다. 버스 번호 대신 검증한 플랫폼 장치를 따라가고, 준비되지 않아도 제한 시간 뒤 호스트 복원을 시도합니다. Korea Projection의 드라이버 호출 제한을 20초에서 90초로 늘립니다. 복구별 시작 uptime과 버스 번호 변경 전후의 커널 메시지를 `speed.log`에 남깁니다. Realtek **1.1.16**, Korea Projection **1.7.4.22**를 포함하며 실차 전환 결과는 확인이 필요합니다.
+
 ## 버전별 변경 사항
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.17 | EHCI 480Mbps 구성 완료 대기 후 OHCI 복원, 드라이버 호출 제한 20→90초, USB 버스 재번호화 이후의 커널 로그 수집 |
 | v0.1.16 | 소유권 반환 후 12Mbps가 유지되면 외부 OHCI/EHCI를 EHCI 우선 순서로 재초기화, 대상 범위·복원·실제 480 확인 |
 | v0.1.15 | USB 12→480Mbps 복구 도구의 실행 권한 누락 수정, 준비 실패 시 시도 예산 보존, 조회·진단 도구 실행 권한 복구 |
 | v0.1.14 | 확인된 USB-AP Bluetooth 세션의 transport=0 판정, SPP 종료 후 iAP2 이관, 이전 세션의 예약 작업·전송 차단 |

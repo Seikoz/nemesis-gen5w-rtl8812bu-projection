@@ -2,20 +2,20 @@
 
 대상은 2024년식 아반떼 N 페이스리프트 CN7NPE KOR `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7NPE USB Test **1.7.4.21** 및 무선 모드 **2.4.10**
-- Realtek RTL8812BU USB Driver **1.1.15**
+- Korea Projection CN7NPE USB Test **1.7.4.22** 및 무선 모드 **2.4.10**
+- Realtek RTL8812BU USB Driver **1.1.16**
 - HMG-API 본체 **1.1.0-rc.4**, NEMESIS 패키지 버전 **1.0.99.4**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.4)
 
 ## 설치 및 업데이트
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7NPE USB Test**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.4와 Realtek 1.1.13이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.16`은 업데이트할 수 있습니다.
+3. 설치 계획을 승인합니다. HMG-API rc.4와 Realtek 1.1.16이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.22`은 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드가 재부팅을 요청하면 재부팅합니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 페어링합니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
 
-A3000mini가 외부 OHCI 포트에서 12Mbps로 잡히면, 대상 장치와 비어 있는 EHCI 단일 포트를 확인해 해당 포트의 EHCI 소유권 복귀를 부팅당 최대 두 번 요청합니다. 실제 속도가 480Mbps로 바뀌었는지 확인한 뒤 AP를 시작합니다. 관련 제어 파일이 없거나 전환에 실패하면 `speed.log`에 이유를 기록합니다. 드라이버 업데이트 뒤에는 A3000mini를 꽂은 채 내비를 완전히 재부팅해 새 모듈과 옵션을 적용합니다.
+A3000mini가 외부 OHCI 포트에서 12Mbps로 잡히면 EHCI 소유권 반환 1회, 실패 시 외부 OHCI/EHCI 재초기화 1회를 부팅당 자동 시도합니다. v0.1.17은 OHCI를 해제한 상태에서 EHCI의 A3000mini가 실제 480Mbps·구성 완료로 준비될 때까지 최대 12초 기다린 뒤 OHCI를 복원합니다. Korea Projection의 NEMESIS 드라이버 호출 제한은 90초입니다. 대상 범위 확인 및 오류/신호 시 복원 처리는 유지합니다. 제어 파일 부재·열거 실패·복구 전후 커널 기록은 `speed.log`에 저장합니다. 드라이버 업데이트 뒤에는 A3000mini를 꽂은 채 내비를 완전히 재부팅하고 약 2분 기다립니다. 실차의 480Mbps 전환은 확인이 필요하며, 실제 속도 480 확인 뒤에만 AP를 시작합니다. 호스트 재등록은 물리 VBUS 차단을 보장하지 않습니다.
 
 v0.1.11의 무선 모드는 AP 준비 신호와 `rtwlan0`의 AP 주소를 모두 확인한 뒤 Bluetooth iAP2를 시작합니다. 먼저 연결된 iPhone은 최대 약 3분간 AP를 기다립니다. 대기가 끝나도 AP가 준비되지 않았다면 준비 완료 후 iPhone Bluetooth를 껐다 켜 재연결합니다. A3000mini를 연결한 뒤 Korea Projection이 무선 모드를 **2.4.10로 업데이트·적용된 것을 확인하고** 내비게이션을 완전히 재부팅합니다. 첫 재부팅 뒤에 모드 업데이트 안내가 나왔다면 업데이트를 마친 뒤 다시 재부팅해야 새 훅이 적용됩니다.
 
@@ -35,7 +35,7 @@ v0.1.13은 IPv6 UDP 6031을 추가 허용하고 **실제 무선 카플레이 세
 
 ARM 모듈과 USB 패키지 구조를 검증했습니다. 실차에서 부팅 인식과 무선 카플레이 연결을 확인하는 진단판입니다.
 
-[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.16/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
+[합본 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.17/CHANGELOG.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
 
 ## v0.1.13 연결 진단
 
@@ -67,9 +67,9 @@ Realtek Launch를 누르거나 동글을 재장착하기 전에 약 2분 기다�
 
 여전히 USB 12Mbps 대기라면 같은 부팅에서 제보 파일을 만든 뒤 `3-log.txt`와 Realtek의 `speed.log`, `boot.log`, `launch.log`(있는 경우)를 보내 주세요. `speed.log`에 새 권한·SELinux·마운트 정보가 포함됩니다. 실차에서 물리 재열거가 성공하는지는 별도 확인이 필요합니다. 이전 릴리즈·태그·ZIP은 GitHub에서 유지합니다.
 
-## v0.1.16 외부 USB 호스트 재초기화 시험
+## v0.1.17 외부 USB 호스트 재초기화 시험
 
-Korea Projection만 설치/업데이트하고 설치 계획에 **Realtek 1.1.15**가 포함되는지 확인합니다. 설치를 마친 뒤 A3000mini를 직결한 채 내비게이션을 완전히 재부팅합니다. 첫 시험에는 재장착이나 Realtek Launch를 누르지 않고 약 2분 기다립니다.
+Korea Projection만 설치/업데이트하고 설치 계획에 **Realtek 1.1.16**가 포함되는지 확인합니다. 설치를 마친 뒤 A3000mini를 직결한 채 내비게이션을 완전히 재부팅합니다. 첫 시험에는 재장착이나 Realtek Launch를 누르지 않고 약 2분 기다립니다.
 
 부팅 시 12Mbps라면 첫 소유권 반환을 시도하고, 계속 12Mbps면 외부 플랫폼 호스트를 EHCI 우선 순서로 재초기화합니다. 동글만 연결된 단일 포트와 유일한 외부 컨트롤러 쌍을 확인해야 하므로 허브·다른 장치·활성 인터페이스·제어 파일 미지원 상태에서는 새 단계를 거부합니다. 컨트롤러가 다시 등록되면서 USB 버스 번호나 장치 번호가 바뀌거나 재사용될 수 있습니다.
 

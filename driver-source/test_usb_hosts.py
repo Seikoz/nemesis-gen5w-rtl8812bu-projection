@@ -1,6 +1,7 @@
 """Run real host-restart code on sysfs fixtures with bind/unbind effects simulated."""
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -26,12 +27,31 @@ with tempfile.TemporaryDirectory() as td:
 #define _GNU_SOURCE
 #include <unistd.h>
 #include <sys/types.h>
+#include <dirent.h>
 static ssize_t fixture_write(int,const void*,size_t);
+static DIR *fixture_opendir(const char*);
 #define write fixture_write
+#define opendir fixture_opendir
 #define main helper_main
 #include "SOURCE"
 #undef main
 #undef write
+#undef opendir
+static DIR *fixture_opendir(const char *path) {
+ const char *base=getenv("HOST_FIXTURE");
+ char device[PATH_MAX],staged[PATH_MAX],target[PATH_MAX];
+ snprintf(device,sizeof(device),"%s/ehci-platform",base);
+ static int polls;
+ if(!strcmp(path,device)) {
+  const char *delay=getenv("EHCI_READY_POLL");
+  if(delay && ++polls==atoi(delay)) {
+   snprintf(staged,sizeof(staged),"%s/staged",base);
+   snprintf(target,sizeof(target),"%s/ehci-platform/usb9",base);
+   if(rename(staged,target))abort();
+  }
+ }
+ return opendir(path);
+}
 static ssize_t fixture_write(int fd,const void *data,size_t count) {
  char fdpath[64],control[PATH_MAX],name[96],device[PATH_MAX],driver[PATH_MAX],event[128];
  snprintf(fdpath,sizeof(fdpath),"/proc/self/fd/%d",fd);
@@ -63,6 +83,8 @@ int main(int argc,char **argv){return helper_main(argc,argv);}
         f'-DUSB_SYSFS="{devices}"',f'-DUSB_NET_FLAGS="{flags}"',str(wrapper),'-o',str(binary)],check=True)
 
     def reset():
+        for path in (root/'ehci-platform/usb9',root/'staged'):
+            if path.exists():shutil.rmtree(path)
         for name in ['ohci-platform','ehci-platform','tcc-ehci']:
             link=root/name/'driver'
             if not link.exists():link.symlink_to(drivers/name)
@@ -80,7 +102,20 @@ int main(int argc,char **argv){return helper_main(argc,argv);}
             assert (root/'ehci-platform/driver').is_symlink() and (root/'ohci-platform/driver').is_symlink()
         return result
 
-    reset();invoke(True)
+    reset();r=invoke(True)
+    assert 'stage=EHCI-enumeration ready=0' in r.stdout,r
+    # A new EHCI bus number and delayed configuration must be observed before OHCI restore.
+    for values,expected in [({},1),({'speed':12},0),({'idProduct':'1234'},0),
+                            ({'bConfigurationValue':0},0),({'authorized':0},0)]:
+        reset();write(root/'staged',idVendor='1d6b',idProduct='0002',maxchild=1,devnum=1)
+        attributes=dict(idVendor='0bda',idProduct='b812',authorized=1,bConfigurationValue=1,
+                        bNumInterfaces=1,devnum=3,speed=480)
+        attributes.update(values);write(root/'staged/9-1',**attributes)
+        r=invoke(True,env={'EHCI_READY_POLL':'4'})
+        assert f'stage=EHCI-enumeration ready={expected}' in r.stdout,r
+        if expected:
+            assert r.stdout.index('target configured usb=9-1 speed=480') < r.stdout.index('restore ohci-platform'),r
+    reset()
     for attribute,value,original in [('idProduct','1234','b812'),('authorized','0','1'),('speed','480','12'),('bNumInterfaces','2','1')]:
         reset();(dongle/attribute).write_text(value+'\n');invoke()
         assert (drivers/'ohci-platform/unbind').read_text()=='untouched'
@@ -105,6 +140,8 @@ int main(int argc,char **argv){return helper_main(argc,argv);}
             assert 'restore ehci-platform' in r.stdout and 'restore ohci-platform' in r.stdout
         reset()
     reset();invoke(env={'SIGNAL_HOST_ACTION':'unbind:ehci-platform'})
+    assert (root/'ehci-platform/driver').is_symlink() and (root/'ohci-platform/driver').is_symlink()
+    reset();invoke(env={'SIGNAL_HOST_ACTION':'bind:ehci-platform'})
     assert (root/'ehci-platform/driver').is_symlink() and (root/'ohci-platform/driver').is_symlink()
     reset();extra=root/'extra-ehci/usb5';write(extra,idVendor='1d6b',idProduct='0002',maxchild=1,busnum=5,devnum=1)
     (extra.parent/'driver').symlink_to(drivers/'ehci-platform');(devices/'usb5').symlink_to(extra)

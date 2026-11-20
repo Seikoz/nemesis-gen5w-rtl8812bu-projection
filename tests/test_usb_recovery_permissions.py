@@ -13,6 +13,26 @@ TOOLS=(ROOT/'bundle/usb-stations.sh').read_text(encoding='utf-8')
 
 @unittest.skipUnless(os.name=='posix','Real executable-bit semantics are verified on Linux CI')
 class RecoveryPermissionTest(unittest.TestCase):
+    def test_kernel_recovery_log_tracks_reassigned_buses_and_filters_secrets(self):
+        command = '''
+PATH=$TEST_BIN
+dmesg() { printf '%s\\n' \\
+ '[ 10.000001] usb 3-1: old event' \\
+ '[ 21.332766] usb 4-1: new high-speed USB device' \\
+ '[ 21.462789] usb 4-1: device descriptor read/64, error -71' \\
+ '[ 24.000000] ehci-platform ehci-mux.0: new USB bus registered' \\
+ '[ 36.112778] usb 3-1: new full-speed USB device' \\
+ '[ 36.200000] usb 3-1: SerialNumber: private' \\
+ '[ 36.300000] unrelated event'; }
+recovery_kernel_log 20
+'''
+        r=subprocess.run([SH,'-s'],input=(COMMON+command).encode(),env=ENV,capture_output=True,check=True)
+        output=r.stdout.decode()
+        for expected in ('usb 4-1: new high-speed','error -71','ehci-mux.0','usb 3-1: new full-speed'):
+            self.assertIn(expected,output)
+        for excluded in ('old event','private','unrelated event'):
+            self.assertNotIn(excluded,output)
+
     def run_case(self,helper=None,commands='recover_high_speed; echo rc=$?'):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td);(p/'app/bin').mkdir(parents=True);(p/'usb/3-1').mkdir(parents=True)
