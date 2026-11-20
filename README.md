@@ -2,13 +2,13 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
-**[USB 설치 ZIP v0.1.17 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.17/NEMESIS-CN7NPE-260902-Bundle-v0.1.17-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.17) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.18 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.18/NEMESIS-CN7NPE-260902-Bundle-v0.1.18-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.18) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.22 |
+| Korea Projection CN7NPE USB Test | 1.7.4.23 |
 | Realtek RTL8812BU USB Driver | 1.1.16 |
-| HMG-API 본체 | 1.1.0-rc.4 |
+| HMG-API 본체 | 1.1.0-rc.7 |
 | HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.10 |
 
 ## USB 설치
@@ -58,10 +58,15 @@ Realtek **1.1.15**와 Korea Projection **1.7.4.21**을 포함합니다. 기존 �
 
 v0.1.17은 EHCI 등록 1초 뒤 OHCI를 복원하던 고정 지연을 바꾸어, **EHCI 아래 A3000mini의 실제 480Mbps·구성 완료를 최대 12초 확인한 뒤 OHCI를 복원**합니다. 버스 번호 대신 검증한 플랫폼 장치를 따라가고, 준비되지 않아도 제한 시간 뒤 호스트 복원을 시도합니다. Korea Projection의 드라이버 호출 제한을 20초에서 90초로 늘립니다. 복구별 시작 uptime과 버스 번호 변경 전후의 커널 메시지를 `speed.log`에 남깁니다. Realtek **1.1.16**, Korea Projection **1.7.4.22**를 포함하며 실차 전환 결과는 확인이 필요합니다.
 
+v0.1.18은 HMG-API 본체를 공식 **1.1.0-rc.7**로 올립니다. Korea Projection **1.7.4.23**은 NEMESIS 패키지 **hmgapi 1.0.99.7 이상**을 의존성으로 지정하므로 Korea Projection만 업데이트해도 같은 USB의 본체가 먼저 업데이트됩니다. Realtek **1.1.16**, RTL8812BU 무선 모드 **2.4.10**과 기존 USB 복구/rtwlan0/방화벽 처리를 유지합니다. 공식 무선 모드 2.2.0-rc.8은 포함하지 않습니다.
+
+rc.7에는 rc.4 이후의 빠른 재부팅 보호 개선·문제 기록·모드 설정 저장/엔진 동시 실행 개선이 포함돼 있습니다. [공식 변경 내역](https://github.com/Open-HMG/HMG-API/blob/v1.1.0-rc.7/CHANGELOG.md). CN7PE의 새 지도는 CN7NPE 전용 지도가 아니며, 기존 차량에서 생성한 `state/local-map.json`을 사용하는 경로는 유지됩니다. 업데이트 후 완전히 재부팅하고 HMG-API **1.1.0-rc.7 / Hooks on**, 무선 모드 **2.4.10**을 확인하세요. USB 480Mbps 전환과 카플레이 실차 동작 확인은 여전히 필요합니다.
+
 ## 버전별 변경 사항
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.18 | HMG-API 본체 rc.7 반영, Korea Projection 설치 시 본체 자동 업데이트 의존성 상향, Realtek 1.1.16·무선 모드 2.4.10 유지 |
 | v0.1.17 | EHCI 480Mbps 구성 완료 대기 후 OHCI 복원, 드라이버 호출 제한 20→90초, USB 버스 재번호화 이후의 커널 로그 수집 |
 | v0.1.16 | 소유권 반환 후 12Mbps가 유지되면 외부 OHCI/EHCI를 EHCI 우선 순서로 재초기화, 대상 범위·복원·실제 480 확인 |
 | v0.1.15 | USB 12→480Mbps 복구 도구의 실행 권한 누락 수정, 준비 실패 시 시도 예산 보존, 조회·진단 도구 실행 권한 복구 |
@@ -82,6 +87,13 @@ v0.1.17은 EHCI 등록 1초 뒤 OHCI를 복원하던 고정 지연을 바꾸어,
 | v0.1.0 | Korea Projection CN7NPE USB 테스트판과 Realtek 드라이버를 하나의 USB 설치 ZIP으로 제공 |
 
 자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
+
+## v0.1.18 배포 검증
+
+- 공식 rc.7 ZIP SHA-256 및 내부 payload/지도 493개 MD5, 29개 셸 문법, rc.7 자동 업데이트 의존성·기존 버전 재설치 조건을 확인했습니다.
+- 실제 rc.4의 제거 전 스크립트를 rc.7 스테이징으로 실행해 본체 제거를 건너뛰고 모드·설정·로컬 지도가 보존되는 경로를 시험했습니다. 스테이징이 없으면 제거 경로를 실행하는 것도 확인했습니다. 전체 차량 설치를 모의한 것은 아닙니다.
+- Realtek ZIP·무선 모드/서명·핫스폿 스크립트/도구의 v0.1.17 대비 바이트 동일성과 기존 훅 ID 36개, 동일 입력 재빌드를 확인했습니다. 새 본체 런타임의 차량 동작은 확인이 필요합니다.
+- USB ZIP SHA-256: `013642b92f3c1e68f6da8dfa39ad9702d4a73c19be9990d3bbd5200fe40cab31`
 
 ## v0.1.17 배포 검증
 
@@ -121,4 +133,4 @@ v0.1.17은 EHCI 등록 1초 뒤 OHCI를 복원하던 고정 지연을 바꾸어,
 
 - [Realtek 대응 소스·Gen5W 빌드 설정](driver-source/README.md) · [USB 리셋 도구](driver-source/usb_reset_a3000mini.c)
 - [Korea Projection 1.7.4 원본](https://github.com/StopDragon/korea-projection/tree/v1.7.4) · [CN7NPE USB 이식 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb) · [합본 진단 스크립트](bundle)
-- [HMG-API 1.1.0-rc.4](https://github.com/Open-HMG/HMG-API/tree/v1.1.0-rc.4) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md)
+- [HMG-API 1.1.0-rc.7](https://github.com/Open-HMG/HMG-API/tree/v1.1.0-rc.7) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md)

@@ -14,7 +14,7 @@ from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, verify_mod
 
 PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
-HMG_API_SHA256 = "7c7359dee1afafa512e38ad498798ac1c059765fd4710ddcc68b446e66a739b7"
+HMG_API_SHA256 = "16bea991f1c541acccea658f766971fac0b9d41caf34d6ca7523c9007fc41a63"
 USB_LIST = f"""[nemesis]
 version=1.1
 type=list
@@ -22,12 +22,12 @@ type=list
 [package.0]
 path={PROJECTION}
 name=Korea Projection CN7NPE USB Test
-short-desc=v1.7.4.22 - USB high-speed enumeration recovery
+short-desc=v1.7.4.23 - HMG-API rc.7 / RTL8812BU USB Wi-Fi
 
 [package.1]
 path={HMG_API}
 name=HMG-API
-short-desc=1.1.0-rc.4 - Korea Projection dependency
+short-desc=1.1.0-rc.7 - Korea Projection dependency
 
 [package.2]
 path={PACKAGE_PATH}
@@ -237,14 +237,14 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         raise ValueError('Expected the Android ARMv7 mDNS diagnostics helper')
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
-        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.22\n")
+        descriptor = descriptor.replace(b"package-version=1.7.4.5\n", b"package-version=1.7.4.23\n")
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
-            b'depends="hmgapi@>=1.0.99.4,realtek.88x2bu@>=1.1.16,!niro.carplay.hotspot"\n',
+            b'depends="hmgapi@>=1.0.99.7,realtek.88x2bu@>=1.1.16,!niro.carplay.hotspot"\n',
         )
         descriptor = descriptor.replace(
             b"CN7NPE KOR 260902, HMG-API and RTL8812BU v1.1.4 required.",
-            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.4+ and Realtek 1.1.16+.",
+            b"CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.7+ and Realtek 1.1.16+.",
         )
         preinstall = package.read("scripts/preinstall.sh")
         preinstall = preinstall.replace(
@@ -253,7 +253,7 @@ def build_projection_package(source, wireless, station_counter, link_diagnostics
         )
         preinstall = preinstall.replace(
             rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22)$'",
+            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23)$'",
         )
         old_version_guard = b'''grep -q '"version": "2.4.6"' "$mod/META-HMGAPI/manifest.json"'''
         if preinstall.count(old_version_guard) != 1:
@@ -306,7 +306,7 @@ done''',
             raise ValueError("Expected the Korea Projection source link in the base package")
         changes["licenses/Source.md"] = source_notice.replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
-        ) + b'\nWireless mod 2.4.10 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.17/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.17/bundle\n'
+        ) + b'\nWireless mod 2.4.10 session callbacks, scoped TCP/UDP policy and link diagnostic sources (AGPL-3.0):\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/projection-source\nhttps://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.18/bundle\n'
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
         output = io.BytesIO()
@@ -326,10 +326,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("driver", type=Path, help="Published Realtek v1.1.7 USB ZIP (reset helper)")
     parser.add_argument("projection", type=Path, help="Published Korea Projection 1.7.4.5 USB ZIP (base package)")
-    parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.4 NEMESIS package ZIP")
+    parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.7 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
-        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.17-USB.zip",
+        default=ROOT / "dist" / "NEMESIS-CN7NPE-260902-Bundle-v0.1.18-USB.zip",
     )
     parser.add_argument(
         "--diagnostic-modules", required=True, type=Path,

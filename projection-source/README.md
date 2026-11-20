@@ -39,7 +39,7 @@ A 15-second heartbeat refreshes only the state established by a real wireless se
 ```sh
 bash projection-source/compile_hooks.sh projection-output
 python build_wireless_mod.py --base-mod wireless-2.4.6.zip --hooks projection-output/hooks.jar --key /private/path/existing-author.key --output wireless-2.4.10.zip
-python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.4.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-2.4.10.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
+python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.7-nemesis-package.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-2.4.10.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
 python -m unittest discover -s tests -v
 ```
 
