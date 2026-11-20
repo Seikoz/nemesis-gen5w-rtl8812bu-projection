@@ -165,7 +165,7 @@ reset_boot_dongle() {
 
 # Return a full-speed A3000mini's external port to EHCI before the AP starts.
 recover_high_speed() (
-    local boot_id usb_speed lock marker attempt wait_count helper_rc result=1
+    local boot_id usb_speed lock marker attempt wait_count helper_rc limit result=1
     local log_dir=/data/nemesis/logs/realtek.88x2bu
     is_cn7npe_boot_reset_target && read_boot_id && identify_dongle &&
         [ "$vendor:$product" = 0bda:b812 ] &&
@@ -194,13 +194,22 @@ recover_high_speed() (
             [ "$usb_speed" != 480 ] || { result=0; break; }
             [ "$usb_speed" = 12 ] || break
             echo "Attempt $attempt: usb=${usb##*/} speed_before=$usb_speed"
-            "$package_dir/bin/usb-reset-a3000mini" --high-speed "$usb"
-            helper_rc=$?
-            echo "EHCI ownership request exit=$helper_rc"
+            if [ "$attempt" = 1 ]; then
+                echo "Recovery stage=EHCI-ownership"
+                "$package_dir/bin/usb-reset-a3000mini" --high-speed "$usb"
+                helper_rc=$?
+                limit=6
+            else
+                echo "Recovery stage=external-host-restart EHCI-first"
+                "$package_dir/bin/usb-reset-a3000mini" --restart-hosts "$usb"
+                helper_rc=$?
+                limit=12
+            fi
+            echo "USB recovery request exit=$helper_rc"
             case "$helper_rc" in 126|127) reset_helper_diagnostics ;; esac
             [ "$helper_rc" -eq 0 ] || break
             wait_count=0
-            while [ "$wait_count" -lt 6 ]; do
+            while [ "$wait_count" -lt "$limit" ]; do
                 sleep 1
                 if identify_dongle && [ "$vendor:$product" = 0bda:b812 ] &&
                    read -r usb_speed < "$usb/speed" && [ "$usb_speed" = 480 ]; then

@@ -2,7 +2,7 @@ name: Build Android USB reset helper
 on:
   push:
     branches: [test/rtl8812bu-boot-retry]
-    paths: ['.github/workflows/build-a3000mini-reset.yml', 'driver-source/usb_reset_a3000mini.c', 'driver-source/test_usb_speed.py', 'package/scripts/common.sh', 'tests/test_usb_recovery_permissions.py', 'bundle/usb-stations.sh']
+    paths: ['.github/workflows/build-a3000mini-reset.yml', 'driver-source/usb_reset_a3000mini.c', 'driver-source/test_usb_speed.py', 'driver-source/test_usb_hosts.py', 'package/scripts/common.sh', 'tests/test_usb_recovery_permissions.py', 'bundle/usb-stations.sh']
 permissions:
   contents: read
 jobs:
@@ -16,6 +16,7 @@ jobs:
       - name: Verify USB high-speed recovery conditions
         run: |
           python3 driver-source/test_usb_speed.py
+          python3 driver-source/test_usb_hosts.py
           python3 -m unittest discover -s tests -v
       - name: Build and inspect Android API 19 executable
         run: |

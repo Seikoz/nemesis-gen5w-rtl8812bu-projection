@@ -5,11 +5,13 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <linux/usbdevice_fs.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 #ifndef USB_SYSFS
@@ -190,13 +192,195 @@ static int reclaim_high_speed(const char *port)
     return result;
 }
 
+struct host_control {
+    char device[PATH_MAX], driver[PATH_MAX], name[96];
+    int bind_fd, unbind_fd, restore;
+};
+
+static volatile sig_atomic_t host_interrupted;
+static void host_signal(int signal_number) { host_interrupted = signal_number; }
+
+static int host_interface_idle(void)
+{
+    int flags = number(USB_NET_FLAGS, 0);
+    if (flags >= 0) return !(flags & 1);
+    struct stat state;
+    return lstat(USB_NET_FLAGS, &state) < 0 && errno == ENOENT;
+}
+
+static void host_pause(unsigned milliseconds)
+{
+#ifndef USB_HOST_TEST_NO_DELAY
+    struct timespec delay = {milliseconds / 1000, (long)(milliseconds % 1000) * 1000000};
+    while (!host_interrupted && nanosleep(&delay, &delay) && errno == EINTR) {}
+#else
+    (void)milliseconds;
+#endif
+}
+
+static int root_has_only_target(const char *root)
+{
+    char current[PATH_MAX], child[PATH_MAX], resolved[PATH_MAX];
+    if (!getcwd(current, sizeof(current))) return 0;
+    DIR *dir = opendir(root);
+    if (!dir) return 0;
+    struct dirent *entry;
+    int count = 0, valid = 1;
+    while ((entry = readdir(dir))) {
+        if (entry->d_name[0] == '.') continue;
+        if (!path_join(child, sizeof(child), root, entry->d_name)) { valid = 0; break; }
+        if (root_attribute(child, "idVendor", 16) < 0) continue;
+        if (!realpath(child, resolved) || strcmp(current, resolved)) { valid = 0; break; }
+        count++;
+    }
+    closedir(dir);
+    return valid && count == 1;
+}
+
+static int open_host_control(const char *root, const char *driver, int product,
+                             struct host_control *host)
+{
+    char path[PATH_MAX];
+    if (root_attribute(root, "idVendor", 16) != 0x1d6b ||
+        root_attribute(root, "idProduct", 16) != product ||
+        root_attribute(root, "devnum", 10) != 1 ||
+        root_attribute(root, "maxchild", 10) != 1 ||
+        !path_join(path, sizeof(path), root, "../driver") || !driver_is(path, driver) ||
+        !realpath(path, host->driver) ||
+        !path_join(path, sizeof(path), root, "..") || !realpath(path, host->device)) return 0;
+    const char *name = strrchr(host->device, '/');
+    if (!name || !name[1] || strlen(++name) >= sizeof(host->name) ||
+        strspn(name, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._:-") != strlen(name)) return 0;
+    strcpy(host->name, name);
+    if (!path_join(path, sizeof(path), host->driver, "bind")) return 0;
+    host->bind_fd = open(path, O_WRONLY | O_CLOEXEC);
+    if (host->bind_fd < 0) perror("USB cold recovery: open external bind control");
+    if (!path_join(path, sizeof(path), host->driver, "unbind")) return 0;
+    host->unbind_fd = open(path, O_WRONLY | O_CLOEXEC);
+    if (host->unbind_fd < 0) perror("USB cold recovery: open external unbind control");
+    return host->bind_fd >= 0 && host->unbind_fd >= 0;
+}
+
+static int host_write(int fd, const char *name)
+{
+    char value[100];
+    int length = snprintf(value, sizeof(value), "%s\n", name);
+    if (length <= 0 || (size_t)length >= sizeof(value)) return 0;
+    if (lseek(fd, 0, SEEK_SET) < 0 && errno != ESPIPE) return 0;
+    ssize_t result;
+    do { result = write(fd, value, (size_t)length); } while (result < 0 && errno == EINTR);
+    return result == length;
+}
+
+static int host_restore(struct host_control *host, const char *label)
+{
+    if (!host->restore) return 1;
+    int ok = host_write(host->bind_fd, host->name);
+    /* If another kernel path already rebound it, preserve that valid binding. */
+    if (!ok) {
+        char path[PATH_MAX];
+        ok = path_join(path, sizeof(path), host->device, "driver") && driver_is(path, label);
+    }
+    printf("USB cold recovery: restore %s device=%s result=%d\n", label, host->name, ok);
+    if (ok) host->restore = 0;
+    return ok;
+}
+
+/* Reprobe only the unique external single-port platform pair, EHCI first.
+ * Internal tcc-ehci, occupied roots, hubs and UP interfaces never qualify.
+ * Driver remove/probe may reset the PHY; a physical VBUS power cut is not assumed. */
+static int restart_external_hosts(const char *port)
+{
+    char ohci_root[PATH_MAX], ehci_root[PATH_MAX] = "", path[PATH_MAX];
+    struct host_control ohci = {.bind_fd = -1, .unbind_fd = -1};
+    struct host_control ehci = {.bind_fd = -1, .unbind_fd = -1};
+    int result = 2, candidates = 0, ohci_count = 0;
+    int devnum = number("devnum", 10);
+    const char *dash = strrchr(port, '-');
+    char interface[64];
+    struct stat entry;
+    if (!dash || strcmp(dash, "-1") || strspn(port, "0123456789-") != strlen(port) ||
+        !identity() || number("speed", 10) != 12 || devnum < 2 || devnum > 127 ||
+        !realpath("..", ohci_root) || !root_has_only_target(ohci_root) ||
+        root_attribute(ohci_root, "busnum", 10) != number("busnum", 10) ||
+        !host_interface_idle()) goto done;
+    int length = snprintf(interface, sizeof(interface), "%s:1.0", port);
+    if (length <= 0 || (size_t)length >= sizeof(interface) || !vendor_interface(interface) ||
+        !path_join(path, sizeof(path), interface, "driver")) goto done;
+    if (lstat(path, &entry) == 0) { if (!driver_is(path, "rtl88x2bu")) goto done; }
+    else if (errno != ENOENT) goto done;
+
+    DIR *devices = opendir(USB_SYSFS);
+    if (!devices) goto done;
+    struct dirent *item;
+    while ((item = readdir(devices))) {
+        char root[PATH_MAX], link[PATH_MAX];
+        if (strncmp(item->d_name, "usb", 3) || !item->d_name[3] ||
+            strspn(item->d_name + 3, "0123456789") != strlen(item->d_name + 3) ||
+            !path_join(root, sizeof(root), USB_SYSFS, item->d_name) ||
+            !path_join(link, sizeof(link), root, "../driver")) continue;
+        if (driver_is(link, "ohci-platform")) ohci_count++;
+        if (!driver_is(link, "ehci-platform")) continue;
+        candidates++;
+        if (root_empty(root) && realpath(root, ehci_root)) continue;
+        ehci_root[0] = 0;
+        break;
+    }
+    closedir(devices);
+    if (candidates != 1 || ohci_count != 1 || !ehci_root[0] ||
+        !open_host_control(ohci_root, "ohci-platform", 1, &ohci) ||
+        !open_host_control(ehci_root, "ehci-platform", 2, &ehci) ||
+        !strcmp(ohci.device, ehci.device) || !identity() || number("devnum", 10) != devnum ||
+        number("speed", 10) != 12 || !root_has_only_target(ohci_root) || !root_empty(ehci_root)) goto done;
+    if (!host_interface_idle()) goto done;
+
+    struct sigaction action;
+    memset(&action, 0, sizeof(action));
+    action.sa_handler = host_signal;
+    sigemptyset(&action.sa_mask);
+    host_interrupted = 0;
+    if (sigaction(SIGTERM, &action, NULL) || sigaction(SIGINT, &action, NULL) ||
+        sigaction(SIGHUP, &action, NULL)) goto done;
+    if (host_interrupted) goto done;
+    result = 1;
+    printf("USB cold recovery: validated OHCI=%s EHCI=%s port=1\n", ohci.name, ehci.name);
+    fflush(stdout);
+    ohci.restore = 1;
+    if (!host_write(ohci.unbind_fd, ohci.name)) goto restore;
+    puts("USB cold recovery: external OHCI unbound");
+    if (host_interrupted) goto restore;
+    ehci.restore = 1;
+    if (!host_write(ehci.unbind_fd, ehci.name)) goto restore;
+    puts("USB cold recovery: external EHCI unbound; pause_ms=1500");
+    host_pause(1500);
+    if (host_interrupted) goto restore;
+    if (!host_restore(&ehci, "ehci-platform")) goto restore;
+    puts("USB cold recovery: EHCI first; pause_ms=1000");
+    host_pause(1000);
+    if (!host_interrupted && host_restore(&ohci, "ohci-platform")) result = 0;
+restore:
+    /* Always attempt both restorations, even when one fails or a signal arrives. */
+    { int a = host_restore(&ehci, "ehci-platform");
+      int b = host_restore(&ohci, "ohci-platform");
+      if (!a || !b || host_interrupted) result = 1; }
+done:
+    if (ohci.bind_fd >= 0) close(ohci.bind_fd);
+    if (ohci.unbind_fd >= 0) close(ohci.unbind_fd);
+    if (ehci.bind_fd >= 0) close(ehci.bind_fd);
+    if (ehci.unbind_fd >= 0) close(ehci.unbind_fd);
+    if (result == 2) puts("USB cold recovery: refused by topology, device, interface or control-endpoint checks");
+    printf("USB cold recovery: request_exit=%d (actual USB speed must be verified)\n", result);
+    return result;
+}
+
 int main(int argc, char **argv)
 {
     const char prefix[] = USB_SYSFS "/";
     int high_speed = argc == 3 && strcmp(argv[1], "--high-speed") == 0;
-    if (argc != 2 && !high_speed)
+    int restart_hosts = argc == 3 && strcmp(argv[1], "--restart-hosts") == 0;
+    if (argc != 2 && !high_speed && !restart_hosts)
         return 2;
-    const char *device_path = high_speed ? argv[2] : argv[1];
+    const char *device_path = (high_speed || restart_hosts) ? argv[2] : argv[1];
     if (strncmp(device_path, prefix, sizeof(prefix) - 1))
         return 2;
     const char *port = device_path + sizeof(prefix) - 1;
@@ -212,6 +396,8 @@ int main(int argc, char **argv)
     }
     if (high_speed)
         return reclaim_high_speed(port);
+    if (restart_hosts)
+        return restart_external_hosts(port);
     char interface[56];
     snprintf(interface, sizeof(interface), "%s:1.0", port);
     int bus = number("busnum", 10);

@@ -75,6 +75,20 @@ recover_high_speed; echo second=$?
         self.assertEqual(files['called'],'refused\nrefused\n');self.assertEqual(len(markers),2)
         self.assertNotIn('speed_after=480',files['log/speed.log'])
 
+    def test_second_stage_uses_host_restart_and_verifies_actual_480(self):
+        helper='''#!/bin/sh
+echo "$1" >> "$PWD/called"
+if [ "$1" = --restart-hosts ]; then
+ mkdir -p "$PWD/usb/4-1"; echo 480 > "$PWD/usb/4-1/speed"
+fi
+'''
+        out,err,files,markers,_=self.run_case(helper)
+        self.assertEqual(err,'');self.assertIn('rc=0',out)
+        self.assertEqual(files['called'].splitlines(),['--high-speed','--restart-hosts'])
+        self.assertEqual(len(markers),2)
+        self.assertIn('Recovery stage=external-host-restart EHCI-first',files['log/speed.log'])
+        self.assertIn('speed_after=480',files['log/speed.log'])
+
     def test_symlink_and_missing_helper_are_rejected_before_attempt(self):
         for command in ('mv app/bin/usb-reset-a3000mini outside; ln -s "$PWD/outside" app/bin/usb-reset-a3000mini',
                         'rm app/bin/usb-reset-a3000mini'):
