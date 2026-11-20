@@ -10,6 +10,16 @@ GEN = '12345678-200.50-8'
 
 
 class SessionTest(unittest.TestCase):
+    def test_state_poll_works_without_a_shell_printf_command(self):
+        out,files=self.run_case(self.event(), '''
+printf() { return 127; }
+usb_cp_poll
+usb_cp_read
+echo "$CP_COUNT $CP_STATE $CP_SOURCE"
+''')
+        self.assertIn('1 started session-callback',out)
+        self.assertIn('started,1',files['usb-cp-state'])
+
     def run_case(self, record='', commands='usb_cp_read; echo "$CP_COUNT $CP_STATE $CP_SOURCE"'):
         with tempfile.TemporaryDirectory() as td:
             p = Path(td)

@@ -17,16 +17,23 @@ usb_audio_pending() {
 }
 
 usb_audio_owned_files() {
-  local actual expected name
-  [ -f "$BK/mod.ours" ] && [ ! -f "$BK/mod.pin" ] &&
-    [ "$(mod_ver)" = "$MOD_VER" ] || return 1
+  local actual expected name checked=0
+  if ! { [ -f "$BK/mod.ours" ] && [ ! -f "$BK/mod.pin" ] &&
+    [ "$(mod_ver)" = "$MOD_VER" ]; }; then
+    echo "Ownership, version or pin check failed."
+    return 1
+  fi
   [ -s "$KP_HMG/usb-mod-files.md5" ] || return 1
   while read -r expected name; do
     case "$name" in ''|/*|*..*) return 1 ;; esac
-    [ -f "$HMGDATA/mods/$MOD_ID/$name" ] && [ ! -L "$HMGDATA/mods/$MOD_ID/$name" ] || return 1
+    if [ ! -f "$HMGDATA/mods/$MOD_ID/$name" ] || [ -L "$HMGDATA/mods/$MOD_ID/$name" ]; then
+      echo "Missing or linked bundled file: $name"; return 1
+    fi
     actual=$("$BB" md5sum < "$HMGDATA/mods/$MOD_ID/$name") || return 1
-    [ "${actual%% *}" = "$expected" ] || return 1
+    [ "${actual%% *}" = "$expected" ] || { echo "Bundled file differs: $name"; return 1; }
+    checked=$((checked + 1))
   done < "$KP_HMG/usb-mod-files.md5"
+  echo "Verified $checked bundled mod files."
 }
 
 usb_audio_marker() {
@@ -39,6 +46,7 @@ usb_audio_reconcile() {
   local marked_boot= marked_version= marked_state= safe=0
   USB_AUDIO_STATUS=none
   usb_target || return 0
+  echo "boot=$BID expected_mod=$MOD_VER audio setup before AP startup"
   [ ! -f "$HMGDATA/mods/$MOD_ID/.disabled" ] || return 0
   [ -f "$HMGDATA/mods/$MOD_ID/mod.json" ] && [ "$(mod_ver)" = "$MOD_VER" ] || return 0
   case "$BID" in ''|*[!0-9a-f-]*) USB_AUDIO_STATUS=invalid-boot; return 2 ;; esac
