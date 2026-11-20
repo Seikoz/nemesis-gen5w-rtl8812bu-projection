@@ -14,7 +14,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Test AP readiness ordering and build Android API 19 hooks
-        run: bash projection-source/compile_hooks.sh "$PWD/projection-output"
+        run: bash projection-source/compile_rc8.sh "$PWD/projection-output"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: usb-carplay-ap-wait-hooks
