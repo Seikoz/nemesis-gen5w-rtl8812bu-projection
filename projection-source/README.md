@@ -1,6 +1,6 @@
 # CN7NPE USB CarPlay session and network diagnostics
 
-The v0.1.13 bundle contains Korea Projection **1.7.4.18**, signed wireless mod **2.4.9**, Realtek **1.1.13** and HMG-API core **1.1.0-rc.4**. The local mod numbering is independent of upstream Open-HMG releases. Vehicle CarPlay success remains unverified. These modifications are AGPL-3.0, like the original wireless mod.
+The v0.1.14 bundle contains Korea Projection **1.7.4.19**, signed wireless mod **2.4.10**, Realtek **1.1.13** and HMG-API core **1.1.0-rc.4**. The local mod numbering is independent of upstream Open-HMG releases. Vehicle CarPlay success remains unverified. These modifications are AGPL-3.0, like the original wireless mod.
 
 ## Session ordering and status
 
@@ -16,7 +16,7 @@ A 15-second heartbeat refreshes only the state established by a real wireless se
 
 ## Network policy and diagnostics
 
-[build_wireless_mod.py](../build_wireless_mod.py) verifies the original 2.4.6 mod and signs 2.4.9 with the existing author identity. Every signed file hash and the P-256 signature are verified. The private key is never published. Native patches and all existing fixed-port rules are preserved.
+[build_wireless_mod.py](../build_wireless_mod.py) verifies the original 2.4.6 mod and signs 2.4.10 with the existing author identity. Every signed file hash and the P-256 signature are verified. The private key is never published. Native patches and all existing fixed-port rules are preserved.
 
 - Dynamic TCP: input/output, `rtwlan0` only, peers `192.168.43.0/24` or `fe80::/10`, either source or destination port 1024–65535 (v0.1.12).
 - New UDP: IPv6 input/output, `rtwlan0` only, peers `fe80::/10`, either source or destination port 6031. Other UDP, external ranges and interfaces are not opened by these additions.
@@ -38,9 +38,25 @@ A 15-second heartbeat refreshes only the state established by a real wireless se
 
 ```sh
 bash projection-source/compile_hooks.sh projection-output
-python build_wireless_mod.py --base-mod wireless-2.4.6.zip --hooks projection-output/hooks.jar --key /private/path/existing-author.key --output wireless-2.4.9.zip
-python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.4.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-2.4.9.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
+python build_wireless_mod.py --base-mod wireless-2.4.6.zip --hooks projection-output/hooks.jar --key /private/path/existing-author.key --output wireless-2.4.10.zip
+python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.4.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-2.4.10.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
 python -m unittest discover -s tests -v
 ```
 
-The USB builder verifies pinned source packages, signed mod identity/hashes, Android ELF architecture and new diagnostic payloads. Upgrade/reinstall guards accept the existing local 2.4.6–2.4.9 identity. The user installs the finished USB ZIP; no build tools are required on the vehicle.
+The USB builder verifies pinned source packages, signed mod identity/hashes, Android ELF architecture and new diagnostic payloads. Upgrade/reinstall guards accept the existing local 2.4.6–2.4.10 identity. The user installs the finished USB ZIP; no build tools are required on the vehicle.
+
+## v0.1.14: confirmed Bluetooth origin and CarPlay-channel handover
+
+The vehicle log from KP 1.7.4.17 / mod 2.4.8 repeatedly reported native session start `transport=0 wireless=false`, then SPP loss, bridge `BT_DETACHED`, component 4 disconnect and finalization about 1–2 seconds later. The `transport == 1` condition was also present in 2.4.9. This evidence identifies a bridge cleanup path; it does not establish why the phone/vehicle originally closed SPP or guarantee that all disconnects are solved.
+
+[patch_handover.py](patch_handover.py) recognizes transport 0 only when there is no actual USB iAP2 connection, the bridge's active Bluetooth request is confirmed by component 4 with the same serial, and the same USB AP generation is ready. Transport 0 is not assigned a universal meaning. Legacy transport 1 behavior is retained; an unknown non-USB origin is `unclassified`, not automatically wired.
+
+After a confirmed wireless start, SPP loss preserves native CarPlay and requests the existing component 5 iAP2 channel. Existing DiPO disconnect filtering keeps the server's component 4 -> 5 switch from finalizing the native session. Duplicate SPP events do not duplicate the request. A queued attach checks the live session token, native owner, address, AP generation, enabled state and actual USB state before dispatch. A send failure clears the pending-client flag, with at most two attempts per native session. No infinite reconnect watchdog or Bluetooth keepalive patch is added.
+
+New-session/USB fences prevent an old queued detach from closing the replacement session. Queued native iAP2 output is also checked against the session token and AP before execution; already executing native calls cannot be cancelled. Incoming packets from an obsolete native owner are ignored. Finalization clears flags and buffered data. Component 5 `connected` is logged as a server callback, not proof that identification, picture or audio works.
+
+The raw transport value is retained in both callback and heartbeat records; a recognized `started,0` is displayed as connected only after the existing boot/PID/AP/freshness checks. Session-status heartbeats resolve the Bridge scheduler before taking the status lock to avoid the reverse lock order with synchronized lifecycle callbacks.
+
+[test_handover.py](test_handover.py) extracts the actual patched Bridge methods and replays the vehicle sequence. It checks component 5 attachment and incoming/outgoing iAP2 delivery, duplicates, ordinary SPP loss, unconfirmed/wired/disabled/changed-AP cases, finalization, old queued jobs, data buffering and bounded send failures. Tests use synthetic identifiers; the private vehicle report is not included in the repository or ZIP.
+
+[Android build and all method tests](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44665053112), source commit `a353c84afb1f8e8b0aa49400938ae68411c32fbe`. hooks.jar SHA-256: `917092cff18ddafbd55a07a7ae5cca2ab0e988a15d86be1d25e3d15bdab55b8e`. Existing ARMv7 mDNS and station helpers, firewall policy, HMG-API core and Realtek package are reused unchanged.

@@ -2,14 +2,14 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜 드라이버의 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. 현재 테스트 대상은 2024년식 아반떼 N 페이스리프트 `CN7NPE.KOR.S5W_M.V039.001.260902`와 ipTIME A3000mini(`0bda:b812`)입니다. TCC803x, 커널 `3.18.24-tcc`, NEMESIS Manager 1.16.7 이상을 사용합니다. 차량에서 무선 카플레이 연결을 시험할 수 있도록 Korea Projection과 HMG-API를 포함한 USB 설치 ZIP을 제공합니다.
 
-**[USB 설치 ZIP v0.1.13 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.13/NEMESIS-CN7NPE-260902-Bundle-v0.1.13-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.13) · [전체 변경 이력](CHANGELOG.md)
+**[USB 설치 ZIP v0.1.14 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.14/NEMESIS-CN7NPE-260902-Bundle-v0.1.14-USB.zip)** · [릴리스 변경 사항](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.14) · [전체 변경 이력](CHANGELOG.md)
 
 | 구성 | 버전 |
 | --- | --- |
-| Korea Projection CN7NPE USB Test | 1.7.4.18 |
+| Korea Projection CN7NPE USB Test | 1.7.4.19 |
 | Realtek RTL8812BU USB Driver | 1.1.13 |
 | HMG-API 본체 | 1.1.0-rc.4 |
-| HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.9 |
+| HMG-API 무선 CarPlay·Android Auto 모드 | 2.4.10 |
 
 ## USB 설치
 
@@ -42,12 +42,17 @@ v0.1.13은 IPv6 링크 로컬 피어의 UDP 6031을 추가 허용합니다. **AP
 
 제보 파일 `3-log.txt`에 `usb-carplay-events.log`, `usb-cp-capture.log`, `usb-connection-first.log`, `usb-connection-latest.log`를 포함합니다. 방화벽의 실제 규칙·점프 순서·패킷/바이트 카운터와 IPv6 UDP 6031 항목 수, mDNS 조회 결과·서비스 포트, TCP 소켓 상태를 확인할 수 있습니다. 첫 스냅샷과 최근 스냅샷을 보존하므로 동글을 빼고 제보 USB로 바꾼 뒤에도 직전 기록을 볼 수 있습니다. mDNS 응답 없음만으로 서비스 부재나 연결 실패를 단정하지 않습니다.
 
-동글 연결 후 무선 모드가 **2.4.9로 업데이트되고 적용된 것을 확인한 뒤** 완전히 재부팅합니다. 실차의 카플레이 연결 성공은 아직 미확인입니다.
+동글 연결 후 무선 모드가 **2.4.10로 업데이트되고 적용된 것을 확인한 뒤** 완전히 재부팅합니다. 실차의 카플레이 연결 성공은 아직 미확인입니다.
+
+v0.1.14는 `transport=0`으로 시작한 실제 무선 세션이 SPP 종료 직후 `BT_DETACHED`로 끊기던 경로를 수정합니다. USB iAP2 연결이 없고, 이 브리지가 요청한 Bluetooth iAP2(컴포넌트 4)의 기기 일치와 같은 `rtwlan0` AP 준비를 확인한 경우에만 해당 세션을 무선으로 인정합니다. SPP가 끝나면 카플레이 채널(컴포넌트 5)로 이관합니다. 실제 USB 연결과 확인되지 않은 세션은 구분합니다.
+
+종료·재연결·AP 변경 뒤 이전 작업이 실행되지 않도록 attach/detach와 대기 중인 iAP2 전송을 세션별로 확인합니다. 상태 기록과 15초 갱신에서도 원래 `transport=0` 값을 보존합니다. HMG-API 본체와 Realtek 드라이버를 따로 재설치할 필요는 없습니다. 실차의 연결 유지 여부는 확인이 필요합니다.
 
 ## 버전별 변경 사항
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.14 | 확인된 USB-AP Bluetooth 세션의 transport=0 판정, SPP 종료 후 iAP2 이관, 이전 세션의 예약 작업·전송 차단 |
 | v0.1.13 | IPv6 UDP 6031 허용, 실제 방화벽 규칙·순서·카운터와 mDNS 진단, 실제 카플레이 세션 기준 연결 표시 |
 | v0.1.12 | USB AP 대역의 동적 TCP 허용, 현재 접속 단말 수·확인 불가 표시, 기존 설치의 포트 정책 자동 적용 |
 | v0.1.11 | AP 준비 전에 Bluetooth iAP2가 시작되는 순서 수정, 준비 후 자동 진행, 끊긴 연결의 대기 취소 |
@@ -65,7 +70,13 @@ v0.1.13은 IPv6 링크 로컬 피어의 UDP 6031을 추가 허용합니다. **AP
 
 자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
 
-## v0.1.13 배포 검증
+## v0.1.14 배포 검증
+
+- [실제 수정 메서드의 끊김 재현·이관·세션 격리 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44665053112)를 통과했습니다. 16개 회귀 검사, 기존 AP 대기 검사와 원래 transport 값을 보존하는 상태 갱신 검사도 포함합니다.
+- 중첩 ZIP·29개 셸 문법·동일 작성자 서명, 2.4.6~2.4.10 업데이트/재설치 조건, 기존 드라이버·본체·네트워크 정책 보존을 확인했습니다. 동일 입력 재빌드의 파일 내용도 일치합니다. 실차의 연결 지속 여부는 확인이 필요합니다.
+- USB ZIP SHA-256: `ddac046fe0a26230b1a5548a44194b83d995f133ab7f6fc2c2adf2f6a25ad1f1`
+
+## v0.1.13 배포 검증 기록
 
 - [회귀 검사·세션 콜백·Android 훅 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44536318095), [mDNS 응답 해석 검사·ARMv7 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44535807005)를 통과했습니다.
 - 중첩 패키지·29개 셸 문법·모드 서명·드라이버/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서의 실제 방화벽 통과·카플레이 동작 확인은 남아 있습니다.
