@@ -83,6 +83,12 @@ v0.1.17은 EHCI 등록 1초 뒤 OHCI를 복원하던 고정 지연을 바꾸어,
 
 자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
 
+## v0.1.17 배포 검증
+
+- [실제 C 코드의 EHCI 버스 재번호화·지연 준비·미구성/다른 장치·시간 초과·실패/신호 복원 검사, 24개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44680540924)를 통과했습니다.
+- 29개 셸 문법, 새 드라이버 의존성·90초 호출 제한·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서 실제 480Mbps 전환은 확인이 필요합니다.
+- USB ZIP SHA-256: `773ebcc1e222caddbe4497b45fa1777a7ad6f5918c0533b4f8e62c0f52dddab4`
+
 ## v0.1.16 배포 검증
 
 - [실제 C 코드의 외부 호스트 재초기화 모의 검사·기존 EHCI 검사·23개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44677378486)를 통과했습니다. 해제/등록 효과와 실패·SIGTERM을 모의해 순서·내부 호스트 보존·복원을 확인했습니다.
