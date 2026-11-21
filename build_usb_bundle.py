@@ -17,8 +17,8 @@ PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "16bea991f1c541acccea658f766971fac0b9d41caf34d6ca7523c9007fc41a63"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.29"
-PROJECTION_VERSION = "1.7.4.34"
+BUNDLE_VERSION = "0.1.30"
+PROJECTION_VERSION = "1.7.4.35"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
                  for model in ("CN7PE", "CN7HEVPE", "CN7NPE") for variant in ("0000", "S5W_M"))
 BASE_PRODUCTS = b"CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902"
@@ -237,7 +237,8 @@ def add_session_diagnostics(hotspot, status):
     start = hotspot.index(b'\ncp_count() {') + 1
     end = hotspot.index(b'\n}\n', hotspot.index(b'\ncp_watch() {', start)) + 3
     definitions = b'\n'.join((ROOT / 'bundle' / name).read_bytes() for name in (
-        'usb-carplay-session.sh', 'usb-connection-diagnostics.sh', 'usb-carplay-audio.sh'))
+        'usb-carplay-session.sh', 'usb-connection-diagnostics.sh', 'usb-carplay-audio.sh',
+        'usb-carplay-trials.sh'))
     hotspot = hotspot[:start] + definitions + b'\n' + hotspot[end:]
     anchor = b'  if [ "$_a" = "$(getprop $AAPROP 2>/dev/null)" ]; then'
     if hotspot.count(anchor) != 1:
@@ -247,6 +248,10 @@ def add_session_diagnostics(hotspot, status):
     if status.count(anchor) != 1:
         raise ValueError('Expected report collection hook')
     status = status.replace(anchor, anchor + b'  usb_cp_poll\n  usb_ap_live && usb_connection_snapshot report\n')
+    anchor = b'  echo; echo "== perf.log ('
+    if status.count(anchor) != 1:
+        raise ValueError('Expected report history insertion point')
+    status = status.replace(anchor, b'  usb_trial_report\n' + anchor)
     anchor = b'$W/usb-hostapd.log '
     if status.count(anchor) != 1:
         raise ValueError('Expected report file list')
@@ -278,12 +283,12 @@ def add_boot_timing(hotspot, status):
          b'  usb_boot_mark ap_prerequisites_ready\n  while ! parse_conf "$SRC"; do\n'),
         (b'      usb_capture_running_hostapd\n      log "USB AP ready:',
          b'      usb_boot_mark ap_ready\n      usb_capture_running_hostapd\n      log "USB AP ready:'),
-        (b'  echo "$CP_COUNT" > "$CPN"\n  usb_watch_carplay_audio',
+        (b'  echo "$CP_COUNT" > "$CPN"\n',
          b'''  if [ "$CP_COUNT" = 1 ] && [ "$USB_CP_BOOT_RECORDED" != 1 ]; then
     usb_boot_mark carplay_observed && USB_CP_BOOT_RECORDED=1
   fi
   echo "$CP_COUNT" > "$CPN"
-  usb_watch_carplay_audio'''),
+'''),
     )
     for before, after in anchors:
         if hotspot.count(before) != 1:
@@ -300,13 +305,19 @@ def add_ap_options(hotspot):
     anchors = (
         (b'\nwrite_conf() {\n', b'\n' + helper + b'\nwrite_conf() {\n  local ht_capab\n  ht_capab=$(usb_ap_ht_capab)\n'),
         (b'ht_capab=[HT40+][SHORT-GI-20][SHORT-GI-40]\n', b'ht_capab=$ht_capab\n'),
+        (b'  $BB chown 1000:1010 $CONF; $BB chmod 660 $CONF\n',
+         b'  $BB chown 1000:1010 $CONF; $BB chmod 660 $CONF\n'
+         b'  usb_trial_ap_event "ap_config channel=149 ht_capab=$ht_capab"\n'),
         (b'\nconf_tick() {\n', b'\nconf_tick() {\n  USB_AP_HOLD_REMAINING=0\n'),
         (b'  if [ "$(cp_count)" != 0 ]; then\n', b'  if [ "$(cp_count)" != 0 ] || usb_ap_hold_restart; then\n'),
         (hold_log, b'''      if [ "$USB_AP_HOLD_REMAINING" -gt 0 ]; then
         log "USB AP restart deferred for Bluetooth iAP2: remaining=${USB_AP_HOLD_REMAINING}s (max 90s from attach)"
+        usb_trial_ap_event "ap_restart_deferred reason=bt_iap2 remaining_seconds=$USB_AP_HOLD_REMAINING"
       else
   ''' + hold_log + b'''
       fi'''),
+        (b'  write_conf\n  restart_hostapd\n',
+         b'  write_conf\n  usb_trial_ap_event "ap_restart_requested reason=credentials_changed"\n  restart_hostapd\n'),
         (b'  n=0\n  while true; do\n    sleep 30 &\n    wait $!\n',
          b'  n=0\n  while true; do\n    sleep "${USB_AP_RECHECK:-30}" &\n    wait $!\n    USB_AP_RECHECK=30\n'),
         (b'  usb_boot_mark ap_prerequisites_ready\n',
@@ -314,6 +325,14 @@ def add_ap_options(hotspot):
   USB_AP_HOLD_OPTION=off
   [ "$(getprop persist.kp.ap.hold 2>/dev/null)" != 1 ] || USB_AP_HOLD_OPTION=on
   log "USB AP options: channel=149 ht_capab=$(usb_ap_ht_capab) iAP2_restart_hold=$USB_AP_HOLD_OPTION"
+'''),
+        (b'  usb_boot_mark android_ready\n',
+         b'''  usb_boot_mark android_ready
+  if usb_trial_begin; then
+    usb_trial_save usb-boot-timing.log
+  else
+    log "USB CarPlay trial history unavailable: failed to initialize local archive."
+  fi
 '''),
         (b'        if (index(row, "wpa_passphrase=") == 1) key = substr(row, 16)\n'
          b'      }\n      close(config)\n      print "hostapd startup: rtwlan0, KR, channel 149, HT40+"\n',

@@ -2,7 +2,7 @@
 
 대상은 국내형 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x), ipTIME A3000mini(`0bda:b812`)입니다. CN7HEVPE는 실차 시험 대상입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.34** — 설치·AP·연결 관리
+- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.35** — 설치·AP·연결 관리
 - HMG-API Wireless Mode **2.4.21** (CN7PE·CN7NPE) / **2.4.22** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek Wi-Fi Driver **1.1.19** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
@@ -11,7 +11,7 @@
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.7과 Realtek Wi-Fi Driver 1.1.19가 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.33`은 업데이트할 수 있습니다.
+3. 설치 계획을 승인합니다. HMG-API rc.7과 Realtek Wi-Fi Driver 1.1.19가 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.34`는 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드가 재부팅을 요청하면 재부팅합니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 페어링합니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
@@ -195,3 +195,11 @@ Korea Projection의 **Update**를 완료하고 새 무선 모드를 적용합니
 | **Defer AP restart during iAP2 (90 s)** | 현재 USB AP에서 확인된 첫 Bluetooth iAP2 연결부터 최대 90초 동안, 순정 `softap.conf`의 SSID나 암호 변경 때문에 요청된 AP 재시작을 미룹니다. 협상이 끝나거나 기한이 지나면 보류 조건을 해제합니다. |
 
 주차 상태에서 한 번에 한 옵션씩 켜고 같은 아이폰으로 CarPlay 화면, 음악·내비 안내·통화, 연결 유지 여부를 확인합니다. `3-log.txt`의 `ap.log`에는 `USB AP options`와 실제 설정 변경을 보류했을 때의 `USB AP restart deferred for Bluetooth iAP2`가 나옵니다. `usb-hostapd.log`의 시작 줄에서 HT20/HT40+를 확인합니다. USB 재열거와 AP 프로세스 종료는 기존 복구 절차로 처리합니다.
+
+## v0.1.30 A/B/C 로그 한 번에 내보내기
+
+1. Korea Projection **1.7.4.35**로 업데이트합니다. 순정 오디오 협상 로그도 필요하면 첫 재부팅 전에 **HMG-API Wireless Mode → CarPlay's own log (troubleshooting)**를 켭니다.
+2. A3000mini를 꽂은 채 **A 둘 다 끔 → B HT20만 켬 → C iAP2 재시작 보류만 켬** 순서로 시험합니다. 옵션을 바꿀 때마다 **Apply changes → 재부팅**합니다. 화면과 실제 소리 출력이 확인된 뒤 약 1분 동안 로그가 수집되도록 기다립니다. 연결이 실패했으면 시도 후 약 1분 기다립니다.
+3. C 시험을 끝낸 뒤 재부팅 전에 동글 대신 제보 USB를 꽂습니다. **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 한 번 누릅니다. `KoreaProjection-report/3-log.txt`의 **USB CarPlay trial history**에 최근 8회 부팅의 옵션과 iAP2·오디오 진단이 모입니다.
+
+같은 조건을 반복해도 부팅별로 저장하며 두 옵션을 모두 켠 시험은 D로 표시합니다. AP·터널 전환·오디오 설정·우선권 로그는 정해진 진단 항목만 저장합니다. 실제 소리가 차량과 아이폰 중 어디에서 나왔는지는 연결 시각과 함께 메모해 주세요.

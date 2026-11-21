@@ -89,6 +89,10 @@ usb_cp_poll() {
       "$BB" mv -f "$W/.usb-cp-state.next" "$W/usb-cp-state"
   fi
   "$BB" rm -f "$snapshot"
+  if [ -n "${USB_TRIAL_DIR:-}" ]; then
+    usb_trial_save usb-carplay-events.log
+    usb_trial_save usb-cp-capture.log
+  fi
 }
 
 cp_count() { usb_cp_read; echo "$CP_COUNT"; }
@@ -101,6 +105,7 @@ cp_watch() {
     CP_LAST_STATE="$CP_STATE:$CP_COUNT"
   fi
   echo "$CP_COUNT" > "$CPN"
+  [ -z "${USB_TRIAL_DIR:-}" ] || usb_trial_save usb-boot-timing.log
   usb_watch_carplay_audio
   usb_client_progress
   usb_connection_tick

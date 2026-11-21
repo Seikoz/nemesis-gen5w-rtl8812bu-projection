@@ -6,6 +6,7 @@ from test_usb_stations import SH, ENV
 
 SCRIPT=(Path(__file__).resolve().parents[1]/'bundle/usb-connection-diagnostics.sh').read_text(encoding='utf-8')
 AUDIO=(Path(__file__).resolve().parents[1]/'bundle/usb-carplay-audio.sh').read_text(encoding='utf-8')
+TRIALS=(Path(__file__).resolve().parents[1]/'bundle/usb-carplay-trials.sh').read_text(encoding='utf-8')
 
 class FirewallSnapshotTest(unittest.TestCase):
     def test_kernel_order_counters_and_ipv6_udp_scope_are_reported(self):
@@ -53,6 +54,9 @@ EOF
             setup = r'''
 PATH=$TEST_BIN
 W="$PWD" PROC="$PWD/proc" BB=bb BB_OWN=bb UPTIME="$PWD/uptime"
+USB_TRIAL_DIR="$W/trial" USB_TRIAL_BOOT=new-boot
+mkdir "$USB_TRIAL_DIR"
+usb_ap_live() { return 1; }
 bb() {
   if [ "$1" = timeout ]; then
     [ "$2" = 25 ] || return 90
@@ -76,6 +80,10 @@ logcat() {
 11-21 12:01:00.004 123 456 I TccCarPlay: audio setup failed for Private iPhone
 11-21 12:01:00.005 123 456 I TccCarPlay: Setup stream type: 110
 11-21 12:01:00.006 123 456 I MediaFocusControl: AudioFocus requestAudioFocus() from com.daudio.av.app.btaudio.ui Private iPhone
+11-21 12:01:00.007 123 456 I TccCarPlay: Setup stream type: 130 for Private iPhone
+11-21 12:01:00.008 123 456 I HMG-API : USB_CP_HANDOVER stage=first-native-send rc=19 len=6 peer_seen=false Private iPhone
+11-21 12:01:00.009 123 456 I HMG-API : CarPlay-channel iAP2 send failed rc=19 len=6 Private iPhone
+11-21 12:01:00.010 123 456 I HMG-API : ACTION_IAP2_CONNECTFAIL / LimitMaxResend Private iPhone
 EOF
   return "$status"
 }
@@ -100,10 +108,11 @@ usb_watch_carplay_audio
 wait "$USB_AUDIO_CAPTURE_PID"
 usb_watch_carplay_audio
 '''
-            result = subprocess.run([SH, '-s'], input=(setup+AUDIO+run).encode(), env=ENV,
+            result = subprocess.run([SH, '-s'], input=(setup+AUDIO+TRIALS+run).encode(), env=ENV,
                                     cwd=root, capture_output=True, check=True)
             self.assertFalse(result.stderr, result.stderr)
             out = report.read_text()
+            self.assertEqual((root/'trial/usb-carplay-audio.log').read_text(), out)
             self.assertEqual((root/'captures').read_text().splitlines(), ['capture', 'capture'])
             self.assertTrue(out.startswith('boot=new-boot\nlogcat_exit=0\n'))
             self.assertIn('bluetooth_handoff=stock', out)
@@ -111,6 +120,10 @@ usb_watch_carplay_audio
             self.assertEqual(out.count('audio_stream_reported stream=main codec=aac-lc'), 1)
             self.assertIn('audio_setup_error', out)
             self.assertIn('iap2_stage=waiting-after-rc19', out)
+            self.assertIn('iap2_setup_request type=130', out)
+            self.assertIn('iap2_stage=first-native-send rc=19 len=6 peer_seen=false', out)
+            self.assertIn('iap2_send_failed rc=19 len=6', out)
+            self.assertIn('iap2_retry_limit', out)
             self.assertIn('focus_request source=bluetooth-media', out)
             for excluded in ('old-event', 'Private iPhone', 'type=110', 'com.daudio'):
                 self.assertNotIn(excluded, out)

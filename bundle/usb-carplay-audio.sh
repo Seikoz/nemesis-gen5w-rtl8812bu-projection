@@ -21,7 +21,7 @@ usb_capture_carplay_audio() {
           event="audio_stream_reported stream=" route " codec=" codec
         } else if (line ~ /setup stream type:[[:space:]]*(100|101|102|103)([^0-9]|$)/) {
           match(line, /10[0-3]([^0-9]|$)/); event="audio_setup_request type=" substr(line,RSTART,3)
-        }
+        } else if (line ~ /setup stream type:[[:space:]]*130([^0-9]|$)/) event="iap2_setup_request type=130"
       } else if (line ~ /[[:space:]]mediafocuscontrol[[:space:]]*:/) {
         source=(line ~ /btaudio/ ? "bluetooth-media" : (line ~ /[.]dipo|carplay/ ? "carplay" : "other"))
         if (line ~ /requestaudiofocus\(\) from/) event="focus_request source=" source
@@ -29,11 +29,19 @@ usb_capture_carplay_audio() {
       } else if (line ~ /[[:space:]]hmg-api[[:space:]]*:/) {
         if (line ~ /usb_cp_audio bluetooth_handoff=(stock|preserved)[[:space:]]*$/)
           event="bluetooth_handoff=" (line ~ /=stock[[:space:]]*$/ ? "stock" : "preserved")
-        else if (match(line, /usb_cp_handover stage=(waiting-after-rc19|resume-on-peer|native-send-accepted|component5-connected)([[:space:]]|$)/)) {
+        else if (match(line, /usb_cp_handover stage=first-native-send rc=-?[0-9]+ len=[0-9]+ peer_seen=(false|true)/)) {
+          event=substr(line, RSTART, RLENGTH)
+          sub(/^usb_cp_handover stage=/, "iap2_stage=", event)
+        } else if (match(line, /usb_cp_handover stage=(waiting-for-peer|peer-wait-expired|first-peer-data|spp-down-preserved|waiting-after-rc19|resume-on-peer|native-send-accepted|component5-connected)([[:space:]]|$)/)) {
           event=substr(line, RSTART, RLENGTH)
           sub(/^usb_cp_handover stage=/, "iap2_stage=", event)
           sub(/[[:space:]]+$/, "", event)
-        } else if (line ~ /iap2 connect success comp=5([[:space:]]|$)/) event="iap2_stage=component5-ready"
+        } else if (match(line, /carplay-channel iap2 send failed rc=-?[0-9]+ len=[0-9]+/)) {
+          event=substr(line, RSTART, RLENGTH)
+          sub(/^carplay-channel iap2 send failed/, "iap2_send_failed", event)
+        } else if (line ~ /iap2 connect success comp=4([[:space:]]|$)/) event="iap2_stage=bluetooth-ready"
+        else if (line ~ /iap2 connect success comp=5([[:space:]]|$)/) event="iap2_stage=component5-ready"
+        else if (line ~ /action_iap2_connectfail.*limitmaxresend/) event="iap2_retry_limit"
         else if (line ~ /carplay log: on /) event="native_logging=enabled"
         else if (line ~ /carplay log: logcontrol failed|carplay log: can.t switch it on/) event="native_logging=error"
       }
@@ -43,7 +51,7 @@ usb_capture_carplay_audio() {
     END {print "capture_rows=" (matched+0) " native_rows=" (native+0)}' > "$snapshot"
   previous=/dev/null
   [ ! -r "$file" ] || previous=$file
-  {
+  if {
     echo "boot=$boot"
     "$BB" awk -v b="boot=$boot" '
       FILENAME!=ARGV[ARGC-1] {
@@ -58,7 +66,9 @@ usb_capture_carplay_audio() {
         if (counts!="") print counts
         for (i=(n>160?n-160:0); i<n; i++) print items[i%160]
       }' "$previous" "$snapshot"
-  } > "$output" && "$BB" mv -f "$output" "$file"
+  } > "$output" && "$BB" mv -f "$output" "$file"; then
+    [ -z "${USB_TRIAL_DIR:-}" ] || usb_trial_save usb-carplay-audio.log
+  fi
   "$BB" rm -f "$snapshot" "$output"
 }
 
@@ -69,10 +79,11 @@ usb_watch_carplay_audio() {
     wait "$USB_AUDIO_CAPTURE_PID" 2>/dev/null || :
     USB_AUDIO_CAPTURE_PID=
   fi
-  if [ "$CP_COUNT" = 1 ] || [ "${CP_STATE:-}" = bt_attach ] || [ "${CP_STATE:-}" = created ]; then
-    read -r now _ < "$UPTIME" || return 0
-    now=${now%%.*}
-    case "$now" in ""|*[!0-9]*) return 0 ;; esac
+  read -r now _ < "$UPTIME" || return 0
+  now=${now%%.*}
+  case "$now" in ""|*[!0-9]*) return 0 ;; esac
+  if [ "$CP_COUNT" = 1 ] || [ "${CP_STATE:-}" = bt_attach ] || [ "${CP_STATE:-}" = created ] ||
+    { [ -n "${USB_TRIAL_DIR:-}" ] && usb_trial_audio_window "$now"; }; then
     [ "$now" -lt "${USB_AUDIO_CAPTURE_NEXT:-0}" ] && return 0
     USB_AUDIO_CAPTURE_NEXT=$((now + 30))
   elif [ -n "${USB_AUDIO_CAPTURE_NEXT:-}" ]; then
