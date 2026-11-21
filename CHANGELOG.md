@@ -7,6 +7,14 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.29
+
+- Korea Projection **1.7.4.34**와 무선 모드 **2.4.21**(CN7PE·CN7NPE) / **2.4.22**(CN7HEVPE)에 독립적인 AP 시험 옵션 두 개를 추가했습니다. 두 옵션은 기본 꺼짐이며 HMG-API에서 변경을 적용하고 재부팅한 뒤 시험합니다.
+- **Channel 149 HT20 (USB AP test)**를 켜면 `rtwlan0`의 5GHz 채널 149에서 20MHz로 설정합니다. 제보의 hostapd 시작 로그에 적용한 폭을 남깁니다. [Android hostapd 설정 예제](https://android.googlesource.com/platform/external/wpa_supplicant_8/+/master/hostapd/hostapd.conf)
+- **Defer AP restart during iAP2 (90 s)**를 켜면, 현재 AP의 Bluetooth iAP2 시작 기록을 기준으로 `softap.conf`의 SSID·암호 변경에 따른 재시작만 최대 90초 유예합니다. 동일한 협상의 후속 이벤트는 기한을 연장하지 않습니다. AP 장애 복구와 이미 연결된 CarPlay의 보호는 기존 동작을 따릅니다.
+- GRT47에서 `rtwlan0` 격리 구성, Korea Projection에서 투싼 무선 CarPlay 제보를 확인했습니다. CN7NPE에서 두 설정의 효과와 실제 오디오 출력은 차량 시험 대상입니다. [GRT47](https://github.com/GRT47/HKG_5W_USB_Wlan) · [Korea Projection #125](https://github.com/StopDragon/korea-projection/issues/125)
+- Linux 회귀 45개, 세 차종의 rc.7 옵션 모의 적용·해제, 기존 무선 훅과 본체·드라이버 일치, 셸 문법 29개 및 ZIP 재현 빌드를 확인했습니다. SHA-256 `71049739525c69c2f9b41e0cb7b8cf1067efda77d708433551e3bc6258c7043c`. [빌드 및 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44870998521)
+
 ## USB 합본 v0.1.28
 
 - 무선 모드 **2.4.19**(CN7PE·CN7NPE) 및 **2.4.20**(CN7HEVPE)에서 확인된 USB 무선 CarPlay의 iAP2 전환 대기를 1.2초에서 4초로 늘렸습니다. 아이폰 쪽 데이터와 성공한 송신이 아직 없는 경로에서 네이티브 송신이 `rc=19`를 반환하면 동일한 실패를 반복하는 대신, 기존 화면 세션을 보존하며 수신을 기다립니다. 이후 같은 세션의 첫 데이터가 들어오면 이를 보관한 채 새 컴포넌트 5 연결을 시작합니다.
