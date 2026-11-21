@@ -39,21 +39,25 @@ usb_trial_begin() {
     [ -d "$other" ] && [ ! -L "$other" ] && usb_trial_boot_id "${other##*/}" || continue
     "$BB" grep -Fxq "${other##*/}" "$order" && continue
     "$BB" rm -f "$other"/trial.txt "$other"/trial.next "$other"/ap-events.log "$other"/ap-events.log.next \
-      "$other"/usb-carplay-events.log "$other"/usb-carplay-events.log.next \
-      "$other"/usb-cp-capture.log "$other"/usb-cp-capture.log.next \
-      "$other"/usb-carplay-audio.log "$other"/usb-carplay-audio.log.next \
-      "$other"/usb-boot-timing.log "$other"/usb-boot-timing.log.next
+      "$other"/usb-carplay-events.log "$other"/usb-carplay-events.log.?????? \
+      "$other"/usb-cp-capture.log "$other"/usb-cp-capture.log.?????? \
+      "$other"/usb-carplay-audio.log "$other"/usb-carplay-audio.log.?????? \
+      "$other"/usb-boot-timing.log "$other"/usb-boot-timing.log.??????
     "$BB" rmdir "$other" 2>/dev/null || :
   done
 }
 
 usb_trial_save() {
-  local name="$1" file="$W/$1" header
+  local name="$1" file="$W/$1" header temp
   [ -n "${USB_TRIAL_DIR:-}" ] && [ -r "$file" ] || return 0
   read -r header _ < "$file" || return 0
   [ "$header" = "boot=$USB_TRIAL_BOOT" ] || return 0
-  "$BB" cp "$file" "$USB_TRIAL_DIR/$name.next" &&
-    "$BB" mv -f "$USB_TRIAL_DIR/$name.next" "$USB_TRIAL_DIR/$name"
+  temp=$("$BB" mktemp "$USB_TRIAL_DIR/$name.XXXXXX") || return 1
+  if "$BB" cp "$file" "$temp" && "$BB" mv -f "$temp" "$USB_TRIAL_DIR/$name"; then
+    return 0
+  fi
+  "$BB" rm -f "$temp"
+  return 1
 }
 
 usb_trial_ap_event() {
