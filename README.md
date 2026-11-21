@@ -2,9 +2,9 @@
 
 현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜의 부팅 인식과 AP 작동을 구현·검증하는 프로젝트**입니다. Korea Projection과 HMG-API를 포함한 완성 USB 설치 ZIP을 제공합니다. 차량에서 따로 빌드할 필요는 없습니다.
 
-**[v0.1.29 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.29/NEMESIS-Avante-260902-Bundle-v0.1.29-USB.zip)** · [릴리스 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.29) · [전체 변경 이력](CHANGELOG.md)
+**[v0.1.30 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.30/NEMESIS-Avante-260902-Bundle-v0.1.30-USB.zip)** · [릴리스 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.30) · [전체 변경 이력](CHANGELOG.md)
 
-> **실차 시험용 패키지입니다.** `rtwlan0` 핫스팟에 5GHz 채널 149의 HT20과 iAP2 협상 중 AP 재시작 보류를 각각 시험하는 옵션을 추가했습니다. 아반떼의 무선 연결 유지와 차량 오디오 출력은 실차 확인이 필요합니다.
+> **실차 시험용 패키지입니다.** `rtwlan0`의 HT20과 iAP2 재시작 보류를 각각 시험하고, 세 시험의 로그를 마지막 제보 파일 하나로 저장할 수 있습니다. 아반떼의 무선 연결 유지와 차량 오디오 출력은 실차 확인이 필요합니다.
 
 [시험 대상](#프로젝트와-시험-대상) · [경고 사항](#경고-사항) · [패키지 구성](#패키지-구성) · [작동 원리](#작동-원리) · [설치 순서](#설치-및-업데이트-순서) · [상태 표시](#상태-표시-읽는-법) · [알려진 문제](#알려진-문제점과-제한-사항) · [미확인 사항](#미확인-사항) · [로그 수집](#문제-발생-시-로그-수집) · [검증 범위](#검증-범위) · [버전 이력](#버전별-변경-사항)
 
@@ -35,9 +35,9 @@
 
 ## 패키지 구성
 
-| 구성 요소 / 표시 이름 | v0.1.29 버전 | 역할 |
+| 구성 요소 / 표시 이름 | v0.1.30 버전 | 역할 |
 | --- | --- | --- |
-| Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA | **1.7.4.34** | 설치 의존성, 오디오 파일 자동 적용, USB AP·DHCP 운영, 상태 표시·제보 수집 |
+| Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA | **1.7.4.35** | 설치 의존성, 오디오 파일 자동 적용, USB AP·DHCP 운영, 부팅별 시험 로그 저장 |
 | Realtek Wi-Fi Driver | **1.1.19** | RTL8812BU 커널 모듈 로드, 동글 바인딩, 부팅 감시와 제한된 USB 고속 복구 |
 | HMG-API 본체 | **1.1.0-rc.7** / NEMESIS 패키지 **1.0.99.7** | 시스템 훅·차량 지도·모드 설치 및 적용 |
 | HMG-API Wireless Mode | **2.4.21** (CN7PE·CN7NPE) / **2.4.22** (CN7HEVPE) | 공식 **2.2.0-rc.8** 기반 USB 이식판. AP 대기·카플레이 세션·iAP2 처리 |
@@ -192,6 +192,12 @@ HMG-API가 응답하지 않거나 `Operation failed`가 나오면 현재 설치 
 
 HMG-API rc.7에서는 **Logs → Record a problem**을 시작하고 증상을 재현한 뒤 종료하는 방법도 사용할 수 있습니다. USB 인식 분석에는 Korea Projection 제보와 Realtek 로그가 함께 필요합니다.
 
+### v0.1.30 A/B/C 로그 일괄 내보내기
+
+동글을 꽂은 채 **A 둘 다 끔 → B HT20만 켬 → C iAP2 재시작 보류만 켬** 순서로 시험합니다. 설정을 바꿀 때마다 적용하고 재부팅합니다. 각 시험의 연결 시도나 오디오 재생 뒤 약 1분 동안 수집을 기다린 뒤 다음 시험으로 넘어갑니다. 마지막 시험의 재부팅 전에 제보 USB로 교체해 **제보 파일 만들기**를 한 번 누릅니다.
+
+`3-log.txt`의 **USB CarPlay trial history**에는 최근 8회 부팅의 선택 옵션, AP 상태, iAP2 전환과 오디오 진단이 들어갑니다. 자세한 순정 CarPlay 로그를 기록하려면 첫 시험 전에 **CarPlay's own log (troubleshooting)**를 켭니다. [시험과 제보 순서](bundle/INSTALL-KO.md#v0130-abc-로그-한-번에-내보내기)
+
 ### v0.1.29 핫스팟 옵션 시험
 
 HMG-API Wireless Mode에서 **Channel 149 HT20 (USB AP test)**와 **Defer AP restart during iAP2 (90 s)**를 각각 켤 수 있습니다. 두 옵션의 기본값은 꺼짐입니다. **Apply changes** 후 재부팅하고 한 옵션씩 비교합니다. 90초 보류는 현재 AP의 Bluetooth iAP2 협상 중 `softap.conf`가 바뀌어 발생하는 재시작에 적용합니다. [옵션별 시험 순서](bundle/INSTALL-KO.md#v0129-ht20-및-iap2-협상-중-ap-재시작-보류)
@@ -205,6 +211,11 @@ Korea Projection과 무선 모드의 업데이트를 적용하고 재부팅합�
 CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth handoff (CarPlay audio test)**를 켜고 내비게이션을 재부팅합니다. 무선 CarPlay에서 음악·내비 안내·통화가 나오는 곳과 아이폰의 출력 기기 목록을 확인합니다. 같은 항목을 끄고 재부팅하면 v0.1.26의 블루투스 유지 조건으로 비교할 수 있습니다. [설치 및 시험 순서](bundle/INSTALL-KO.md#v0127-무선-카플레이-오디오-비교)
 
 ## 검증 범위
+
+### v0.1.30 A/B/C 부팅별 로그 보존
+
+- A/B/C 시험의 설정과 로그를 독립적으로 저장하고 동일 부팅의 서비스 재시작, 지난 부팅의 파일 제외, 최근 8회 보관 및 단일 제보 출력을 모의 검증했습니다. Linux 회귀 검사 48개를 통과했습니다. [빌드 및 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44872378639)
+- 셸 문법 29개와 USB ZIP 재현 빌드를 확인했습니다. 아반떼 실차의 연결 및 실제 오디오 출력은 추가 시험이 필요합니다.
 
 ### v0.1.29 두 AP 옵션
 
@@ -266,10 +277,10 @@ CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth h
 
 위 검사는 소스·빌드·모의 환경·배포 파일 검증입니다. 실제 차량의 RF 성능·USB PHY·화면·음성 정상 동작을 대신 검증한 결과가 아닙니다.
 
-**v0.1.29 USB ZIP SHA-256**
+**v0.1.30 USB ZIP SHA-256**
 
 ```text
-71049739525c69c2f9b41e0cb7b8cf1067efda77d708433551e3bc6258c7043c
+be7efa20fe4d4e85ac564ba96bed44cd9385e7e9e7620d205101bf5c7f921c71
 ```
 
 <details>
@@ -311,6 +322,7 @@ CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth h
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.30 | A/B/C 옵션과 iAP2·오디오 로그를 최근 8회 부팅별로 자동 보존하고 제보 USB에 한 번에 내보내기 |
 | v0.1.29 | 채널 149 HT20과 Bluetooth iAP2 협상 중 AP 설정 변경에 따른 재시작의 최대 90초 보류 옵션 |
 | v0.1.28 | 초기 `rc=19` 반복 송신 억제와 아이폰 데이터 수신 시 재전환, 오디오 로그 백그라운드 스캔 및 부분 기록 보존 |
 | v0.1.27 | CN7PE·CN7NPE의 순정 블루투스 전환 비교 옵션, 오디오 제보와 `rtwlan0` 카운터 |
@@ -349,7 +361,7 @@ CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth h
 - 새 합본은 GitHub **Latest**로 등록하고 완성된 USB 설치 ZIP 한 개를 제공합니다.
 - **이전 릴리스·태그·설치 ZIP을 보존**해 버전별 다운로드를 유지합니다.
 - 영문 프로젝트/릴리스 이름을 사용하고, 변경 내용은 README와 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
-- 이 README의 현재 설치 안내는 v0.1.29 기준입니다.
+- 이 README의 현재 설치 안내는 v0.1.30 기준입니다.
 
 [최신 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest) · [전체 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases)
 
