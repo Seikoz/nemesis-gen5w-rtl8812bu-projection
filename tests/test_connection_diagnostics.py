@@ -53,8 +53,21 @@ EOF
             setup = r'''
 PATH=$TEST_BIN
 W="$PWD" PROC="$PWD/proc" BB=bb BB_OWN=bb UPTIME="$PWD/uptime"
-bb() { if [ "$1" = timeout ]; then shift 2; "$@"; else command "$@"; fi; }
+bb() {
+  if [ "$1" = timeout ]; then
+    [ "$2" = 25 ] || return 90
+    shift 2
+    "$@"
+  else command "$@"; fi
+}
 logcat() {
+  [ "$1 $2 $3" = '-b main -d' ] || return 91
+  for arg do [ "$arg" != -t ] || return 92; done
+  status=0
+  if [ ! -r "$W/captures" ]; then
+    status=143
+    echo '11-21 12:01:00.000 123 456 I HMG-API : [wireless] USB_CP_HANDOVER stage=waiting-after-rc19'
+  fi
   echo capture >> "$W/captures"
   cat <<'EOF'
 11-21 12:01:00.001 123 456 I HMG-API : [wireless] USB_CP_AUDIO bluetooth_handoff=stock
@@ -64,17 +77,27 @@ logcat() {
 11-21 12:01:00.005 123 456 I TccCarPlay: Setup stream type: 110
 11-21 12:01:00.006 123 456 I MediaFocusControl: AudioFocus requestAudioFocus() from com.daudio.av.app.btaudio.ui Private iPhone
 EOF
+  return "$status"
 }
 '''
             run = r'''
+set -e
 echo '100.50 1.00' > "$UPTIME"
 CP_COUNT=0
 usb_watch_carplay_audio
-CP_COUNT=1
+CP_STATE=bt_attach
 usb_watch_carplay_audio
+usb_watch_carplay_audio
+wait "$USB_AUDIO_CAPTURE_PID"
+grep -q '^logcat_exit=143$' "$W/usb-carplay-audio.log"
+grep -q 'iap2_stage=waiting-after-rc19' "$W/usb-carplay-audio.log"
+CP_COUNT=1
+CP_STATE=started
 usb_watch_carplay_audio
 CP_COUNT=0
+CP_STATE=finalized
 usb_watch_carplay_audio
+wait "$USB_AUDIO_CAPTURE_PID"
 usb_watch_carplay_audio
 '''
             result = subprocess.run([SH, '-s'], input=(setup+AUDIO+run).encode(), env=ENV,
@@ -87,6 +110,7 @@ usb_watch_carplay_audio
             self.assertIn('audio_setup_request type=102', out)
             self.assertEqual(out.count('audio_stream_reported stream=main codec=aac-lc'), 1)
             self.assertIn('audio_setup_error', out)
+            self.assertIn('iap2_stage=waiting-after-rc19', out)
             self.assertIn('focus_request source=bluetooth-media', out)
             for excluded in ('old-event', 'Private iPhone', 'type=110', 'com.daudio'):
                 self.assertNotIn(excluded, out)

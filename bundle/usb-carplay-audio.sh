@@ -1,12 +1,13 @@
 # Keep only audio milestones and source categories. Native logs may name the phone.
 usb_capture_carplay_audio() {
-  local boot snapshot output previous file="$W/usb-carplay-audio.log"
+  local boot snapshot output previous rc file="$W/usb-carplay-audio.log"
   read -r boot < "$PROC/sys/kernel/random/boot_id" || return 0
   snapshot=$("$BB" mktemp "$W/.usb-cp-audio.XXXXXX") || return 0
   output=$("$BB" mktemp "$W/.usb-cp-audio.XXXXXX") || { "$BB" rm -f "$snapshot"; return 0; }
   {
-    "$BB_OWN" timeout 3 logcat -d -t 4000 -v threadtime 'TccCarPlay:V' 'MediaFocusControl:I' 'HMG-API:I' '*:S' 2>/dev/null
-    echo "logcat_exit=$?"
+    rc=0
+    "$BB_OWN" timeout 25 logcat -b main -d -v threadtime 'TccCarPlay:V' 'MediaFocusControl:I' 'HMG-API:I' '*:S' 2>/dev/null || rc=$?
+    echo "logcat_exit=$rc"
   } | "$BB" awk '
     /^logcat_exit=[0-9]+$/ {print; next}
     $1 !~ /^[0-9][0-9]-[0-9][0-9]$/ || $2 !~ /^[0-9:.]+$/ {next}
@@ -25,11 +26,21 @@ usb_capture_carplay_audio() {
         source=(line ~ /btaudio/ ? "bluetooth-media" : (line ~ /[.]dipo|carplay/ ? "carplay" : "other"))
         if (line ~ /requestaudiofocus\(\) from/) event="focus_request source=" source
         else if (line ~ /abandonaudiofocus\(\) from/) event="focus_abandon source=" source
-      } else if (line ~ /[[:space:]]hmg-api[[:space:]]*:/ && line ~ /usb_cp_audio bluetooth_handoff=(stock|preserved)[[:space:]]*$/) {
-        event="bluetooth_handoff=" (line ~ /=stock[[:space:]]*$/ ? "stock" : "preserved")
+      } else if (line ~ /[[:space:]]hmg-api[[:space:]]*:/) {
+        if (line ~ /usb_cp_audio bluetooth_handoff=(stock|preserved)[[:space:]]*$/)
+          event="bluetooth_handoff=" (line ~ /=stock[[:space:]]*$/ ? "stock" : "preserved")
+        else if (match(line, /usb_cp_handover stage=(waiting-after-rc19|resume-on-peer|native-send-accepted|component5-connected)([[:space:]]|$)/)) {
+          event=substr(line, RSTART, RLENGTH)
+          sub(/^usb_cp_handover stage=/, "iap2_stage=", event)
+          sub(/[[:space:]]+$/, "", event)
+        } else if (line ~ /iap2 connect success comp=5([[:space:]]|$)/) event="iap2_stage=component5-ready"
+        else if (line ~ /carplay log: on /) event="native_logging=enabled"
+        else if (line ~ /carplay log: logcontrol failed|carplay log: can.t switch it on/) event="native_logging=error"
       }
-      if (event!="") print $1, $2, event
-    }' > "$snapshot"
+      if (event!="") {print $1, $2, event; matched++}
+      if (line ~ /[[:space:]]tcccarplay[[:space:]]*:/) native++
+    }
+    END {print "capture_rows=" (matched+0) " native_rows=" (native+0)}' > "$snapshot"
   previous=/dev/null
   [ ! -r "$file" ] || previous=$file
   {
@@ -37,12 +48,14 @@ usb_capture_carplay_audio() {
     "$BB" awk -v b="boot=$boot" '
       FILENAME!=ARGV[ARGC-1] {
         if (FNR==1) {keep=($0==b); next}
-        if (!keep || /^logcat_exit=/) next
+        if (!keep || /^(logcat_exit|capture_rows)=/) next
       }
       /^logcat_exit=/ {status=$0; next}
+      /^capture_rows=/ {counts=$0; next}
       !seen[$0]++ {items[n++%160]=$0}
       END {
         if (status!="") print status
+        if (counts!="") print counts
         for (i=(n>160?n-160:0); i<n; i++) print items[i%160]
       }' "$previous" "$snapshot"
   } > "$output" && "$BB" mv -f "$output" "$file"
@@ -51,16 +64,23 @@ usb_capture_carplay_audio() {
 
 usb_watch_carplay_audio() {
   local now
-  if [ "$CP_COUNT" = 1 ]; then
+  if [ -n "${USB_AUDIO_CAPTURE_PID:-}" ]; then
+    kill -0 "$USB_AUDIO_CAPTURE_PID" 2>/dev/null && return 0
+    wait "$USB_AUDIO_CAPTURE_PID" 2>/dev/null || :
+    USB_AUDIO_CAPTURE_PID=
+  fi
+  if [ "$CP_COUNT" = 1 ] || [ "${CP_STATE:-}" = bt_attach ] || [ "${CP_STATE:-}" = created ]; then
     read -r now _ < "$UPTIME" || return 0
     now=${now%%.*}
     case "$now" in ""|*[!0-9]*) return 0 ;; esac
     [ "$now" -lt "${USB_AUDIO_CAPTURE_NEXT:-0}" ] && return 0
-    USB_AUDIO_CAPTURE_NEXT=$((now + 12))
+    USB_AUDIO_CAPTURE_NEXT=$((now + 30))
   elif [ -n "${USB_AUDIO_CAPTURE_NEXT:-}" ]; then
     USB_AUDIO_CAPTURE_NEXT=
   else
     return 0
   fi
-  usb_capture_carplay_audio
+  # Logcat latency must not block AP supervision or overwrite results from an active capture.
+  usb_capture_carplay_audio &
+  USB_AUDIO_CAPTURE_PID=$!
 }

@@ -33,6 +33,8 @@ def patch(mod, old):
     static Object sUsbCpFallback;
     static volatile Object sUsbCpRxLogged;
     static volatile Object sUsbCpTxLogged;
+    static volatile Object sUsbCpTxAccepted, sUsbCpWaitPeer;
+    static volatile Object sUsbCpSendFence = new Object();
     static int sUsbCpAttempts;
     static volatile String sAddr;''')
     text = method(text, 'static void onSppUp(final String addr)', '''    static synchronized void onSppUp(final String addr) {
@@ -99,6 +101,7 @@ def patch(mod, old):
         if (component == COMPONENT_USB) {
             sUsb = true; sSession = false; sUsbApRequest = null; sUsbBtConfirmed = false;
             sUsbCpSession = null; sUsbDetachFence = new Object();
+            sUsbCpWaitPeer = null; sUsbCpTxAccepted = null;
             sCpWireless = false; sCpClient = false; sCpConnected = false;
             sReattach.sessionEnd(); sCpTx.reset("USB takeover", false);
             synchronized (sPendingIn) { sPendingIn.clear(); }
@@ -118,6 +121,7 @@ def patch(mod, old):
         synchronized (sPendingIn) { sPendingIn.clear(); }
         sUsbCpSession = new Object(); sUsbDetachFence = new Object();
         sUsbCpFallback = null; sUsbCpRxLogged = null; sUsbCpTxLogged = null;
+        sUsbCpWaitPeer = null; sUsbCpTxAccepted = null;
         sUsbCpGeneration = prop("sys.kp.cp_gen", "off"); sUsbCpAttempts = 0;
         sUsbCpTransport = -1; sCpWireless = false; sCpClient = false; sCpConnected = false;
         SessionStatus.emit("created", -1);''')
@@ -129,21 +133,50 @@ def patch(mod, old):
     text = once(text, '    static void onCpSessionFinalized(int type) {', '''    static synchronized void onCpSessionFinalized(int type) {
         sUsbCpSession = null; sUsbBtConfirmed = false; sUsbApRequest = null;
         sUsbCpFallback = null; sUsbCpRxLogged = null; sUsbCpTxLogged = null;
+        sUsbCpWaitPeer = null; sUsbCpTxAccepted = null;
         SessionStatus.emit("finalized", type);''')
-    text = once(text, '            if (cp != null) sCp = cp;', '''            if (!usbCpApCurrent() || (sCp != null && cp != null && cp != sCp)) return;
-            if (cp != null) sCp = cp;''')
-    text = once(text, '            if (!sCpClient) startCpClient("iAP2 data from CarPlay channel");', '''            final Object session = sUsbCpSession;
-            if (session != null && sUsbCpRxLogged != session) {
-                sUsbCpRxLogged = session;
-                log("USB_CP_HANDOVER stage=first-peer-data len=" + len + " client=" + sCpClient);
+    text = method(text, 'static void onCpIapIn(Object cp, byte[] data, int len)', '''    static void onCpIapIn(Object cp, byte[] data, int len) {
+        if (data == null || data.length == 0 || len <= 0) return;
+        try {
+            final byte[] packet = java.util.Arrays.copyOf(data, Math.min(len, data.length));
+            final IIap2Service service;
+            synchronized (Bridge.class) {
+                if (!usbCpApCurrent() || cp == null || cp != sCp) return;
+                final Object session = sUsbCpSession;
+                if (sUsbCpRxLogged != session) {
+                    sUsbCpRxLogged = session;
+                    log("USB_CP_HANDOVER stage=first-peer-data len=" + packet.length + " client=" + sCpClient);
+                }
+                final boolean resume = sUsbCpWaitPeer == session;
+                if (resume) {
+                    sUsbCpWaitPeer = null;
+                    sCpClient = false; sCpConnected = false;
+                    sUsbCpSendFence = new Object();
+                    sCpTx.reset("peer data after initial rc=19", false);
+                    log("USB_CP_HANDOVER stage=resume-on-peer");
+                }
+                service = sCpConnected ? sIap2 : null;
+                if (service == null) {
+                    synchronized (sPendingIn) {
+                        if (sPendingIn.size() < MAX_PENDING) sPendingIn.add(packet);
+                    }
+                    if (!sCpClient) startCpClient(resume ? "peer data after initial rc=19" : "iAP2 data from CarPlay channel");
+                    return;
+                }
             }
-            if (!sCpClient) startCpClient("iAP2 data from CarPlay channel");''')
+            flushPending(service);
+            service.Iap2SvcTransportReadDone(packet, packet.length);
+        } catch (Throwable t) {
+            error("onCpIapIn", t);
+        }
+    }''')
     text = once(text, '    static void startCpClient(final String why) {',
                 '    static synchronized void startCpClient(final String why) {')
-    text = once(text, '        if (sCpClient) return;\n        sCpClient = true;', '''        if (sCpClient || !usbCpApCurrent() || sAddr == null || sCp == null ||
+    text = once(text, '        if (sCpClient) return;\n        sCpClient = true;', '''        if (sCpClient || !usbCpApCurrent() || sUsbCpWaitPeer == sUsbCpSession || sAddr == null || sCp == null ||
                 (!sCpWireless && !sUsbBtConfirmed) || sUsbCpAttempts >= 2) return;
         sUsbCpAttempts++;
         sUsbCpFallback = null;
+        sUsbCpTxLogged = null;
         sCpClient = true;''')
     # Both initial handover and upstream re-attach retain their native send/watchdog logic.
     for start_signature, end_signature in (
@@ -152,7 +185,7 @@ def patch(mod, old):
         start=text.index(start_signature); end=text.index(end_signature,start)
         block=text[start:end]
         block=once(block, '        handler().post(new Runnable()', '        final Object session = sUsbCpSession;\n        final Object cp = sCp;\n        handler().post(new Runnable()')
-        block=once(block, '                    Context c = context;', '''                    if (session != sUsbCpSession) return;
+        block=once(block, '                    Context c = context;', '''                    if (session != sUsbCpSession || sUsbCpWaitPeer == session) return;
                     if (cp != sCp || !sCpClient || !usbCpApCurrent()) { sCpClient = false; return; }
                     Context c = context;''')
         if 'startCpClient' in start_signature:
@@ -160,18 +193,40 @@ def patch(mod, old):
                        '                    if (session == sUsbCpSession) { sCpClient = false; sCpConnected = false; }\n                    error("startCpClient", t);')
         text=text[:start]+block+text[end:]
     text=once(text, '        sCpConnected = true;\n        IIap2Service',
-              '        if (!sCpClient || !usbCpApCurrent()) return;\n        sCpConnected = true;\n        log("USB_CP_HANDOVER stage=component5-connected");\n        IIap2Service')
+              '        if (!sCpClient || !usbCpApCurrent() || sUsbCpWaitPeer == sUsbCpSession) return;\n        sCpConnected = true;\n        log("USB_CP_HANDOVER stage=component5-connected");\n        IIap2Service')
+    text=once(text, '        if (cp == null || data == null || data.length == 0 || !sCpClient) return;',
+              '        if (cp == null || data == null || data.length == 0 || !sCpClient || sUsbCpWaitPeer == sUsbCpSession) return;')
+    text=once(text, '        sCpTx.reset("re-attach #" + attempt, true);',
+              '        sUsbCpSendFence = new Object();\n        sCpTx.reset("re-attach #" + attempt, true);')
     text = once(text, '            Object r = nativeSend().invoke(cp, b, len);\n            return r instanceof Integer ? (Integer) r : -1;', '''            final Object session = sUsbCpSession;
-            if (session == null || cp != sCp || !sCpClient || !usbCpApCurrent()) return -1;
+            if (session == null || cp != sCp || !sCpClient || sUsbCpWaitPeer == session || !usbCpApCurrent()) return -1;
+            final Object sendFence = sUsbCpSendFence;
             final boolean peerSeen = sUsbCpRxLogged == session;
             Object r = nativeSend().invoke(cp, b, len);
             int rc = r instanceof Integer ? (Integer) r : -1;
-            if (sUsbCpSession == session && sUsbCpTxLogged != session) {
-                sUsbCpTxLogged = session;
-                log("USB_CP_HANDOVER stage=first-native-send rc=" + rc + " len=" + len + " peer_seen=" + peerSeen);
+            synchronized (Bridge.class) {
+                if (sUsbCpSession != session || sUsbCpSendFence != sendFence || cp != sCp || !sCpClient || !usbCpApCurrent()) return rc;
+                if (sUsbCpTxLogged != session) {
+                    sUsbCpTxLogged = session;
+                    log("USB_CP_HANDOVER stage=first-native-send rc=" + rc + " len=" + len + " peer_seen=" + peerSeen);
+                }
+                if (rc == 0 && sUsbCpTxAccepted != session) {
+                    sUsbCpTxAccepted = session;
+                    log("USB_CP_HANDOVER stage=native-send-accepted");
+                } else if (rc == 19 && sCpWireless && sUsbCpTransport == 0 &&
+                           sUsbCpRxLogged != session && sUsbCpTxAccepted != session && sUsbCpWaitPeer != session) {
+                    // This fingerprint is an initial rejection without evidence of a live tunnel.
+                    // Let an inbound callback rearm the handover with a fresh server session.
+                    sUsbCpWaitPeer = session;
+                    sCpConnected = false;
+                    sReattach.sessionEnd();
+                    log("USB_CP_HANDOVER stage=waiting-after-rc19");
+                }
             }
             return rc;''')
     text=once(text, '    static void onSppDown(String addr) {', '    static synchronized void onSppDown(String addr) {')
+    text=once(text, '        if (!sCpClient || sUsb) {\n            log("re-attach #',
+                    '        if (!sCpClient || sUsb || sUsbCpWaitPeer == sUsbCpSession) {\n            log("re-attach #')
     text=once(text, '        if (sCpWireless) {\n            sSession = false;', '''        sUsbApRequest = null;
         sUsbBtConfirmed = false;
         if (sCpWireless && usbCpApCurrent()) {
@@ -185,7 +240,7 @@ def patch(mod, old):
         final Object session = sUsbCpSession;
         if (session == null || sCpClient || sUsbCpFallback == session) return;
         sUsbCpFallback = session;
-        log("USB_CP_HANDOVER stage=waiting-for-peer timeout_ms=1200");
+        log("USB_CP_HANDOVER stage=waiting-for-peer timeout_ms=4000");
         handler().postDelayed(new Runnable() {
             @Override public void run() {
                 synchronized (Bridge.class) {
@@ -197,7 +252,7 @@ def patch(mod, old):
                     }
                 }
             }
-        }, 1200);
+        }, 4000);
     }
 
     static void sendDetach() {''')

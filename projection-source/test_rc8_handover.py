@@ -28,6 +28,7 @@ signatures=(
  'void writeCp(', 'boolean wirelessTransport(', 'void reattachCpClient(', 'void waitForUsbCpPeer(',
 )
 methods='\n'.join(method(s,x) for x in signatures)
+native_sink=method(s,'final class NativeSink')
 harness=r'''
 import java.util.*;
 class Intent {
@@ -52,7 +53,7 @@ class Context {
 class Handler {
  ArrayDeque<Runnable> queue=new ArrayDeque<Runnable>();
  void post(Runnable r){queue.add(r);}
- void postDelayed(Runnable r,long delay){if(delay!=1200)throw new AssertionError("Unexpected grace period");post(r);}
+ void postDelayed(Runnable r,long delay){if(delay!=4000)throw new AssertionError("Unexpected grace period");post(r);}
  void runAll(){int n=0;while(!queue.isEmpty()){if(++n>10)throw new AssertionError("Unbounded jobs");queue.remove().run();}}
 }
 class IIap2Service {
@@ -63,12 +64,14 @@ class Playing {void reset(){}}
 class Reattach {void sessionEnd(){} void sessionUp(){}}
 class Dipo {static void rgSessionEnd(){} static void rgSessionUp(){} static void rgLinkDown(String s){}}
 class CpTx {
+ interface Sink {int send(Object cp,byte[] b,int len) throws Throwable;}
  void reset(String why,boolean fresh){Bridge.tx.queue.clear();}
  void send(final Object cp,final byte[] data){ Bridge.tx.post(new Runnable(){public void run(){
-  if(cp==Bridge.sCp && Bridge.sCpClient && Bridge.usbCpApCurrent())((NativeCp)cp).calls++;
+  try {new Bridge.NativeSink().send(cp,data,data.length);}
+  catch(Throwable t){throw new AssertionError(t);}
  }});}
 }
-class NativeCp {int calls; public int send(byte[] b,int len){calls++;return 0;}}
+class NativeCp {int calls,rc; public int send(byte[] b,int len){calls++;return rc;}}
 class Param {boolean skipped;void setResult(Object ignored){skipped=true;}}
 class SessionStatus {
  static String state; static int raw;
@@ -79,6 +82,7 @@ public class Bridge {
  static final int COMPONENT_USB=1,COMPONENT_BT_CARPLAY=4,COMPONENT_CARPLAY_CLIENT=5,MAX_PENDING=64;
  static volatile boolean sUsb,sSession,sCpClient,sCpConnected,sCpWireless,sUsbBtConfirmed;
  static Object sCp,sUsbCpSession,sUsbDetachFence,sUsbApRequest,sUsbCpFallback,sUsbCpRxLogged,sUsbCpTxLogged;
+ static Object sUsbCpTxAccepted,sUsbCpWaitPeer,sUsbCpSendFence;
  static String sCpSerial;
  static final Reattach sReattach=new Reattach();
  static final CpTx sCpTx=new CpTx();
@@ -112,6 +116,7 @@ public class Bridge {
   sPendingIn.clear();
  }
  METHODS
+ NATIVE_SINK
  static void check(boolean b,String why){if(!b)throw new AssertionError(why);}
  static void reset(){
   sUsb=sSession=sCpClient=sCpConnected=sCpWireless=sUsbBtConfirmed=failBroadcast=false;
@@ -192,6 +197,30 @@ public class Bridge {
   check(sCpClient,"Legacy transport 1 must keep immediate handover");
   handler.runAll();check(attaches==1,"Legacy transport 1 attach failed");
 
+  reset();begin(true);onCpSessionStarted(0);onSppDown("phone-A");handler.runAll();
+  NativeCp pending=(NativeCp)sCp;pending.rc=19;
+  writeCp(new byte[]{1});writeCp(new byte[]{2});tx.runAll();
+  check(sUsbCpWaitPeer==sUsbCpSession && pending.calls==1,"Initial rc=19 repeated native sends");
+  reattachCpClient(1);onSppDown("phone-A");writeCp(new byte[]{3});handler.runAll();tx.runAll();
+  check(sCpWireless && attaches==1 && detaches==0 && pending.calls==1,"Waiting retried or tore down the screen");
+  onCpIapIn(oldCp,new byte[]{2},1);
+  check(sUsbCpWaitPeer==sUsbCpSession,"Obsolete session rearmed the channel");
+  pending.rc=0;
+  onCpIapIn(sCp,new byte[]{8,9},2);handler.runAll();
+  check(sUsbCpWaitPeer==null && attaches==2 && sIap2.reads.size()==1 &&
+        sIap2.reads.get(0)[0]==8,"Late peer did not rearm and deliver its first packet");
+  writeCp(new byte[]{4});tx.runAll();
+  check(sUsbCpTxAccepted==sUsbCpSession && pending.calls==2,"Rearmed transmission was not accepted");
+
+  reset();begin(true);onCpSessionStarted(0);onSppDown("phone-A");handler.runAll();
+  writeCp(new byte[]{1});tx.runAll();((NativeCp)sCp).rc=19;
+  writeCp(new byte[]{2});tx.runAll();
+  check(sUsbCpWaitPeer==null,"Later rc=19 on an accepted channel suppressed normal recovery");
+
+  reset();begin(false);onCpSessionStarted(1);onSppDown("phone-A");handler.runAll();
+  ((NativeCp)sCp).rc=19;writeCp(new byte[]{1});tx.runAll();
+  check(sUsbCpWaitPeer==null,"Legacy transport inherited the rc=19 recovery rule");
+
   reset();begin(true);onCpSessionStarted(0);
   Param control=new Param();bluetoothHandoff(control,false);
   check(control.skipped,"Default must keep the previous behavior");
@@ -209,7 +238,7 @@ public class Bridge {
   System.out.println("Actual rc.8 Bridge transport-0/SPP-loss replay, iAP2 forwarding, cancellation and reconnect isolation passed");
  }
 }
-'''.replace('METHODS',methods).replace('BLUETOOTH_HOOK',bt_hook)
+'''.replace('METHODS',methods).replace('BLUETOOTH_HOOK',bt_hook).replace('NATIVE_SINK',native_sink)
 with tempfile.TemporaryDirectory() as td:
     p=Path(td);(p/'Bridge.java').write_text(harness,encoding='utf-8')
     subprocess.run(['javac','-d',str(p),str(p/'Bridge.java')],check=True)
