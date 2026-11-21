@@ -7,6 +7,13 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.28
+
+- 무선 모드 **2.4.19**(CN7PE·CN7NPE) 및 **2.4.20**(CN7HEVPE)에서 확인된 USB 무선 CarPlay의 iAP2 전환 대기를 1.2초에서 4초로 늘렸습니다. 아이폰 쪽 데이터와 성공한 송신이 아직 없는 경로에서 네이티브 송신이 `rc=19`를 반환하면 동일한 실패를 반복하는 대신, 기존 화면 세션을 보존하며 수신을 기다립니다. 이후 같은 세션의 첫 데이터가 들어오면 이를 보관한 채 새 컴포넌트 5 연결을 시작합니다.
+- Korea Projection **1.7.4.33**의 오디오 스캔은 메인 로그 버퍼를 백그라운드에서 읽습니다. 스캔당 상한은 25초이며 중간 종료돼도 이미 읽은 진단 항목을 현재 부팅 기록에 병합합니다. 제보의 `usb-carplay-audio.log`에는 스캔 종료 코드, 정리한 항목 수, 순정 CarPlay 로그 줄 수와 iAP2 전환 단계가 포함됩니다.
+- 연결 초기 실패 뒤 재개를 모의 검증했습니다. 아이폰 쪽 터널 데이터 유무와 차량 스피커 출력은 실차 시험 대상입니다.
+- Linux 회귀 42개, Android API 19 훅 빌드, rc.7 엔진의 세 차종 모의 적용·복원, 셸 문법 29개 및 USB ZIP 재현 빌드를 확인했습니다. SHA-256 `fc47869a886a02cf0baf86d86be82a2a0857f6847b2ef81cbbbb0a39c472dac4`. [빌드와 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44869289485)
+
 ## USB 합본 v0.1.27
 
 - HMG-API Wireless Mode **2.4.17**에 **Stock Bluetooth handoff (CarPlay audio test)**를 추가했습니다. 기본값은 꺼짐입니다. CN7PE·CN7NPE에서 사용자가 켜고 재부팅하면, 확인된 USB 무선 CarPlay 세션에서 아이폰이 Bluetooth 종료를 요청할 때 차량의 기본 처리를 허용합니다. 다른 헤드유닛에서 Bluetooth와 CarPlay 오디오 경로가 충돌한 사례를 바탕으로 한 대조 시험입니다. [Autochips 사례](https://github.com/riazosama/headunit-carplay/blob/main/docs/GUIDE.md#status-honestly)

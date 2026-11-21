@@ -2,8 +2,8 @@
 
 대상은 국내형 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x), ipTIME A3000mini(`0bda:b812`)입니다. CN7HEVPE는 실차 시험 대상입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.32** — 설치·AP·연결 관리
-- HMG-API Wireless Mode **2.4.17** (CN7PE·CN7NPE) / **2.4.18** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
+- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.33** — 설치·AP·연결 관리
+- HMG-API Wireless Mode **2.4.19** (CN7PE·CN7NPE) / **2.4.20** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek Wi-Fi Driver **1.1.19** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.7**, NEMESIS 패키지 버전 **1.0.99.7**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.7)
 
@@ -11,7 +11,7 @@
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.7와 Realtek Wi-Fi Driver 1.1.19이 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.31`는 업데이트할 수 있습니다.
+3. 설치 계획을 승인합니다. HMG-API rc.7과 Realtek Wi-Fi Driver 1.1.19가 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 CN7NPE USB 테스트판 `1.7.4.1`~`1.7.4.32`는 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드가 재부팅을 요청하면 재부팅합니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 페어링합니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
@@ -176,3 +176,11 @@ A3000mini를 꽂고 기다립니다. 하이브리드는 내비 자체 파일을 
 5. 대조 시험은 같은 메뉴에서 **Stock Bluetooth handoff**를 끄고 재부팅한 뒤 반복합니다. 시험 설정 기본값은 꺼짐입니다. 켠 상태에서 연결이 반복해서 끊기면 끄고 재부팅하세요.
 
 전환 시험은 CN7PE·CN7NPE의 확인된 USB 무선 CarPlay 세션에 적용됩니다. 하이브리드 **2.4.18**에서는 새 제보 기록을 사용할 수 있습니다. `rtwlan0`의 패킷·드롭 카운터는 인터페이스 전체 통계이며 음성 패킷 자체의 손실률과는 별개의 수치입니다. 공유 전에 원본 로그에서 기기 이름과 주소를 가리세요.
+
+## v0.1.28 iAP2 재전환과 오디오 제보
+
+1. Korea Projection을 **Update**한 뒤 무선 모드 적용과 재부팅 안내를 따릅니다. 처음 비교할 때는 이전 시험과 같은 **Stock Bluetooth handoff** 설정을 사용합니다.
+2. **HMG-API Wireless Mode → CarPlay's own log (troubleshooting)**를 켜고 안내에 따라 재부팅합니다. A3000mini를 꽂은 채 CarPlay를 연결하고, 멜론·안내·통화의 실제 출력을 시험합니다. 오디오 수집은 연결을 시작할 때부터 백그라운드에서 진행됩니다.
+3. 재부팅하기 전에 Korea Projection 제보 `3-log.txt`를 저장합니다. `usb-carplay-audio.log`에서 `waiting-after-rc19`, `resume-on-peer`, `native-send-accepted`, `component5-ready` 및 오디오 스트림 설정 기록을 확인합니다. `native_rows=0`인 경우 그 스캔에서 순정 CarPlay 로그가 관측되지 않은 상태입니다. 원본 로그가 필요하면 HMG-API의 **Record a problem**도 함께 사용합니다.
+
+터널 데이터가 늦게 도착하면 보존한 첫 패킷과 함께 iAP2 전환을 재개합니다. 데이터가 끝내 도착하지 않는 세션에는 화면을 유지한 채 대기 기록을 남깁니다. 차량 오디오 출력은 실차 확인이 필요합니다.

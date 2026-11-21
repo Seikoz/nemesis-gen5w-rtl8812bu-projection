@@ -44,8 +44,9 @@ A 15-second heartbeat refreshes only the state established by a real wireless se
 
 ```sh
 bash projection-source/compile_rc8.sh projection-output
-python build_wireless_mod.py --base-mod wireless-carplay-aa-2.2.0-rc.8.zip --previous-mod wireless-2.4.10.zip --hooks projection-output/hooks.jar --key /private/path/existing-author.key --output wireless-2.4.11.zip
-python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.7-nemesis-package.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-2.4.11.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
+python build_wireless_mod.py --base-mod wireless-carplay-aa-2.2.0-rc.8.zip --previous-mod wireless-2.4.10.zip --hooks projection-output/hooks.jar --key /private/path/existing-author.key --output wireless-avante.zip
+python build_wireless_mod.py --hybrid --previous-mod wireless-avante.zip --hooks projection-output/hooks-hybrid.jar --key /private/path/existing-author.key --output wireless-hybrid.zip
+python build_usb_bundle.py rtl-v1.1.7.zip kp-v0.1.4.zip hmgapi-1.1.0-rc.7-nemesis-package.zip --diagnostic-modules /path/to/modules --usb-reset-helper /path/to/usb-reset-a3000mini --wireless-mod wireless-avante.zip --hybrid-wireless-mod wireless-hybrid.zip --station-counter /path/to/ap-station-count --link-diagnostics /path/to/ap-link-diagnostics
 python -m unittest discover -s tests -v
 ```
 
@@ -66,3 +67,11 @@ The raw transport value is retained in both callback and heartbeat records; a re
 [test_handover.py](test_handover.py) extracts the actual patched Bridge methods and replays the vehicle sequence. It checks component 5 attachment and incoming/outgoing iAP2 delivery, duplicates, ordinary SPP loss, unconfirmed/wired/disabled/changed-AP cases, finalization, old queued jobs, data buffering and bounded send failures. Tests use synthetic identifiers; the private vehicle report is not included in the repository or ZIP.
 
 [Android build and all method tests](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44665053112), source commit `a353c84afb1f8e8b0aa49400938ae68411c32fbe`. hooks.jar SHA-256: `917092cff18ddafbd55a07a7ae5cca2ab0e988a15d86be1d25e3d15bdab55b8e`. Existing ARMv7 mDNS and station helpers, firewall policy, HMG-API core and Realtek package are reused unchanged.
+
+## v0.1.28 initial native send rejection
+
+In the CN7NPE report, the first send for component 5 returned 19 before the bridge saw any iAP2 data from the phone. Component 5 repeatedly connected at the server without completing identification. The value 19 is treated as an observed result in this specific sequence.
+
+The confirmed transport-0 path gives the peer up to four seconds to open the handover first. If its native send returns 19 before any current-peer data or accepted send, the bridge pauses the sender and cancels iAP2 re-attach timers while the CarPlay session stays up. The first valid inbound packet for the same session and AP starts a fresh component 5 attach. The bridge buffers the packet before posting the attach. Other transports and links with evidence of a working tunnel retain their existing retry behavior.
+
+[The rc.8 host replay](test_rc8_handover.py) exercises the patched native sender, queued duplicate suppression, late peer recovery, an obsolete native owner, and normal recovery eligibility after a successful send. The boot-scoped audio report records the wait, resume, first accepted native send and component 5 identification separately. [Build and verification](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44869289485)
