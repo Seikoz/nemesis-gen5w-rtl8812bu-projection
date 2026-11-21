@@ -27,6 +27,7 @@ usb_cp_record_shape() {
 usb_cp_read() {
   local property cached= boot= record pid start generation millis seq state transport actual=
   CP_STATE=unknown CP_SOURCE=unavailable CP_COUNT=0
+  CP_EVENT_RECORD= CP_EVENT_BOOT=
   property=$(getprop sys.kp.cp_session 2>/dev/null | usb_cp_record_shape)
   read -r boot < "$PROC/sys/kernel/random/boot_id" || return 0
   if [ -r "$W/usb-cp-state" ]; then
@@ -36,7 +37,7 @@ usb_cp_read() {
   record=$("$BB" printf '%s\n%s\n' "$cached" "$property" | usb_cp_record_shape |
     "$BB" awk -F, '$5+0>time || ($5+0==time && $6+0>=seq) {v=$0; time=$5+0; seq=$6+0} END {print v}')
   [ -n "$record" ] || return 0
-  IFS=, read -r record pid start generation millis seq state transport <<EOF
+  IFS=, read -r _ pid start generation millis seq state transport <<EOF
 $record
 EOF
   [ "$generation" = "$(getprop sys.kp.cp_gen 2>/dev/null)" ] && [ "$generation" != off ] || {
@@ -50,6 +51,7 @@ EOF
     CP_STATE=stale-session; return 0
   fi
   CP_STATE=$state CP_SOURCE=session-callback
+  CP_EVENT_RECORD=$record CP_EVENT_BOOT=$boot
   if [ "$state" = started ] && { [ "$transport" = 0 ] || [ "$transport" = 1 ]; } &&
      [ "$(getprop "$AAPROP" 2>/dev/null)" = 1 ] && usb_wifi_ready; then CP_COUNT=1; fi
 }

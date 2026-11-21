@@ -6,6 +6,7 @@ import unittest
 from test_usb_stations import SH, ENV
 
 SCRIPT = (Path(__file__).resolve().parents[1]/'bundle/usb-carplay-session.sh').read_text(encoding='utf-8')
+AP_OPTIONS = (Path(__file__).resolve().parents[1]/'bundle/usb-ap-options.sh').read_text(encoding='utf-8')
 GEN = '12345678-200.50-8'
 
 
@@ -25,7 +26,7 @@ echo "$CP_COUNT $CP_STATE $CP_SOURCE"
             p = Path(td)
             (p/'proc/123').mkdir(parents=True)
             (p/'proc/sys/kernel/random').mkdir(parents=True)
-            (p/'proc/sys/kernel/random/boot_id').write_text('12345678-boot\n')
+            (p/'proc/sys/kernel/random/boot_id').write_text('12345678-boot\n', newline='\n')
             (p/'proc/123/stat').write_text('123 (DiPO with ) spaces) S '+'0 '*18+'77 0\n')
             (p/'net').mkdir()
             (p/'net/ifindex').write_text('8\n')
@@ -98,6 +99,78 @@ echo '201.50 1.00' > uptime
 usb_cp_generation 1; getprop sys.kp.cp_gen
 ''')
         self.assertEqual(out.splitlines(),[GEN,'off','12345678-201.50-8'])
+
+    def test_ap_ht20_and_handoff_hold_are_independent(self):
+        out, _ = self.run_case(self.event('bt_attach', -1), AP_OPTIONS + '''
+usb_ap_live() { [ "$(cat ap)" = 1 ]; }
+show() {
+  usb_ap_ht_capab
+  if usb_ap_hold_restart; then echo "held"; else echo "released"; fi
+}
+show
+echo 1 > persist.kp.ap.ht20
+show
+echo 1 > persist.kp.ap.hold
+show
+echo 0 > persist.kp.ap.ht20
+show
+echo 0 > ap
+show
+''')
+        self.assertEqual(out.splitlines(), [
+            '[HT40+][SHORT-GI-20][SHORT-GI-40]', 'released',
+            '[SHORT-GI-20]', 'released', '[SHORT-GI-20]', 'held',
+            '[HT40+][SHORT-GI-20][SHORT-GI-40]', 'held',
+            '[HT40+][SHORT-GI-20][SHORT-GI-40]', 'released',
+        ])
+
+    def test_ap_hold_deadline_is_from_first_attach_and_never_renewed_by_created(self):
+        first = self.event('bt_attach', -1)
+        duplicate = f'v1,123,77,{GEN},240000,4,bt_attach,-1'
+        created = f'v1,123,77,{GEN},280000,5,created,-1'
+        out, _ = self.run_case(created, AP_OPTIONS + f'''
+usb_ap_live() {{ return 0; }}
+echo 1 > persist.kp.ap.hold
+cat > usb-carplay-events.log <<EOF
+boot=12345678-boot
+{first}
+{duplicate}
+EOF
+echo '287.00 1.00' > uptime
+USB_AP_RECHECK=30
+if usb_ap_hold_restart; then echo "held=$USB_AP_HOLD_REMAINING recheck=$USB_AP_RECHECK"; fi
+cat > usb-carplay-events.log <<EOF
+boot=12345678-boot
+{duplicate}
+EOF
+echo '291.00 1.00' > uptime
+if usb_ap_hold_restart; then echo erroneous; else echo expired; fi
+USB_AP_HOLD_ANCHOR=
+echo 'boot=old' > usb-carplay-events.log
+if usb_ap_hold_restart; then echo erroneous; else echo stale; fi
+''')
+        self.assertEqual(out.splitlines(), ['held=4 recheck=4', 'expired', 'stale'])
+
+    def test_ap_hold_releases_on_terminal_or_stale_ap_events(self):
+        attach = self.event('bt_attach', -1)
+        history = f'boot=12345678-boot\n{attach}'
+        for state in ('started', 'finalized', 'wired', 'idle', 'unclassified'):
+            with self.subTest(state=state):
+                ended = f'v1,123,77,{GEN},202000,3,{state},0'
+                out, _ = self.run_case(ended, AP_OPTIONS + f'''
+usb_ap_live() {{ return 0; }}
+echo 1 > persist.kp.ap.hold
+echo '{history}' > usb-carplay-events.log
+if usb_ap_hold_restart; then echo erroneous; else echo released; fi
+''')
+                self.assertEqual(out.strip(), 'released')
+        out, _ = self.run_case(attach, AP_OPTIONS + '''
+usb_ap_live() { return 0; }
+echo 1 > persist.kp.ap.hold
+echo off > sys.kp.cp_gen
+if usb_ap_hold_restart; then echo erroneous; else echo stale; fi
+''')
+        self.assertEqual(out.strip(), 'stale')
 
 
 if __name__=='__main__': unittest.main()

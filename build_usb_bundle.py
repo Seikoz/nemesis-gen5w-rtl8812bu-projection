@@ -17,8 +17,8 @@ PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "16bea991f1c541acccea658f766971fac0b9d41caf34d6ca7523c9007fc41a63"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.28"
-PROJECTION_VERSION = "1.7.4.33"
+BUNDLE_VERSION = "0.1.29"
+PROJECTION_VERSION = "1.7.4.34"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
                  for model in ("CN7PE", "CN7HEVPE", "CN7NPE") for variant in ("0000", "S5W_M"))
 BASE_PRODUCTS = b"CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902"
@@ -294,6 +294,44 @@ def add_boot_timing(hotspot, status):
     return hotspot, status
 
 
+def add_ap_options(hotspot):
+    helper = (ROOT / 'bundle/usb-ap-options.sh').read_bytes()
+    hold_log = '      log "softap.conf의 카플레이 Wi-Fi 설정이 바뀜: 카플레이가 연결되어 있어 연결이 끝나면 핫스팟을 다시 시작함"'.encode()
+    anchors = (
+        (b'\nwrite_conf() {\n', b'\n' + helper + b'\nwrite_conf() {\n  local ht_capab\n  ht_capab=$(usb_ap_ht_capab)\n'),
+        (b'ht_capab=[HT40+][SHORT-GI-20][SHORT-GI-40]\n', b'ht_capab=$ht_capab\n'),
+        (b'\nconf_tick() {\n', b'\nconf_tick() {\n  USB_AP_HOLD_REMAINING=0\n'),
+        (b'  if [ "$(cp_count)" != 0 ]; then\n', b'  if [ "$(cp_count)" != 0 ] || usb_ap_hold_restart; then\n'),
+        (hold_log, b'''      if [ "$USB_AP_HOLD_REMAINING" -gt 0 ]; then
+        log "USB AP restart deferred for Bluetooth iAP2: remaining=${USB_AP_HOLD_REMAINING}s (max 90s from attach)"
+      else
+  ''' + hold_log + b'''
+      fi'''),
+        (b'  n=0\n  while true; do\n    sleep 30 &\n    wait $!\n',
+         b'  n=0\n  while true; do\n    sleep "${USB_AP_RECHECK:-30}" &\n    wait $!\n    USB_AP_RECHECK=30\n'),
+        (b'  usb_boot_mark ap_prerequisites_ready\n',
+         b'''  usb_boot_mark ap_prerequisites_ready
+  USB_AP_HOLD_OPTION=off
+  [ "$(getprop persist.kp.ap.hold 2>/dev/null)" != 1 ] || USB_AP_HOLD_OPTION=on
+  log "USB AP options: channel=149 ht_capab=$(usb_ap_ht_capab) iAP2_restart_hold=$USB_AP_HOLD_OPTION"
+'''),
+        (b'        if (index(row, "wpa_passphrase=") == 1) key = substr(row, 16)\n'
+         b'      }\n      close(config)\n      print "hostapd startup: rtwlan0, KR, channel 149, HT40+"\n',
+         b'''        if (index(row, "wpa_passphrase=") == 1) key = substr(row, 16)
+        if (index(row, "ht_capab=") == 1)
+          width = (row ~ /\\[HT40[+]\\]/ ? "HT40+" : (row == "ht_capab=[SHORT-GI-20]" ? "HT20" : "unknown"))
+      }
+      close(config)
+      print "hostapd startup: rtwlan0, KR, channel 149, " (width == "" ? "unknown" : width)
+'''),
+    )
+    for before, after in anchors:
+        if hotspot.count(before) != 1:
+            raise ValueError(f'Expected one USB AP option anchor: {before!r}')
+        hotspot = hotspot.replace(before, after)
+    return hotspot
+
+
 def allow_avante_products(script):
     if script.count(BASE_PRODUCTS) != 1:
         raise ValueError("Expected the CN7NPE product guard")
@@ -430,6 +468,7 @@ done''',
         hotspot, changes['bin/status.sh'] = add_session_diagnostics(hotspot, changes['bin/status.sh'])
         changes['bin/status.sh'] = changes['bin/status.sh'].replace(b'$W/mod-apply.txt', b'$W/mod-apply.txt $W/usb-audio-apply.log $W/usb-mod-files-check.log $W/usb-boot-setup.log')
         hotspot, changes['bin/status.sh'] = add_boot_timing(hotspot, changes['bin/status.sh'])
+        hotspot = add_ap_options(hotspot)
         old_digest = hashlib.md5(old_wireless, usedforsecurity=False).hexdigest().encode()
         new_digest = hashlib.md5(wireless, usedforsecurity=False).hexdigest().encode()
         if hotspot.count(b'MOD_VER=2.4.6') != 1 or hotspot.count(b'MOD_MD5=' + old_digest) != 1:

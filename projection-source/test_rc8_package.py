@@ -76,7 +76,15 @@ with tempfile.TemporaryDirectory() as temporary:
     assert not (root/'sys/bus/sdio/devices/mmc1:0001:1').exists()
     for name in ('libleafiaaac.so','libcarplayidentity.so','libcarplaylog.so'):
         assert (root/'system/lib'/name).read_bytes()==files['files/'+name]
-    engine('apply');engine('restore')
+    options = {'usb_ap_ht20': 'persist.kp.ap.ht20', 'usb_ap_handoff_hold': 'persist.kp.ap.hold'}
+    for selected in ((), ('usb_ap_ht20',), ('usb_ap_handoff_hold',), tuple(options), ()):
+        write(data/'settings/wireless-carplay-aa.json', json.dumps({key: key in selected for key in options}))
+        engine('apply')
+        props = (root/'settings.txt').read_text().splitlines()
+        for switch, prop in options.items():
+            lines = [line for line in props if line.startswith('prop/' + prop + '=')]
+            assert lines == (['prop/' + prop + '=1'] if switch in selected else []), (switch, selected, lines)
+    engine('restore')
     after={p.relative_to(root/'system'):p.read_bytes() for p in (root/'system').rglob('*') if p.is_file()}
     assert before==after,(before.keys(),after.keys())
     assert json.loads((data/'settings/hmgapi.json').read_text())==settings

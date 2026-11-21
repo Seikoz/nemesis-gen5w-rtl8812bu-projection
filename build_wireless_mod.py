@@ -16,8 +16,8 @@ from build_package import archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.19'
-HYBRID_VERSION = '2.4.20'
+VERSION = '2.4.21'
+HYBRID_VERSION = '2.4.22'
 HYBRID_OMIT = {'btsettings.projection_helper.open_wireless_page', 'dipo.carplay.disable_bluetooth'}
 DISPLAY_NAME = 'HMG-API Wireless Mode'
 UPSTREAM_SHA256 = '4837efbfc1e71a7f30c65c7d914dc7d00aa788cc7ab4ea17b1a1860e6e96d4ee'
@@ -118,6 +118,15 @@ def rebase_files(base, hooks, previous):
     patches = json.loads(files['patches.json'])
     patches['cars'] = {'CN7NPE.KOR.': 'usb_cn7npe', 'CN7PE.KOR.': 'usb_cn7pe'}
     patches['changes'].insert(0,json.loads(old_files['patches.json'])['changes'][0])
+    ap_options = [
+        ('usb_ap_ht20', 'persist.kp.ap.ht20', 'Channel 149 HT20 (USB AP test)',
+         'Use 20 MHz on 5 GHz channel 149 for the rtwlan0 hotspot. Apply changes and restart the head unit.'),
+        ('usb_ap_handoff_hold', 'persist.kp.ap.hold', 'Defer AP restart during iAP2 (90 s)',
+         'Defer a restart requested by changed CarPlay Wi-Fi credentials during the Bluetooth handoff. The window starts at the confirmed iAP2 attach. Apply changes and restart the head unit.'),
+    ]
+    for key, prop, _, _ in ap_options:
+        mod['parts'].append({'id': key, 'when': f'settings.{key}'})
+        patches['changes'].append({'type': 'prop', 'part': key, 'key': prop, 'value': '1'})
     files['patches/usb_cn7npe/stock'] = b''
     files['patches/usb_cn7npe/expect'] = b''
     files['patches/usb_cn7pe/stock'] = b''
@@ -139,12 +148,17 @@ def rebase_files(base, hooks, previous):
         'apply': 'restart',
         'description': 'CN7PE/CN7NPE KOR 260902 only. For a confirmed USB Wi-Fi CarPlay session, allow the head unit to handle the iPhone Bluetooth handoff when requested. Compare audio and connection stability. Turn off to restore the previous behavior. Takes effect after the head unit restarts.',
     })
+    for key, _, title, description in ap_options:
+        settings['settings'].append({
+            'key': key, 'type': 'toggle', 'default': False, 'title': title,
+            'apply': 'rebuild', 'description': description,
+        })
     files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] = (
         f'HMG-API USB wireless mod {VERSION} (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
-        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.28/projection-source\n'
+        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.29/projection-source\n'
         'AGPL-3.0. Signed by the existing local author; not an unmodified official package.\n'
         'Eight hooks newer than the checked 351-point map are omitted; their consumers are not registered.\n'
     ).encode()
@@ -198,7 +212,7 @@ def hybrid_files(files, hooks):
     files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] += (
         f'\nCN7HEVPE variant {HYBRID_VERSION}: separate hybrid patch set and hook declaration.\n'
-        'Source: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.28\n'
+        'Source: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.29\n'
     ).encode()
     return files
 
