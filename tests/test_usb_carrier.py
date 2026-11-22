@@ -22,7 +22,7 @@ getprop() {
 }
 mod_ver() { echo "${WIRELESS:-2.4.21}"; }
 usb_ap_live() { [ "${LIVE:-0}" = 1 ]; }
-usb_carplay_coreutils_md5() { echo "$STOCK"; }
+usb_carplay_coreutils_probe() { USB_COREUTILS_MD5="$STOCK"; USB_COREUTILS_CHECK=fixture; }
 bb() {
   case "$1" in
     timeout) shift 2; "$@" ;;

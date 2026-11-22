@@ -33,7 +33,7 @@ usb_carrier_plan_safe() {
 # Return 1 only when an applied mod needs this boot to end before use.
 usb_carrier_setup() {
   local dir="$HMGDATA/mods/$USB_CARRIER_ID" payload="$APP/hmgapi/$USB_CARRIER_ID.zip"
-  local hash= state= previous_boot= scope= installed= stock
+  local hash= state= previous_boot= scope= installed=
   case "$(getprop ro.build.product 2>/dev/null)" in
     CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902) ;;
     *) return 0 ;;
@@ -79,8 +79,11 @@ usb_carrier_setup() {
     echo 'Kept carrier removed'
     return 0
   fi
-  stock=$(usb_carplay_coreutils_md5 /system/lib/libCarPlayCoreUtils.so)
-  [ "$stock" = "$USB_CARRIER_STOCK_MD5" ] || { echo "Skipped: CoreUtils MD5=$stock"; return 0; }
+  usb_carplay_coreutils_probe /system/lib/libCarPlayCoreUtils.so
+  if [ "$USB_COREUTILS_MD5" != "$USB_CARRIER_STOCK_MD5" ]; then
+    echo "Skipped: CoreUtils MD5=$USB_COREUTILS_MD5 ($USB_COREUTILS_CHECK)"
+    return 0
+  fi
   [ ! -e "${SYS_NET:-/sys/class/net}/wlan0" ] && ! usb_ap_live || return 0
   usb_carrier_plan_safe || { echo 'Deferred: HMG-API plan has other changes or problems'; return 0; }
   if [ "$installed" != current ]; then

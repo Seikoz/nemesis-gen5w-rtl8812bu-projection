@@ -1,24 +1,41 @@
 # Read-only snapshots. They never add/flush rules, reset counters or start mDNS daemons.
-usb_carplay_coreutils_md5() {
-  local library="$1" md5
+usb_coreutils_parse_digest() {
+  local digest
+  read -r digest _ <<EOF
+$1
+EOF
+  case "$digest" in ''|*[!0-9a-f]*) return 1 ;; esac
+  [ "${#digest}" -eq 32 ] || return 1
+  USB_COREUTILS_MD5=$digest
+}
+
+usb_carplay_coreutils_probe() {
+  local library="$1" output rc
+  USB_COREUTILS_CHECK=not-run
   if [ ! -f "$library" ]; then
-    md5=missing
+    USB_COREUTILS_MD5=missing
   elif [ ! -r "$library" ]; then
-    md5=unreadable
-  elif md5=$("$BB_OWN" timeout 5 "$BB_OWN" md5sum 2>/dev/null < "$library"); then
-    md5=${md5%%[[:space:]]*}
-    case "$md5" in *[!0-9a-f]*) md5= ;; esac
-    [ "${#md5}" -eq 32 ] || md5=hash-failed
+    USB_COREUTILS_MD5=unreadable
   else
-    md5=hash-failed
+    USB_COREUTILS_MD5=hash-failed
+    # The selected BusyBox stdin path also verifies the installed wireless mod.
+    rc=0
+    output=$("$BB" md5sum 2>/dev/null < "$library") || rc=$?
+    USB_COREUTILS_CHECK="selected-stdin(exit=$rc)"
+    if [ "$rc" = 0 ] && usb_coreutils_parse_digest "$output"; then return 0; fi
+    rc=0
+    output=$("$BB_OWN" md5sum "$library" 2>/dev/null) || rc=$?
+    USB_COREUTILS_CHECK="$USB_COREUTILS_CHECK bundled-file(exit=$rc)"
+    if [ "$rc" = 0 ]; then usb_coreutils_parse_digest "$output" || :; fi
   fi
-  echo "$md5"
 }
 
 usb_carplay_coreutils_report() {
+  usb_carplay_coreutils_probe "$1"
   echo
   echo '== CarPlay native library fingerprint'
-  echo "libCarPlayCoreUtils.so.md5=$(usb_carplay_coreutils_md5 "$1")"
+  echo "libCarPlayCoreUtils.so.md5=$USB_COREUTILS_MD5"
+  echo "libCarPlayCoreUtils.so.check=$USB_COREUTILS_CHECK"
 }
 
 usb_firewall_snapshot() {

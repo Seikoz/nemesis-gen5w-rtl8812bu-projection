@@ -17,14 +17,22 @@ class FirewallSnapshotTest(unittest.TestCase):
             setup = r'''
 set -e
 PATH=$TEST_BIN
-BB_OWN=bb
+BB=selected BB_OWN=bundled
 printf() { return 127; }
-bb() {
-  [ "$1 $2 $3 $4 $#" = 'timeout 5 bb md5sum 4' ] || return 90
+selected() {
+  [ "$1 $#" = 'md5sum 1' ] || return 90
   case "${mode:-}" in
-    failed) return 124 ;;
-    invalid) echo 'not-a-valid-md5 private-text' ;;
+    failed|fallback) return 13 ;;
+    invalid|tab-fallback) echo 'not-a-valid-md5 private-text' ;;
     *) "$TEST_PYTHON" -c 'import hashlib, sys; print(hashlib.md5(sys.stdin.buffer.read(), usedforsecurity=False).hexdigest(), " -")' ;;
+  esac
+}
+bundled() {
+  [ "$1 $2 $#" = 'md5sum test library.so 2' ] || return 91
+  case "${mode:-}" in
+    failed) return 1 ;;
+    invalid) echo 'invalid bundled output' ;;
+    *) "$TEST_PYTHON" -c 'import hashlib, pathlib, sys; print(hashlib.md5(pathlib.Path(sys.argv[1]).read_bytes(), usedforsecurity=False).hexdigest() + chr(9) + sys.argv[1])' "$2" ;;
   esac
 }
 '''
@@ -33,6 +41,8 @@ usb_carplay_coreutils_report 'test library.so'
 usb_carplay_coreutils_report 'missing.so'
 mode=failed usb_carplay_coreutils_report 'test library.so'
 mode=invalid usb_carplay_coreutils_report 'test library.so'
+mode=fallback usb_carplay_coreutils_report 'test library.so'
+mode=tab-fallback usb_carplay_coreutils_report 'test library.so'
 command printf changed > 'test library.so'
 usb_carplay_coreutils_report 'test library.so'
 '''
@@ -43,14 +53,25 @@ usb_carplay_coreutils_report 'test library.so'
             self.assertEqual([line for line in result.stdout.decode().splitlines() if line],
                              ['== CarPlay native library fingerprint',
                               'libCarPlayCoreUtils.so.md5=900150983cd24fb0d6963f7d28e17f72',
+                              'libCarPlayCoreUtils.so.check=selected-stdin(exit=0)',
                               '== CarPlay native library fingerprint',
                               'libCarPlayCoreUtils.so.md5=missing',
+                              'libCarPlayCoreUtils.so.check=not-run',
                               '== CarPlay native library fingerprint',
                               'libCarPlayCoreUtils.so.md5=hash-failed',
+                              'libCarPlayCoreUtils.so.check=selected-stdin(exit=13) bundled-file(exit=1)',
                               '== CarPlay native library fingerprint',
                               'libCarPlayCoreUtils.so.md5=hash-failed',
+                              'libCarPlayCoreUtils.so.check=selected-stdin(exit=0) bundled-file(exit=0)',
                               '== CarPlay native library fingerprint',
-                              'libCarPlayCoreUtils.so.md5=8977dfac2f8e04cb96e66882235f5aba'])
+                              'libCarPlayCoreUtils.so.md5=900150983cd24fb0d6963f7d28e17f72',
+                              'libCarPlayCoreUtils.so.check=selected-stdin(exit=13) bundled-file(exit=0)',
+                              '== CarPlay native library fingerprint',
+                              'libCarPlayCoreUtils.so.md5=900150983cd24fb0d6963f7d28e17f72',
+                              'libCarPlayCoreUtils.so.check=selected-stdin(exit=0) bundled-file(exit=0)',
+                              '== CarPlay native library fingerprint',
+                              'libCarPlayCoreUtils.so.md5=8977dfac2f8e04cb96e66882235f5aba',
+                              'libCarPlayCoreUtils.so.check=selected-stdin(exit=0)'])
 
     def test_kernel_order_counters_and_ipv6_udp_scope_are_reported(self):
         with tempfile.TemporaryDirectory() as td:
