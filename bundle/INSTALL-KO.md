@@ -1,6 +1,6 @@
 # 아반떼 Gen5W USB 합본 설치
 
-**v0.1.41**은 국내형 아반떼 CN7PE, 하이브리드 CN7HEVPE, N CN7NPE의 **V039.001.260902** Gen5W(TCC803x)를 대상으로 합니다. NEMESIS Manager **1.16.7 이상**이 필요합니다. 합본에는 Korea Projection **1.7.4.46**, Wireless Mode **2.4.29**(CN7PE·CN7NPE) 또는 **2.4.30**(CN7HEVPE), HMG-API **1.1.0-rc.8**, Realtek **1.1.19**가 포함됩니다.
+**v0.1.42**는 국내형 아반떼 CN7PE, 하이브리드 CN7HEVPE, N CN7NPE의 **V039.001.260902** Gen5W(TCC803x)를 대상으로 합니다. NEMESIS Manager **1.16.7 이상**이 필요합니다. 합본에는 Korea Projection **1.7.4.47**, Wireless Mode **2.4.31**(CN7PE·CN7NPE) 또는 **2.4.32**(CN7HEVPE), HMG-API **1.1.0-rc.8**, Realtek **1.1.19**가 포함됩니다.
 
 주차 상태에서 설치하고 완료될 때까지 전원을 끄거나 USB를 빼지 마세요. 설치 실패 시 내비게이션 재부팅이나 복구가 필요할 수 있습니다. 모든 책임은 설치하신 차주 본인에게 있습니다.
 
@@ -15,9 +15,9 @@ ipTIME A3000mini(`0bda:b812`)는 CN7NPE에서 확인했습니다. TP-Link Archer
 
 ## HUD 경로 안내
 
-합본의 **HMG-API → Wireless Mode → Turn-by-turn on the cluster and HUD**는 기본 **꺼짐**입니다. 별도의 **Phone Projection TBT**를 쓰는 경우 Wireless Mode의 HUD 옵션을 끈 상태로 두세요.
+HUD는 별도 **Phone Projection TBT**를 설치해 **켜짐**으로 사용하세요. 원본 모드는 활성 상태에서 CarPlay 길안내를 사용하며, **Android Auto 길안내**도 기본 켜짐입니다. [Phone Projection TBT 설치 안내](https://github.com/ch0iiih/HMG_Phone_Projection_TBT/releases/latest)
 
-업데이트 시 직접 저장한 켜짐·꺼짐은 유지됩니다. 이전에 켜 두었고 별도 TBT를 사용한다면 Wireless Mode의 HUD 옵션을 끄고 적용한 뒤 재부팅하세요. 합본 HUD를 사용하려면 별도 Phone Projection TBT를 끈 뒤 Wireless Mode의 HUD 옵션을 켜고 적용·재부팅합니다. 경로를 시작해 HUD에 방향과 거리가 표시되는지 확인하세요.
+합본의 **HMG-API → Wireless Mode → 계기판·HUD 길안내**는 중복 표시를 피하기 위해 기본 **꺼짐**입니다. 업데이트 시 저장한 선택은 유지됩니다. 두 모드가 모두 켜져 있다면 Wireless Mode의 **계기판·HUD 길안내**를 끄고 적용한 뒤 재부팅하세요. 경로를 시작해 HUD에 방향과 거리가 표시되는지 확인합니다.
 
 ## 재시도 및 제거
 
@@ -32,6 +32,6 @@ ipTIME A3000mini(`0bda:b812`)는 CN7NPE에서 확인했습니다. TP-Link Archer
 
 ### 무선 곡 전환 무음 시험
 
-**Wireless Mode → CarPlay's own log (troubleshooting)**를 켜고 재부팅합니다. 무선으로 다운로드한 곡을 재생한 뒤 간격을 두고 세 번 넘깁니다. 버튼을 누른 시각, 제목이 바뀐 시각, 소리가 들리기 시작한 시각을 기록합니다. 마지막 전환 약 1분 뒤 제보 파일을 저장합니다.
+**Wireless Mode → CarPlay 상세 로그 (문제 진단)**를 켜고 재부팅합니다. 다운로드한 곡을 무선 CarPlay로 재생한 뒤 간격을 두고 세 번 넘깁니다. 버튼을 누른 시각, 제목이 바뀐 시각, 소리가 들리기 시작한 시각을 기록합니다. 마지막 전환 약 1분 뒤 제보 파일을 저장합니다.
 
 [전체 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/main/CHANGELOG.md) · [이전 버전 진단 절차](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.40/bundle/INSTALL-KO.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)

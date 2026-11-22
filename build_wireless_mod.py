@@ -16,8 +16,8 @@ from build_package import PROJECTION_USB_IDS, archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.29'
-HYBRID_VERSION = '2.4.30'
+VERSION = '2.4.31'
+HYBRID_VERSION = '2.4.32'
 COREUTILS = 'libCarPlayCoreUtils.so'
 CARRIER_RECIPE = 'recipes/usb-wifi-name.recipe'
 CARRIER_SOURCE = Path(__file__).resolve().parent / 'projection-source/cn7npe-carrier'
@@ -31,6 +31,76 @@ UNMAPPED_RC4 = {
     'framework.pp_service.connect_pp', 'framework.pp_service.send_connect_pp_from_bt',
     'framework.pp_service.disconnect_pp', 'framework.pp_service.cancel_connection_pp',
     'framework.pp_service.on_wireless_connected', 'framework.pp_service.on_wireless_disconnected',
+}
+
+KOREAN_OPTION_TEXT = {
+    'tbt': (
+        '계기판·HUD 길안내',
+        'CarPlay와 지원되는 Android Auto의 회전 안내를 계기판과 HUD에 표시합니다. '
+        'Phone Projection TBT를 사용 중이면 중복 표시를 막기 위해 이 옵션을 꺼 두세요.',
+    ),
+    'tbt_standard': (
+        '순정 형식 길안내',
+        '회전이 가까워지면 차량 순정 형식의 방향 화살표와 거리 막대를 표시합니다. '
+        '끄면 기본 프로젝션 아이콘을 사용합니다. 변경 후 내비게이션을 재부팅하세요.',
+    ),
+    'bridge': (
+        '무선 CarPlay 연결',
+        'Bluetooth로 연결을 시작하고 Wi-Fi로 전환해 무선 CarPlay를 실행합니다.',
+    ),
+    'shared_identity': (
+        'CarPlay 차량 정보 공유',
+        '다른 HMG-API 모드가 제공하는 차량·외관 정보를 CarPlay 식별 메시지에 포함할 수 있도록 합니다. '
+        '변경 후 내비게이션을 재부팅하세요.',
+    ),
+    'audio': (
+        'CarPlay 무선 오디오',
+        'Wi-Fi를 통해 음악과 Siri 음성을 차량에서 재생하도록 AAC와 Opus를 지원합니다.',
+    ),
+    'now_playing': (
+        '무선 CarPlay 재생 정보',
+        '무선 연결이 시작되면 iPhone에 곡 제목, 아티스트, 앨범 표지를 다시 요청해 계기판과 분할 화면 등에 표시합니다.',
+    ),
+    'menu': (
+        '폰 프로젝션에서 기기 연결 열기',
+        '지원되는 차량에서 폰 프로젝션 설정을 기기 연결 화면으로 연결합니다. 국내형에서는 순정 메뉴 동작을 유지합니다.',
+    ),
+    'usb_drives': (
+        'USB 메모리 연결 시 유선 Android Auto 방지',
+        'USB 메모리나 허브를 연결했을 때 유선 Android Auto가 시작되어 무선 연결을 막는 문제를 줄입니다.',
+    ),
+    'park': (
+        '하차 시 무선 CarPlay 종료',
+        '지원되는 차량에서 HMG-API의 주차·하차 조건이 충족되면 무선 세션을 종료하고 오디오와 통화를 iPhone으로 돌려줍니다. '
+        '변경 후 내비게이션을 재부팅하세요.',
+    ),
+    'aa_firewall': (
+        '무선 Android Auto 방화벽 허용',
+        '차량의 USB 핫스폿 대역에서 들어오는 IPv4 TCP 40515 연결을 허용합니다. '
+        '이 옵션을 끄면 HMG-API가 해당 규칙을 제거합니다.',
+    ),
+    'carplay_log': (
+        'CarPlay 상세 로그 (문제 진단)',
+        '연결과 종료 원인을 찾을 수 있도록 CarPlay 세션을 자세히 기록합니다. '
+        '로그에 iPhone 모델과 기기 이름이 포함될 수 있습니다. 변경 후 내비게이션을 재부팅하세요.',
+    ),
+    'aa_ap': (
+        '무선 Android Auto USB 핫스폿',
+        'Android Auto의 무선 연결 준비에 Korea Projection의 USB 핫스폿을 사용합니다.',
+    ),
+    'aa_ready_resend': (
+        '무선 Android Auto 준비 신호 재전송',
+        'USB 핫스폿이 실행 중이고 폰 프로젝션 앱이 늦게 시작되면 놓친 준비 신호를 다시 보냅니다.',
+    ),
+    'usb_ap_ht20': (
+        '5GHz 채널 149를 20MHz로 사용 (시험)',
+        'rtwlan0 핫스폿의 채널 149 대역폭을 20MHz로 제한합니다. 설정을 적용한 뒤 내비게이션을 재부팅하세요.',
+    ),
+    'usb_ap_handoff_hold': (
+        'iAP2 전환 중 핫스폿 재시작 보류 (시험)',
+        'Bluetooth iAP2 연결이 확인된 뒤 최대 90초 동안 CarPlay 연결 정보 변경에 따른 핫스폿 재시작을 보류합니다. '
+        '설정을 적용한 뒤 내비게이션을 재부팅하세요.',
+    ),
 }
 
 
@@ -126,13 +196,11 @@ def rebase_files(base, hooks, previous):
     patches = json.loads(files['patches.json'])
     patches['cars'] = {'CN7NPE.KOR.': 'usb_cn7npe', 'CN7PE.KOR.': 'usb_cn7pe'}
     patches['changes'].insert(0,json.loads(old_files['patches.json'])['changes'][0])
-    ap_options = [
-        ('usb_ap_ht20', 'persist.kp.ap.ht20', 'Channel 149 HT20 (USB AP test)',
-         'Use 20 MHz on 5 GHz channel 149 for the rtwlan0 hotspot. Apply changes and restart the head unit.'),
-        ('usb_ap_handoff_hold', 'persist.kp.ap.hold', 'Defer AP restart during iAP2 (90 s)',
-         'Defer a restart requested by changed CarPlay Wi-Fi credentials during the Bluetooth handoff. The window starts at the confirmed iAP2 attach. Apply changes and restart the head unit.'),
-    ]
-    for key, prop, _, _ in ap_options:
+    ap_options = {
+        'usb_ap_ht20': 'persist.kp.ap.ht20',
+        'usb_ap_handoff_hold': 'persist.kp.ap.hold',
+    }
+    for key, prop in ap_options.items():
         mod['parts'].append({'id': key, 'when': f'settings.{key}'})
         patches['changes'].append({'type': 'prop', 'part': key, 'key': prop, 'value': '1'})
     files['patches/usb_cn7npe/stock'] = b''
@@ -148,17 +216,18 @@ def rebase_files(base, hooks, previous):
     for entry in json.loads(old_files['settings.json'])['settings']:
         if entry['key'] in ('aa_ap','aa_ready_resend') and entry['key'] not in entries:
             settings['settings'].append(entry)
-    for key, _, title, description in ap_options:
+    for key in ap_options:
         settings['settings'].append({
-            'key': key, 'type': 'toggle', 'default': False, 'title': title,
-            'apply': 'rebuild', 'description': description,
+            'key': key, 'type': 'toggle', 'default': False, 'apply': 'rebuild',
         })
+    for entry in settings['settings']:
+        entry['title'], entry['description'] = KOREAN_OPTION_TEXT[entry['key']]
     files['settings.json'] = json_bytes(settings)
     files['USB-SOURCE.md'] = (
         f'HMG-API USB wireless mod {VERSION} (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
-        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.41/projection-source\n'
+        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.42/projection-source\n'
         'CarPlay HUD input and display behavior adapted from ch0iiih/HMG_Phone_Projection_TBT (AGPL-3.0):\n'
         'https://github.com/ch0iiih/HMG_Phone_Projection_TBT/tree/daeaf32a6fa3c3540c74c93611dad7dedb6d417e\n'
         'AGPL-3.0. Signed by the existing local author; not an unmodified official package.\n'

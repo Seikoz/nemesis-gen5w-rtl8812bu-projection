@@ -2,7 +2,7 @@
 from pathlib import Path
 from io import BytesIO
 from zipfile import ZipFile
-import hashlib,json,os,subprocess,sys,tempfile,urllib.request
+import hashlib,json,os,re,subprocess,sys,tempfile,urllib.request
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from build_wireless_mod import CARRIER_RECIPE, COREUTILS, HYBRID_OMIT, hybrid_files, rebase_files
@@ -45,7 +45,11 @@ if model=='cn7hevpe':
     files=hybrid_files(files,Path(sys.argv[3]).read_bytes())
 manifest_hooks=json.loads(files['mod.json'])['hooks']
 assert set(manifest_hooks['points']) <= set(points.decode().splitlines())
-assert 'stock_bt_handoff' not in {s['key'] for s in json.loads(files['settings.json'])['settings']}
+option_settings = json.loads(files['settings.json'])['settings']
+assert 'stock_bt_handoff' not in {setting['key'] for setting in option_settings}
+for setting in option_settings:
+    assert re.search('[가-힣]', setting['title']), setting['key']
+    assert re.search('[가-힣]', setting['description']), setting['key']
 assert (CARRIER_RECIPE in files) == (model != 'cn7hevpe')
 assert (manifest_hooks.get('native', {}).get(COREUTILS) == [CARRIER_RECIPE]) == (model != 'cn7hevpe')
 def write(path,content):

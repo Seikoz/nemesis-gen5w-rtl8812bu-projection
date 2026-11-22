@@ -8,6 +8,12 @@
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 - 기본 브랜치에서 이전 무선 모드의 빌드 경로와 독립 오디오 시험판을 정리했습니다. [현재 무선 모드 빌드 안내](projection-source/README.md)에 이전 소스 링크도 남겼습니다. 패키지 생성기와 테스트 파일의 변경도 GitHub Actions에서 검증합니다.
 
+## USB 합본 v0.1.42
+
+- Korea Projection **1.7.4.47**과 Wireless Mode **2.4.31 / 2.4.32**에서 사용자에게 표시되는 옵션 이름과 설명을 한국어로 변경했습니다. 설정 키와 저장된 선택은 그대로 사용합니다.
+- 별도 Phone Projection TBT는 활성 상태에서 CarPlay 길안내를 사용하며 원본 모드의 Android Auto 길안내도 기본 켜짐입니다. 합본의 **계기판·HUD 길안내** 기본값은 꺼짐입니다. [Phone Projection TBT 원본 설정](https://github.com/ch0iiih/HMG_Phone_Projection_TBT/blob/v1.0.5/settings.json)
+- USB 설치 ZIP SHA-256은 `31b4c8e9cb1f69c2c22d773f6f55bf562fd21454262c00d756accb611479eded`입니다.
+
 ## USB 합본 v0.1.41
 
 - Korea Projection **1.7.4.46**와 Wireless Mode **2.4.29 / 2.4.30**에서 HUD·계기판 Turn-by-Turn의 기본값을 끔으로 변경했습니다. HMG-API 설정 정의와 CarPlay·Android Auto의 런타임 기본값을 함께 변경했습니다. 업데이트 시 명시적으로 저장한 설정은 유지됩니다.

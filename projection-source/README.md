@@ -1,6 +1,6 @@
 # Gen5W RTL8812BU wireless projection source
 
-USB bundle v0.1.41 ships Wireless Mode **2.4.29** for CN7PE and CN7NPE and **2.4.30** for CN7HEVPE. Both are based on Open-HMG Wireless Mode **2.2.0-rc.8**. The bundle includes HMG-API core **1.1.0-rc.8**. The local wireless mod versions identify upgrades signed by this project. The wireless mod and its changes are licensed under [AGPL-3.0](../bundle/licenses/HMG-API-AGPL-3.0.txt).
+USB bundle v0.1.42 ships Wireless Mode **2.4.31** for CN7PE and CN7NPE and **2.4.32** for CN7HEVPE. Both are based on Open-HMG Wireless Mode **2.2.0-rc.8**. The bundle includes HMG-API core **1.1.0-rc.8**. The local wireless mod versions identify upgrades signed by this project. The wireless mod and its changes are licensed under [AGPL-3.0](../bundle/licenses/HMG-API-AGPL-3.0.txt).
 
 ## USB access point and session state
 
@@ -8,6 +8,7 @@ USB bundle v0.1.41 ships Wireless Mode **2.4.29** for CN7PE and CN7NPE and **2.4
 - [SessionStatus.java](SessionStatus.java) records the DiPO start and end callbacks. [The shell status reader](../bundle/usb-carplay-session.sh) checks the current boot, AP generation, process identity and record age. The Wi-Fi station count is measured separately.
 - [The CN7NPE audio carrier](cn7npe-carrier/UsbWifiCarrier.java) runs inside Wireless Mode. [Its recipe](cn7npe-carrier/recipes/usb-wifi-name.recipe) applies to the matching CarPlay library on supported CN7NPE firmware.
 - Cluster and HUD turn-by-turn is off by default. The settings schema and runtime fallbacks use the same default. HMG-API honors an explicitly saved user choice.
+- Both Wireless Mode variants use the same Korean option labels and descriptions with the existing settings keys.
 - [Connection diagnostics](../bundle/usb-connection-diagnostics.sh) capture firewall rules, socket state and AP transitions. [The mDNS probe](ap_link_diagnostics.c) queries CarPlay service types on the AP interface and reports service types and ports. [The installation guide](../bundle/INSTALL-KO.md) lists the report files and export steps.
 
 ## Build and verification
