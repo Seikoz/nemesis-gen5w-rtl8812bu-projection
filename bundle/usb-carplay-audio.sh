@@ -6,22 +6,45 @@ usb_capture_carplay_audio() {
   output=$("$BB" mktemp "$W/.usb-cp-audio.XXXXXX") || { "$BB" rm -f "$snapshot"; return 0; }
   {
     rc=0
-    "$BB_OWN" timeout 25 logcat -b main -d -v threadtime 'TccCarPlay:V' 'MediaFocusControl:I' 'HMG-API:I' '*:S' 2>/dev/null || rc=$?
+    "$BB_OWN" timeout 25 logcat -b main -d -v threadtime 'TccCarPlay:V' 'CarPlay_:I' 'MediaFocusControl:I' 'HMG-API:I' '*:S' 2>/dev/null || rc=$?
     echo "logcat_exit=$rc"
   } | "$BB" awk '
+    function diagnostic_field(line, key, allowed,    value) {
+      if (!match(line, key "[[:space:]]*[a-z0-9_]+")) return "unseen"
+      value=substr(line, RSTART, RLENGTH)
+      sub(/^[^:.]+[:.][[:space:]]*/, "", value)
+      return value ~ allowed ? value : "other"
+    }
     /^logcat_exit=[0-9]+$/ {print; next}
     $1 !~ /^[0-9][0-9]-[0-9][0-9]$/ || $2 !~ /^[0-9:.]+$/ {next}
     {
       line=tolower($0); event=""
       if (line ~ /[[:space:]]tcccarplay[[:space:]]*:/) {
+        native++
+        if (line ~ /tcccarplay_iapsendmessage\(\)[[:space:]]*:/) native_iap_send++
         if (line ~ /audio/ && line ~ /setup.*(fail|error)|failed to (set up|start|open)/) event="audio_setup_error"
         else if (line ~ /setting up (aac|opus|pcm)|audio stream.*(started|prepared)/) {
           route=(line ~ /alt audio/ ? "alt" : (line ~ /main audio/ ? "main" : "other"))
           codec=(line ~ /aac-eld/ ? "aac-eld" : (line ~ /aac-lc/ ? "aac-lc" : (line ~ /opus/ ? "opus" : (line ~ /pcm/ ? "pcm" : "unknown"))))
           event="audio_stream_reported stream=" route " codec=" codec
         } else if (line ~ /setup stream type:[[:space:]]*(100|101|102|103)([^0-9]|$)/) {
-          match(line, /10[0-3]([^0-9]|$)/); event="audio_setup_request type=" substr(line,RSTART,3)
+          event="audio_setup_request type=" diagnostic_field(line, "setup stream type:", "^10[0-3]$")
         } else if (line ~ /setup stream type:[[:space:]]*130([^0-9]|$)/) event="iap2_setup_request type=130"
+      } else if (line ~ /[[:space:]]carplay_[[:space:]]*:.*\[[[:space:]]*diposervice[[:space:]]*\]/) {
+        if (line ~ /changeaudiofocus\(\).*resourceowner[.].*audiotye:/) {
+          owner=diagnostic_field(line, "resourceowner[.]", "^(controller|accessory|none|unknown)$")
+          type=diagnostic_field(line, "audiotye:", "^(media|telephony|speech|default|unknown)$")
+          music=diagnostic_field(line, "mismusicaudiofocusgained:", "^(true|false)$")
+          event="dipo_audio_focus owner=" owner " type=" type " music_focus=" music
+        } else if (line ~ /onchangemainaudiomode\(\).*mainaudio:/) {
+          mode=diagnostic_field(line, "mainaudio:", "^(same|enable|disable)$")
+          if (line ~ /mismusicaudiofocusgained:/) {
+            phone=diagnostic_field(line, "misphoneaudiofocusgained:", "^(true|false)$")
+            siri=diagnostic_field(line, "missiriaudiofocusgained:", "^(true|false)$")
+            music=diagnostic_field(line, "mismusicaudiofocusgained:", "^(true|false)$")
+            event="dipo_audio_mode mode=" mode " phone_focus=" phone " siri_focus=" siri " music_focus=" music
+          }
+        }
       } else if (line ~ /[[:space:]]mediafocuscontrol[[:space:]]*:/) {
         source=(line ~ /btaudio/ ? "bluetooth-media" : (line ~ /[.]dipo|carplay/ ? "carplay" : "other"))
         if (line ~ /requestaudiofocus\(\) from/) event="focus_request source=" source
@@ -46,9 +69,8 @@ usb_capture_carplay_audio() {
         else if (line ~ /carplay log: logcontrol failed|carplay log: can.t switch it on/) event="native_logging=error"
       }
       if (event!="") {print $1, $2, event; matched++}
-      if (line ~ /[[:space:]]tcccarplay[[:space:]]*:/) native++
     }
-    END {print "capture_rows=" (matched+0) " native_rows=" (native+0)}' > "$snapshot"
+    END {print "capture_rows=" (matched+0) " native_rows=" (native+0) " native_iap_send_rows=" (native_iap_send+0)}' > "$snapshot"
   previous=/dev/null
   [ ! -r "$file" ] || previous=$file
   if {

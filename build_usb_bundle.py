@@ -17,8 +17,9 @@ PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "16bea991f1c541acccea658f766971fac0b9d41caf34d6ca7523c9007fc41a63"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.30"
-PROJECTION_VERSION = "1.7.4.35"
+BUNDLE_VERSION = "0.1.33"
+PROJECTION_VERSION = "1.7.4.38"
+WIRELESS_SOURCE_REF = "cn7npe-usb-bundle-v0.1.30"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
                  for model in ("CN7PE", "CN7HEVPE", "CN7NPE") for variant in ("0000", "S5W_M"))
 BASE_PRODUCTS = b"CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902"
@@ -248,6 +249,10 @@ def add_session_diagnostics(hotspot, status):
     if status.count(anchor) != 1:
         raise ValueError('Expected report collection hook')
     status = status.replace(anchor, anchor + b'  usb_cp_poll\n  usb_ap_live && usb_connection_snapshot report\n')
+    anchor = b'  echo; echo "== ${APLOG##*/}"'
+    if status.count(anchor) != 1:
+        raise ValueError('Expected native library fingerprint insertion point')
+    status = status.replace(anchor, b'  usb_carplay_coreutils_report /system/lib/libCarPlayCoreUtils.so\n' + anchor)
     anchor = b'  echo; echo "== perf.log ('
     if status.count(anchor) != 1:
         raise ValueError('Expected report history insertion point')
@@ -441,15 +446,19 @@ def build_projection_package(source, wireless, hybrid, station_counter, link_dia
             b"Install and launch the RTL8812BU driver v1.1.4 first.",
             b"Install the RTL8812BU driver v1.1.19 or later first.",
         )
-        preinstall = preinstall.replace(
-            rb"grep -q '^package-version=1\.7\.4\.[12345]$'",
-            rb"grep -Eq '^package-version=1\.7\.4\.([1-9]|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31)$'",
-        )
+        projection_revisions = '|'.join(map(str, range(1, int(PROJECTION_VERSION.rsplit('.', 1)[1]) + 1)))
+        old_projection_guard = rb"grep -q '^package-version=1\.7\.4\.[12345]$'"
+        if preinstall.count(old_projection_guard) != 1:
+            raise ValueError('Expected existing Korea Projection upgrade guard')
+        preinstall = preinstall.replace(old_projection_guard,
+            fr"grep -Eq '^package-version=1\.7\.4\.({projection_revisions})$'".encode("ascii"))
         old_version_guard = b'''grep -q '"version": "2.4.6"' "$mod/META-HMGAPI/manifest.json"'''
         if preinstall.count(old_version_guard) != 1:
             raise ValueError('Expected existing-author mod upgrade guard')
+        last_wireless_revision = max(int(version.rsplit('.', 1)[1]) for version in (VERSION, HYBRID_VERSION))
+        wireless_revisions = '|'.join(map(str, range(6, last_wireless_revision + 1)))
         preinstall = preinstall.replace(old_version_guard,
-            rb'''grep -Eq '"version": "2\.4\.([6-9]|10|11|12|13|14|15|16)"' "$mod/META-HMGAPI/manifest.json"''')
+            fr'''grep -Eq '"version": "2\.4\.({wireless_revisions})"' "$mod/META-HMGAPI/manifest.json"'''.encode("ascii"))
         preinstall = preinstall.replace(
             b'''if [ -e "$mod/mod.json" ] &&
    ! { [ -r "$installed" ] && [ -f /data/nemesis/backup/korea.projection/mod.ours ] &&''',
@@ -516,9 +525,9 @@ done''',
         changes["licenses/Source.md"] = source_notice.replace(b"Korea Projection CN7NPE USB Test", PROJECTION_NAME.encode("ascii")).replace(
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
         ) + (
-            f"\nWireless mod {VERSION} and {HYBRID_VERSION}, scoped TCP/UDP policy and diagnostic sources (AGPL-3.0):\n"
-            f"https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v{BUNDLE_VERSION}/projection-source\n"
-            f"https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v{BUNDLE_VERSION}/bundle\n"
+            f"\nWireless mod {VERSION} and {HYBRID_VERSION}, including scoped TCP/UDP policy (AGPL-3.0):\n"
+            f"https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/{WIRELESS_SOURCE_REF}/projection-source\n"
+            "\nThe diagnostic shell source for this build is included in svc/hotspot.sh and bin/status.sh.\n"
         ).encode("ascii")
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall

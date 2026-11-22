@@ -1,4 +1,22 @@
 # Read-only snapshots. They never add/flush rules, reset counters or start mDNS daemons.
+usb_carplay_coreutils_report() {
+  local library="$1" md5
+  echo
+  echo '== CarPlay native library fingerprint'
+  if [ ! -f "$library" ]; then
+    md5=missing
+  elif [ ! -r "$library" ]; then
+    md5=unreadable
+  elif md5=$("$BB_OWN" timeout 5 "$BB_OWN" md5sum 2>/dev/null < "$library"); then
+    md5=${md5%%[[:space:]]*}
+    case "$md5" in *[!0-9a-f]*) md5= ;; esac
+    [ "${#md5}" -eq 32 ] || md5=hash-failed
+  else
+    md5=hash-failed
+  fi
+  echo "libCarPlayCoreUtils.so.md5=$md5"
+}
+
 usb_firewall_snapshot() {
   local tool rc
   for tool in iptables ip6tables; do
@@ -6,15 +24,26 @@ usb_firewall_snapshot() {
     {
       "$BB_OWN" timeout 2 "$tool" -t filter -n -v -x -L --line-numbers 2>&1
       echo "firewall_exit=$?"
-    } | "$BB" awk '
-      BEGIN {t=4;p=5;iface_in=7;iface_out=8;src=9;dst=10}
+    } | "$BB" awk -v tool="$tool" '
+      BEGIN {t=4;p=5;opt=6;iface_in=7;iface_out=8;src=9;dst=10}
       /^Chain / {chain=$2; keep=(chain=="INPUT" || chain=="OUTPUT" || chain=="HMGAPI_IN" || chain=="HMGAPI_OUT"); if(keep) found++}
-      $1=="num" {for(i=1;i<=NF;i++) {if($i=="target") t=i; if($i=="prot") p=i; if($i=="in") iface_in=i; if($i=="out") iface_out=i; if($i=="source") src=i; if($i=="destination") dst=i}}
+      $1=="num" {
+        opt=0
+        for(i=1;i<=NF;i++) {
+          if($i=="target") t=i; if($i=="prot") p=i; if($i=="opt") opt=i
+          if($i=="in") iface_in=i; if($i=="out") iface_out=i
+          if($i=="source") src=i; if($i=="destination") dst=i
+        }
+      }
       /^firewall_exit=/ {print; exit}
       chain=="INPUT" && $t=="HMGAPI_IN" {input=$1}
       chain=="OUTPUT" && $t=="HMGAPI_OUT" {output=$1}
-      chain=="HMGAPI_IN" && $t=="ACCEPT" && $p=="udp" && $iface_in=="rtwlan0" && $src=="fe80::/10" && /[sd]pt:6031([^0-9]|$)/ {udp_in++}
-      chain=="HMGAPI_OUT" && $t=="ACCEPT" && $p=="udp" && $iface_out=="rtwlan0" && $dst=="fe80::/10" && /[sd]pt:6031([^0-9]|$)/ {udp_out++}
+      tool=="ip6tables" && $1 ~ /^[0-9]+$/ && $t=="ACCEPT" && $p=="udp" && /[[:space:]][sd]pt:6031([[:space:]]|$)/ {
+        # Legacy ip6tables can print an opt column in the header and leave it blank in rows.
+        shift_opt=(opt > 0 && $opt !~ /^[-!][-f]$/)
+        if (chain=="HMGAPI_IN" && $(iface_in-shift_opt)=="rtwlan0" && $(src-shift_opt)=="fe80::/10") udp_in++
+        if (chain=="HMGAPI_OUT" && $(iface_out-shift_opt)=="rtwlan0" && $(dst-shift_opt)=="fe80::/10") udp_out++
+      }
       keep && rows++<320 {print}
       END {if(!found) print "Expected firewall chains unavailable; see exit status.";
            print "HMGAPI_input_jump_position=" (input==""?"missing":input) " HMGAPI_output_jump_position=" (output==""?"missing":output);
