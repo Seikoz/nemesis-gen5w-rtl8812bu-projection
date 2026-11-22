@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.github.seikoz.projectiondashboard"
+    android:versionCode="1052"
+    android:versionName="0.1.47">
+    <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="19" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/dashboard_icon"
+        android:label="무선 연결 대시보드"
+        android:theme="@android:style/Theme.Holo.NoActionBar">
+        <activity android:name=".DashboardActivity" android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <receiver android:name=".DashboardShortcut" android:exported="false" />
+    </application>
+</manifest>

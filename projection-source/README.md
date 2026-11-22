@@ -34,6 +34,8 @@ python3 build_usb_bundle.py --help
 
 [build_usb_bundle.py](../build_usb_bundle.py) packages the signed mods with the pinned Realtek and Korea Projection base ZIPs, the official HMG-API core package and the ARMv7 helpers. The prebuilt USB install ZIP is available from [GitHub Releases](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest).
 
+Build the Android 4.4 dashboard with [dashboard-app/build.py](../dashboard-app/build.py). Pass the signed APK to the USB builder via `--dashboard-apk`. Keep the dashboard signing key outside the checkout and reuse it for upgrades.
+
 ## Compatibility and history
 
 - The [CN7HEVPE test fixture](fixtures/cn7hevpe-kor-260902-wireless-points.txt) records the relevant hook names from the verified KOR 260902 map. The package test checks that the hybrid declarations fit this fixture and that the unmodified upstream declarations are refused.

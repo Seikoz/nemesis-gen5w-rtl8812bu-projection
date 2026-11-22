@@ -7,7 +7,7 @@
 >
 > 모든 책임은 설치하신 차주 본인에게 있습니다.
 
-**[최신 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)** · [설치·제거 상세 안내](bundle/INSTALL-KO.md) · [전체 변경 이력](CHANGELOG.md)
+**[최신 공개 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)** · [설치·제거 상세 안내](bundle/INSTALL-KO.md) · [전체 변경 이력](CHANGELOG.md)
 
 ## 지원 환경
 
@@ -37,14 +37,14 @@
 
 제거할 때는 Korea Projection을 먼저 제거합니다. 무선 모드 업데이트는 합본으로 진행하세요. [설치·제거 상세 안내](bundle/INSTALL-KO.md)
 
-## v0.1.42 변경 사항
+## v0.1.47 변경 사항
 
-- HMG-API Wireless Mode에 표시되는 옵션 이름과 설명을 한국어로 변경했습니다.
-- HUD 길안내는 별도 Phone Projection TBT를 켜서 사용하는 구성을 안내합니다. [Phone Projection TBT 원본 릴리스](https://github.com/ch0iiih/HMG_Phone_Projection_TBT/releases/latest)
+- Korea Projection을 설치하거나 업데이트하면 **무선 연결 대시보드**의 홈 바로가기 등록을 자동으로 요청합니다. Android 앱 목록과 Korea Projection **Launch**에서도 열 수 있으며, 화면을 연 동안 약 5초마다 갱신합니다. [대시보드 사용 방법](bundle/INSTALL-KO.md#연결-대시보드)
+- GPS 카드에서 차량 내비의 수신 상태를 표시합니다. 휴대폰 GPS 연동은 확인 신호를 읽을 수 없어 확인 불가로 표시합니다.
 
 | 구성 요소 | 버전 |
 | --- | --- |
-| Korea Projection BETA | **1.7.4.47** |
+| Korea Projection BETA | **1.7.4.52** |
 | HMG-API Wireless Mode | **2.4.31** (CN7PE·CN7NPE), **2.4.32** (CN7HEVPE) |
 | HMG-API 본체 | **1.1.0-rc.8** (NEMESIS 패키지 **1.0.99.8**) |
 | Realtek Wi-Fi Driver | **1.1.19** |
@@ -75,7 +75,12 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 
 | 버전 | 주요 변경 |
 | --- | --- |
-| **v0.1.42** | Wireless Mode 옵션 이름·설명 한국어화, 별도 Phone Projection TBT 사용 방법 안내 |
+| **v0.1.47** | 5초 갱신 대시보드 및 설치 시 홈 바로가기 자동 등록 요청 |
+| v0.1.46 (로컬 시험) | 차량 GPS 수신과 휴대폰 GPS 연동 표시 구분 |
+| v0.1.45 (로컬 시험) | 내비 GPS 위성 수와 신호 대 잡음비 표시 |
+| v0.1.44 (로컬 시험) | 대시보드 앱·바로가기, 화면에서 5초 갱신, 부팅·연결·Wi-Fi·HUD 상세 상태 |
+| v0.1.43 (로컬 시험) | Korea Projection 연결 대시보드 추가 |
+| v0.1.42 | Wireless Mode 옵션 이름·설명 한국어화, 별도 Phone Projection TBT 사용 방법 안내 |
 | v0.1.41 | HUD 경로 안내 기본 끔, USB 설치 안내 간소화, 하이브리드 CI 외부 첨부 의존성 제거 |
 | v0.1.40 | Archer T3U V1 감지 및 CN7NPE 오디오 보정 적용 추가. NEXI NX-AC1300은 USB ID 조건부 시험 모델로 기록 |
 | v0.1.39 | 무선 곡 전환 무음 진단. 음악 정보·버퍼 비우기·AAC 디코딩·출력 버퍼 고갈 관측과 출력 스레드 상태 기록 |
@@ -83,7 +88,7 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 | v0.1.37 (로컬 시험) | CN7NPE 오디오 보정을 무선 모드에 통합하고 Stock Bluetooth handoff 시험 옵션 제거 |
 | v0.1.36 | 순정 CarPlay 라이브러리 MD5 검사 수정. CN7NPE에서 무선 CarPlay의 차량 스피커 출력 확인 |
 
-v0.1.42 USB ZIP SHA-256 `31b4c8e9cb1f69c2c22d773f6f55bf562fd21454262c00d756accb611479eded`
+v0.1.47 USB ZIP SHA-256 `d7b06e7b5e24bf30a3ebaf01b603d53fca68f65e5a63ae516d010281531de6da`
 
 [전체 변경 이력](CHANGELOG.md) · [이전 릴리스와 설치 ZIP](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.36/README.md#검증-범위)
 

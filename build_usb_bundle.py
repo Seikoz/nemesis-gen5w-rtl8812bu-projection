@@ -20,9 +20,9 @@ PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "eb2480561bb88c53bafb460bb9e4a02d437de23ca8aca11fecc78ee7b9ecb8b3"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.42"
-PROJECTION_VERSION = "1.7.4.47"
-WIRELESS_SOURCE_REF = f"cn7npe-usb-bundle-v{BUNDLE_VERSION}"
+BUNDLE_VERSION = "0.1.47"
+PROJECTION_VERSION = "1.7.4.52"
+WIRELESS_SOURCE_REF = "cn7npe-usb-bundle-v0.1.42"
 CARRIER_SOURCE_REF = "cn7npe-usb-bundle-v0.1.35"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
                  for model in ("CN7PE", "CN7HEVPE", "CN7NPE") for variant in ("0000", "S5W_M"))
@@ -435,7 +435,24 @@ def add_audio_carrier_migration(hotspot, status):
     return hotspot, status
 
 
-def build_projection_package(source, wireless, hybrid, station_counter, link_diagnostics):
+def add_connection_dashboard(status):
+    entry = b"\nstatus_kv() {\n"
+    versions = {
+        b'  echo "pkgver=$(pver $APP/NEMESIS.data)"\n':
+            b'  kp_version=$(pver "$APP/NEMESIS.data")\n  echo "pkgver=$kp_version"\n',
+        b'  echo "modver=$(mod_ver)"\n':
+            b'  wireless_version=$(mod_ver)\n  echo "modver=$wireless_version"\n',
+    }
+    summary = b'  echo "s1=$V_S1"\n  echo "s2=$V_S2"\n  echo "s3=$V_S3"\n'
+    if any(status.count(marker) != 1 for marker in (entry, *versions, summary)):
+        raise ValueError("Expected the Korea Projection status screen summary")
+    status = status.replace(entry, entry + b"  local kp_version wireless_version\n")
+    for previous, replacement in versions.items():
+        status = status.replace(previous, replacement)
+    return status.replace(summary, b'  dashboard_rows "$kp_version" "$wireless_version"\n')
+
+
+def build_projection_package(source, wireless, hybrid, station_counter, link_diagnostics, dashboard_apk):
     if (station_counter[:6] != b'\x7fELF\x01\x01' or len(station_counter) < 20 or
             struct.unpack_from('<HH', station_counter, 16) != (3, 40) or
             b'/system/bin/linker\0' not in station_counter or
@@ -445,6 +462,13 @@ def build_projection_package(source, wireless, hybrid, station_counter, link_dia
             struct.unpack_from('<HH', link_diagnostics, 16) != (3, 40) or
             b'/system/bin/linker\0' not in link_diagnostics or b'_carplay-ctrl._tcp.local\0' not in link_diagnostics):
         raise ValueError('Expected the Android ARMv7 mDNS diagnostics helper')
+    with zipfile.ZipFile(io.BytesIO(dashboard_apk)) as application:
+        dex = application.read("classes.dex")
+        if (application.testzip() is not None or not dex.startswith(b"dex\n035\0") or
+                b"Lio/github/seikoz/projectiondashboard/DashboardActivity;" not in dex or
+                b"Lio/github/seikoz/projectiondashboard/DashboardShortcut;" not in dex or
+                not any(name.startswith("META-INF/") and name.endswith(".RSA") for name in application.namelist())):
+            raise ValueError("Expected the signed Android 4.4 dashboard APK")
     with zipfile.ZipFile(io.BytesIO(source)) as package:
         descriptor = package.read("NEMESIS.data")
         descriptor = descriptor.replace(b"package-version=1.7.4.5\n", f"package-version={PROJECTION_VERSION}\n".encode("ascii"))
@@ -463,6 +487,24 @@ def build_projection_package(source, wireless, hybrid, station_counter, link_dia
         descriptor = descriptor.replace(b'models="cn7npe_kr"\n', b'models="cn7pe_kr,cn7hevpe_kr,cn7npe_kr"\n')
         descriptor = descriptor.replace(b'Experimental wireless CarPlay for CN7NPE 260902 and A3000mini',
                                         b'CN7PE/CN7HEVPE/CN7NPE KOR 260902 USB wireless projection')
+        service = b"\n[service.0]\n"
+        if descriptor.count(service) != 1:
+            raise ValueError("Expected the existing Korea Projection AP service")
+        descriptor = descriptor.replace(service, b"""
+[app.2]
+kind=apk
+path=app/ProjectionDashboard.apk
+package=io.github.seikoz.projectiondashboard
+component=io.github.seikoz.projectiondashboard/.DashboardActivity
+""" + service)
+        descriptor += b"""
+[service.1]
+name=dashboard
+kind=sh
+path=svc/dashboard.sh
+uid=root
+mode=restart
+"""
         preinstall = allow_avante_products(package.read("scripts/preinstall.sh"))
         preinstall = preinstall.replace(b'Requires CN7NPE KOR V039.001.260902',
                                         b'Requires CN7PE, CN7HEVPE or CN7NPE KOR V039.001.260902')
@@ -540,6 +582,17 @@ done''',
             hotspot, changes['bin/status.sh'], hybrid_digest)
         changes['svc/hotspot.sh'], changes['bin/status.sh'] = add_audio_carrier_migration(
             changes['svc/hotspot.sh'], changes['bin/status.sh'])
+        changes['bin/status.sh'] = add_connection_dashboard(changes['bin/status.sh'])
+        hotspot = changes['svc/hotspot.sh']
+        failure = b'\nprog() {\n'
+        if hotspot.count(failure) != 1:
+            raise ValueError("Expected the existing progress writer")
+        changes['svc/hotspot.sh'] = hotspot.replace(failure, b'''
+. "$APP/bin/usb-dashboard.sh"
+
+prog() {
+  if [ "$2" = fail ]; then dashboard_note_failure "$3"; fi
+''')
         changes['hmgapi/wireless-carplay-aa.zip'] = wireless
         required = set(json.loads(hybrid_payload['mod.json'])['hooks']['points'])
         required.add('dipo.carplay.native_iap_send')
@@ -567,6 +620,32 @@ done''',
         ).encode("ascii")
         changes["NEMESIS.data"] = descriptor
         changes["scripts/preinstall.sh"] = preinstall
+        post = package.read("scripts/post.sh")
+        source_hotspot = b"HOTSPOT_LIB=1 . /data/nemesis/apps/korea.projection/svc/hotspot.sh\n"
+        if post.count(source_hotspot) != 1:
+            raise ValueError("Expected the Korea Projection post-install setup")
+        changes["scripts/post.sh"] = post.replace(source_hotspot, source_hotspot + b"""
+# The dashboard APK is already registered by NEMESIS when Android is running.
+# Retry opportunistically from the app if the launcher or Android is unavailable.
+if has_bb; then
+  "$BB_OWN" timeout 5 /system/bin/am broadcast --user 0 --include-stopped-packages \\
+    -a io.github.seikoz.projectiondashboard.REGISTER_SHORTCUT \\
+    -n io.github.seikoz.projectiondashboard/.DashboardShortcut >/dev/null 2>&1 || :
+fi
+""")
+        preun = package.read("scripts/preun.sh")
+        status_cleanup = b"rm -f /data/local/tmp/korea-projection-status.txt /data/local/tmp/korea-projection-status.txt.tmp\n"
+        if preun.count(status_cleanup) != 1:
+            raise ValueError("Expected status cleanup in Korea Projection uninstall")
+        changes["scripts/preun.sh"] = preun.replace(
+            status_cleanup, status_cleanup + b"rm -f /data/local/tmp/korea-projection-dashboard.txt\n",
+        )
+        dashboard_files = {
+            'app/ProjectionDashboard.apk': dashboard_apk,
+            'bin/usb-dashboard.sh': (ROOT / 'bundle/usb-dashboard.sh').read_bytes().replace(
+                b'@BUNDLE_VERSION@', BUNDLE_VERSION.encode("ascii")),
+            'svc/dashboard.sh': (ROOT / 'bundle/dashboard-service.sh').read_bytes(),
+        }
         output = io.BytesIO()
         with zipfile.ZipFile(output, "w") as updated:
             for entry in package.infolist():
@@ -577,10 +656,10 @@ done''',
                 entry.create_system = 3
                 entry.external_attr = 0o100755 << 16
                 updated.writestr(entry, data, compress_type=zipfile.ZIP_DEFLATED)
-            for name, data in hmg_files.items():
+            for name, data in (hmg_files | dashboard_files).items():
                 entry = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
                 entry.create_system = 3
-                entry.external_attr = 0o100644 << 16
+                entry.external_attr = (0o100755 if name.startswith("svc/") else 0o100644) << 16
                 updated.writestr(entry, data, compress_type=zipfile.ZIP_DEFLATED)
         return output.getvalue()
 
@@ -608,6 +687,8 @@ def main():
                         help='Android ARMv7 read-only hostapd station counter')
     parser.add_argument('--link-diagnostics', required=True, type=Path,
                         help='Android ARMv7 bounded mDNS diagnostic probe')
+    parser.add_argument('--dashboard-apk', required=True, type=Path,
+                        help='Signed Android 4.4 dashboard built by dashboard-app/build.py')
     args = parser.parse_args()
     try:
         driver_base = read_package(
@@ -630,7 +711,8 @@ def main():
             PACKAGE_PATH: driver,
             PROJECTION: build_projection_package(projection_base, args.wireless_mod.read_bytes(),
                                                  args.hybrid_wireless_mod.read_bytes(),
-                                                 args.station_counter.read_bytes(), args.link_diagnostics.read_bytes()),
+                                                 args.station_counter.read_bytes(), args.link_diagnostics.read_bytes(),
+                                                 args.dashboard_apk.read_bytes()),
             HMG_API: read_verified_release(args.hmg_api, HMG_API_SHA256),
         })
         args.output.parent.mkdir(parents=True, exist_ok=True)
