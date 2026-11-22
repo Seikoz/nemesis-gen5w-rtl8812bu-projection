@@ -9,7 +9,8 @@ import struct
 import zipfile
 from pathlib import Path
 
-from build_package import MODULES, PACKAGE_PATH, RESET_HELPER_PATH, ROOT, archive, build_driver_package
+from build_package import (MODULES, PACKAGE_PATH, PROJECTION_USB_IDS, RESET_HELPER_PATH,
+                           ROOT, archive, build_driver_package)
 from build_wireless_mod import (BASE_SHA256 as WIRELESS_BASE_SHA256, CARRIER_RECIPE,
                                 CARRIER_SOURCE, COREUTILS, HYBRID_VERSION, VERSION,
                                 hybrid_files, verify_mod)
@@ -19,8 +20,8 @@ PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "eb2480561bb88c53bafb460bb9e4a02d437de23ca8aca11fecc78ee7b9ecb8b3"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.39"
-PROJECTION_VERSION = "1.7.4.44"
+BUNDLE_VERSION = "0.1.40"
+PROJECTION_VERSION = "1.7.4.45"
 WIRELESS_SOURCE_REF = "cn7npe-usb-bundle-v0.1.30"
 CARRIER_SOURCE_REF = "cn7npe-usb-bundle-v0.1.35"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
@@ -79,6 +80,7 @@ def add_hostapd_diagnostics(package):
   if our_dhcp_on; then'''
     speed_check = b"""  for device in $(usb_a3000mini_paths); do
     for intf in "$device":*; do"""
+    match_device = b'    [ "$vendor:$product" != 0bda:b812 ] || echo "$device"\n'
     pending = b"""usb_launch_if_needed() {
   local paths device number device_key now launch_log rc
   paths=$(usb_a3000mini_paths)
@@ -87,7 +89,7 @@ def add_hostapd_diagnostics(package):
     return 0
   fi"""
     driver_timeout = b'"$BB_OWN" timeout 20 /system/xbin/nemesis pkg-launch realtek.88x2bu'
-    if (any(hotspot.count(at) != 1 for at in (launch, ap_start, ap_end, pending, speed_check))
+    if (any(hotspot.count(at) != 1 for at in (launch, ap_start, ap_end, pending, speed_check, match_device))
             or hotspot.count(driver_timeout) != 1
             or any(status.count(at) != 1 for at in (reports, report_read))):
         raise ValueError("Expected hostapd launch and report hooks in the base package")
@@ -95,6 +97,11 @@ def add_hostapd_diagnostics(package):
     diagnostics = b"\n".join((bundle / name).read_bytes() for name in (
         "usb-ap-diagnostics.sh", "hostapd-logcat.sh", "usb-ap-recovery.sh",
     ))
+    adapter_ids = "|".join(PROJECTION_USB_IDS).encode("ascii")
+    hotspot = hotspot.replace(match_device, b'''    case "$vendor:$product" in
+      ''' + adapter_ids + b''') echo "$device" ;;
+    esac
+''')
     return {
         "svc/hotspot.sh": hotspot
         .replace(driver_timeout, driver_timeout.replace(b'timeout 20', b'timeout 90'))
@@ -104,8 +111,11 @@ def add_hostapd_diagnostics(package):
     speed=
     read -r speed < "$device/speed" && [ "$speed" = 480 ] || continue
     for intf in "$device":*; do''')
+        .replace(b"usb_a3000mini_paths", b"usb_projection_paths")
+        .replace(b"USB Wi-Fi missing. Check A3000mini and USB Realtek Launch in the report.",
+                 b"USB Wi-Fi missing. Check the supported adapter and USB Realtek Launch in the report.")
         .replace(b"Waiting for A3000mini on rtwlan0. Korea Projection will try Realtek Launch.",
-                 b"Waiting for A3000mini at USB 480Mbps. Check Realtek speed.log.")
+                 b"Waiting for a supported USB Wi-Fi adapter at 480Mbps. Check Realtek logs.")
         .replace(b"USB Realtek Launch: rtwlan0 ready (exit $rc)",
                  b"USB Realtek Launch: rtwlan0 ready at 480Mbps (exit $rc)")
         .replace(b"USB Realtek Launch: rtwlan0 still missing (exit $rc)",

@@ -1,14 +1,17 @@
 # Record one boot's USB identity independently of network registration.
 usb_ap_context() {
-  local paths first_boot= first_device= marker="/data/nemesis/logs/realtek.88x2bu/first-usb-device"
-  AP_BOOT= AP_PORT= AP_NUMBER= AP_USB_SPEED= AP_FIRST= AP_FIRST_UP= AP_PHASE=boot
+  local paths vendor product first_boot= first_device= marker="/data/nemesis/logs/realtek.88x2bu/first-usb-device"
+  AP_BOOT= AP_PORT= AP_NUMBER= AP_USB_SPEED= AP_USB_ID= AP_FIRST= AP_FIRST_UP= AP_PHASE=boot
   [ ! -r "$PROC/sys/kernel/random/boot_id" ] || read -r AP_BOOT < "$PROC/sys/kernel/random/boot_id"
-  paths=${1-$(usb_a3000mini_paths)}
+  paths=${1-$(usb_projection_paths)}
   set -- $paths
   if [ "$#" -eq 1 ]; then
     AP_PORT=${1##*/}
     [ ! -r "$1/devnum" ] || read -r AP_NUMBER < "$1/devnum"
     [ ! -r "$1/speed" ] || read -r AP_USB_SPEED < "$1/speed"
+    if read -r vendor < "$1/idVendor" && read -r product < "$1/idProduct"; then
+      AP_USB_ID="$vendor:$product"
+    fi
   fi
   AP_DEVICE="${AP_PORT:-unknown}:${AP_NUMBER:-unknown}"
   # Include a fallback for service restarts or a boot-loader enumeration race.
@@ -79,6 +82,7 @@ usb_ap_report_header() {
   local parameter value
   echo "$AP_SCOPE phase=$AP_PHASE first_usb=${AP_FIRST:-unknown} first_seen_uptime=${AP_FIRST_UP:-unknown} uptime=$(usb_ap_uptime) time=$(date '+%m-%d %H:%M:%S')"
   echo "usb_speed_mbps=${AP_USB_SPEED:-unknown}"
+  echo "usb_adapter_id=${AP_USB_ID:-unknown}"
   for parameter in rtw_power_mgnt rtw_ips_mode rtw_enusbss; do
     value=unavailable
     [ ! -r "/sys/module/88x2bu/parameters/$parameter" ] ||

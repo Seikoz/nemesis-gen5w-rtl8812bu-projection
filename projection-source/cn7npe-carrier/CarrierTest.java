@@ -62,9 +62,14 @@ public final class CarrierTest {
         Path product = device.resolve("idProduct");
         Files.write(device.resolve("idVendor"), "0bda\n".getBytes(StandardCharsets.US_ASCII));
         Files.write(product, "abcd\n".getBytes(StandardCharsets.US_ASCII));
-        check(!UsbWifiCarrier.hasA3000Mini(root.toFile()), "Foreign USB device accepted");
+        check(!UsbWifiCarrier.hasSupportedAdapter(root.toFile()), "Foreign USB device accepted");
         Files.write(product, "b812\n".getBytes(StandardCharsets.US_ASCII));
-        check(UsbWifiCarrier.hasA3000Mini(root.toFile()), "Target USB not detected");
+        check(UsbWifiCarrier.hasSupportedAdapter(root.toFile()), "Realtek B812 USB not detected");
+        Files.write(device.resolve("idVendor"), "2357\n".getBytes(StandardCharsets.US_ASCII));
+        Files.write(product, "012D\n".getBytes(StandardCharsets.US_ASCII));
+        check(UsbWifiCarrier.hasSupportedAdapter(root.toFile()), "Archer T3U v1 USB not detected");
+        Files.write(product, "0138\n".getBytes(StandardCharsets.US_ASCII));
+        check(!UsbWifiCarrier.hasSupportedAdapter(root.toFile()), "Unlisted Archer T3U Plus USB accepted");
 
         Path file = root.resolve("fixture");
         Files.write(file, "abc".getBytes(StandardCharsets.US_ASCII));

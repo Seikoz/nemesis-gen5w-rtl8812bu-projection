@@ -15,6 +15,7 @@ RELEASE = "https://github.com/GRT47/HKG_5W_USB_Wlan/releases/tag/v2.0.7"
 ASSET = RELEASE.replace("/tag/", "/download/") + "/HKG_5W_USBWifi_Hotspot.zip"
 ASSET_SHA256 = "1545bc400cfc32693f2fd0a1db155441ee753f35bf25d0b1485cf7d1b46673c3"
 MODULES = ("modules/88x2bu.ko", "modules/88x2bu_tcc897x.ko")
+PROJECTION_USB_IDS = ("0bda:b812", "2357:012d")
 VERMAGIC = b"vermagic=3.18.24-tcc SMP preempt mod_unload ARMv7 p2v8 \0"
 USB_ALIAS = re.compile(
     rb"alias=usb:v([0-9A-F]{4})p([0-9A-F]{4})d\*dc\*dsc\*dp\*icFFiscFFipFFin\*\0"
@@ -85,6 +86,8 @@ def build_driver_package(modules, helper, *, diagnostics=False):
     ids_by_module = [usb_ids(path, files[path]) for path in MODULES]
     if ids_by_module[0] != ids_by_module[1]:
         raise ValueError("The platform modules have different USB aliases")
+    if diagnostics and not set(PROJECTION_USB_IDS).issubset(ids_by_module[0]):
+        raise ValueError("A Korea Projection adapter is missing from the driver USB aliases")
 
     if (len(helper) < 52 or helper[:6] != b"\x7fELF\x01\x01"
             or struct.unpack_from("<HH", helper, 16) != (3, 40)

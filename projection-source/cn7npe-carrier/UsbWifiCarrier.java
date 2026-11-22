@@ -62,20 +62,20 @@ public final class UsbWifiCarrier extends ModEntry {
             mod.log("Carrier skipped: CarPlay CoreUtils MD5 mismatch; found " + stockMd5);
             return;
         }
-        mod.log("Carrier: CarPlay CoreUtils MD5 matched; waiting for A3000MINI AP");
+        mod.log("Carrier: CarPlay CoreUtils MD5 matched; waiting for supported USB Wi-Fi AP");
         for (int poll = 0; poll < AP_WAIT_POLLS; poll++) {
             if (!mod.enabled()) return;
             if (new File(NET, "wlan0").exists() || NetworkInterface.getByName("wlan0") != null) {
                 mod.log("Carrier skipped: stock wlan0 present");
                 return;
             }
-            if (usbApReady(get) && hasA3000Mini(USB)) {
+            if (usbApReady(get) && hasSupportedAdapter(USB)) {
                 if (mod.enabled()) mod.nativePatch(app, LIBRARY);
                 return;
             }
             Thread.sleep(250);
         }
-        mod.log("Carrier skipped: A3000MINI AP did not become ready in 240 seconds");
+        mod.log("Carrier skipped: supported USB Wi-Fi AP did not become ready in 240 seconds");
     }
 
     static boolean target(String product, String platform) {
@@ -104,12 +104,12 @@ public final class UsbWifiCarrier extends ModEntry {
         return false;
     }
 
-    static boolean hasA3000Mini(File root) {
+    static boolean hasSupportedAdapter(File root) {
         File[] devices = root.listFiles();
         if (devices == null) return false;
         for (File device : devices) {
-            if ("0bda".equalsIgnoreCase(readLine(new File(device, "idVendor")))
-                    && "b812".equalsIgnoreCase(readLine(new File(device, "idProduct")))) return true;
+            String id = readLine(new File(device, "idVendor")) + ":" + readLine(new File(device, "idProduct"));
+            if ("0bda:b812".equalsIgnoreCase(id) || "2357:012d".equalsIgnoreCase(id)) return true;
         }
         return false;
     }

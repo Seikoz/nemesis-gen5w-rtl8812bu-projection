@@ -1,20 +1,22 @@
 # 아반떼 CN7PE·CN7HEVPE·CN7NPE 260902 USB 합본 설치
 
-대상은 국내형 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x), ipTIME A3000mini(`0bda:b812`)입니다. CN7HEVPE는 실차 시험 대상입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
+대상은 국내형 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x)입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.44** — 설치·AP·연결 관리 및 무선 CarPlay 곡 전환 진단
-- HMG-API Wireless Mode **2.4.25** (CN7PE·CN7NPE) / **2.4.26** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
+- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.45** — 설치·AP·연결 관리 및 추가 동글 인식 시험
+- HMG-API Wireless Mode **2.4.27** (CN7PE·CN7NPE) / **2.4.28** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek Wi-Fi Driver **1.1.19** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.8**, NEMESIS 패키지 버전 **1.0.99.8**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.8)
+
+실차에서 확인한 동글은 ipTIME A3000mini(`0bda:b812`)입니다. TP-Link Archer T3U V1(`2357:012d`)을 시험 대상으로 추가했습니다. NEXI NX-AC1300(NX1126)은 제조사 사양이 RTL8812BU이며 `0bda:b812`로 인식되는 기기를 시험합니다. 두 신규 모델의 실차 동작과 NX1126 출고 USB ID는 확인을 기다립니다.
 
 ## 설치 및 업데이트
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.8과 Realtek Wi-Fi Driver 1.1.19가 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 Korea Projection BETA `1.7.4.1`~`1.7.4.43`은 업데이트할 수 있습니다.
-4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드 적용·재부팅 안내를 따릅니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 연결합니다.
+3. 설치 계획을 승인합니다. HMG-API rc.8과 Realtek Wi-Fi Driver 1.1.19가 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 Korea Projection BETA `1.7.4.1`~`1.7.4.44`는 업데이트할 수 있습니다.
+4. USB 메모리를 빼고 사용할 동글 하나를 꽂습니다. HMG-API 무선 모드 적용·재부팅 안내를 따릅니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 연결합니다.
 
-CN7NPE 오디오 보정은 **HMG-API Wireless Mode 2.4.25**에 포함됩니다. 예전 오디오 테스트 항목을 이미 삭제한 차량도 같은 Korea Projection 업데이트를 설치하면 보정을 받을 수 있습니다. 음악을 재생해 차량 스피커를 확인하고, 제보에서는 `cn7npe-rtwlan0-carrier: applied`를 확인합니다.
+CN7NPE 오디오 보정은 **HMG-API Wireless Mode 2.4.27**에 포함됩니다. 예전 오디오 테스트 항목을 이미 삭제한 차량도 같은 Korea Projection 업데이트를 설치하면 보정을 받을 수 있습니다. 음악을 재생해 차량 스피커를 확인하고, 제보에서는 `cn7npe-rtwlan0-carrier: applied`를 확인합니다. 새 동글은 `usb_adapter_id`와 `usb_speed_mbps`도 함께 확인합니다.
 
 CarPlay HUD를 시험할 때는 HMG-API에서 **Phone Projection TBT**를 끄고 **Wireless Mode → Turn-by-turn on the cluster and HUD**를 켠 뒤 재부팅합니다. CarPlay 지도 앱으로 경로를 시작해 다음 회전 방향과 거리가 HUD에 표시되는지 확인합니다. 제보에서 `CarPlay: route guidance Start-only result=`와 `CarPlay: first HUD turn submitted`를 확인할 수 있습니다.
 

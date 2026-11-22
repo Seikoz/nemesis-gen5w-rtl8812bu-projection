@@ -10,7 +10,7 @@ usb_ap_net_admin() {
 usb_ap_rebind() (
   local boot_id="$1" paths dev driver intf devnum current vendor product authorized config marker stale attempt
   usb_target && usb_wifi_ready && ! running "hostapd $CONF" || return 1
-  paths=$(usb_a3000mini_paths)
+  paths=$(usb_projection_paths)
   set -- $paths
   [ "$#" -eq 1 ] || return 1
   dev=$1
@@ -83,7 +83,9 @@ usb_prepare_ap_interface() {
     echo "hostapd_up_eperm=$hostapd_eperm"
     case "$hostapd_eperm:$up_rc:$up_error" in
       1:*|0:[1-9]*:*"Operation not permitted"*)
-        if [ -d "$W/.ap-rebind-$AP_BOOT" ]; then
+        if [ "$AP_USB_ID" != 0bda:b812 ]; then
+          echo "USB AP rebind skipped for ID ${AP_USB_ID:-unknown}."
+        elif [ -d "$W/.ap-rebind-$AP_BOOT" ]; then
           echo "A3000mini rebind already attempted this boot."
         elif usb_ap_net_admin; then
           usb_ap_rebind "$AP_BOOT"

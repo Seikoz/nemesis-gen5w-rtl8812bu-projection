@@ -11,13 +11,13 @@ import zipfile
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-from build_package import archive
+from build_package import PROJECTION_USB_IDS, archive
 
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.25'
-HYBRID_VERSION = '2.4.26'
+VERSION = '2.4.27'
+HYBRID_VERSION = '2.4.28'
 COREUTILS = 'libCarPlayCoreUtils.so'
 CARRIER_RECIPE = 'recipes/usb-wifi-name.recipe'
 CARRIER_SOURCE = Path(__file__).resolve().parent / 'projection-source/cn7npe-carrier'
@@ -105,6 +105,7 @@ def rebase_files(base, hooks, previous):
                 b'USB_CP_HANDOVER stage=waiting-after-rc19' not in dex or b'USB_CP_HANDOVER stage=resume-on-peer' not in dex or
                 b'USB_CP_AUDIO bluetooth_handoff=preserved' not in dex or b'stock_bt_handoff' in dex or
                 b'UsbWifiCarrier;' not in dex or COREUTILS.encode() not in dex or
+                any(adapter.encode() + b'\0' not in dex for adapter in PROJECTION_USB_IDS) or
                 b'CarPlay: first HUD turn submitted' not in dex or b'CarPlay: route guidance Start-only result=' not in dex):
             raise ValueError('Expected Android API 19 rc.8 USB hooks')
     mod = json.loads(files['mod.json'])
