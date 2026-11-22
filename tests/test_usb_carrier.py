@@ -57,6 +57,7 @@ hmgapid() {
 FIXTURE = r'''
 USB_CARRIER_ZIP_SHA=payload-check
 USB_CARRIER_MANIFEST_SHA=manifest-check
+USB_CARRIER_LEGACY_SHA=legacy-check
 PAYLOAD="$APP/hmgapi/$USB_CARRIER_ID.zip"
 CARRIER="$HMGDATA/mods/$USB_CARRIER_ID"
 echo "$USB_CARRIER_ZIP_SHA" > "$PAYLOAD"
@@ -64,6 +65,10 @@ carrier_case() {
   rc=0
   usb_carrier_setup || rc=$?
   [ "$rc" = "$1" ]
+}
+legacy_carrier() {
+  mkdir -p "$CARRIER/META-HMGAPI"
+  echo "$USB_CARRIER_LEGACY_SHA" > "$CARRIER/META-HMGAPI/manifest.json"
 }
 '''
 
@@ -105,6 +110,40 @@ echo "$USB_CARRIER_MANIFEST_SHA" > "$CARRIER/META-HMGAPI/manifest.json"
 carrier_case 0
 usb_carrier_remove
 test -f "$CARRIER/META-HMGAPI/manifest.json"
+'''), [])
+
+    def test_previous_bundled_carrier_is_upgraded_and_remains_bundle_owned(self):
+        calls = self.run_case(r'''
+legacy_carrier
+echo "$USB_CARRIER_LEGACY_SHA applied aaa0" > "$BK/usb-carrier.owner"
+carrier_case 1
+grep -Fx "$USB_CARRIER_MANIFEST_SHA applied aaa1 managed" "$BK/usb-carrier.owner"
+usb_carrier_remove
+test ! -e "$CARRIER"
+''')
+        self.assertEqual(calls, ['plan', 'install', 'plan', 'apply', 'remove'])
+
+    def test_previous_separately_installed_carrier_upgrades_without_taking_ownership(self):
+        calls = self.run_case(r'''
+legacy_carrier
+carrier_case 1
+grep -Fx "$USB_CARRIER_MANIFEST_SHA applied aaa1 external" "$BK/usb-carrier.owner"
+usb_carrier_remove
+test -d "$CARRIER"
+''')
+        self.assertEqual(calls, ['plan', 'install', 'plan', 'apply'])
+
+    def test_previous_disabled_or_unrecognized_carrier_stays_untouched(self):
+        self.assertEqual(self.run_case(r'''
+legacy_carrier
+echo "$USB_CARRIER_LEGACY_SHA applied aaa0" > "$BK/usb-carrier.owner"
+touch "$CARRIER/.disabled"
+carrier_case 0
+rm "$CARRIER/.disabled"
+echo different > "$CARRIER/META-HMGAPI/manifest.json"
+carrier_case 0
+usb_carrier_remove
+test -d "$CARRIER"
 '''), [])
 
     def test_foreign_plan_is_never_automatically_applied(self):

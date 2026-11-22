@@ -15,10 +15,10 @@ from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, HYBRID_VERSI
 
 PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
-HMG_API_SHA256 = "16bea991f1c541acccea658f766971fac0b9d41caf34d6ca7523c9007fc41a63"
+HMG_API_SHA256 = "eb2480561bb88c53bafb460bb9e4a02d437de23ca8aca11fecc78ee7b9ecb8b3"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.34"
-PROJECTION_VERSION = "1.7.4.39"
+BUNDLE_VERSION = "0.1.35"
+PROJECTION_VERSION = "1.7.4.40"
 WIRELESS_SOURCE_REF = "cn7npe-usb-bundle-v0.1.30"
 CARRIER_ID = "cn7npe-usb-carplay-carrier-test"
 CARRIER_SOURCE = ROOT / "projection-source/cn7npe-carrier"
@@ -37,7 +37,7 @@ short-desc=v{PROJECTION_VERSION} - Installs HMG-API, wireless mode and Realtek d
 [package.1]
 path={HMG_API}
 name=HMG-API
-short-desc=1.1.0-rc.7 - Core runtime and mod manager
+short-desc=1.1.0-rc.8 - Core runtime and mod manager
 
 [package.2]
 path={PACKAGE_PATH}
@@ -410,7 +410,7 @@ esac
 
 
 def add_audio_carrier(hotspot, status, uninstall, carrier):
-    files, _ = verify_mod(carrier, "0.1.0", mod_id=CARRIER_ID)
+    files, _ = verify_mod(carrier, "0.1.1", mod_id=CARRIER_ID)
     if (set(files) != {"hooks.jar", "mod.json", "recipes/usb-wifi-name.recipe"} or
             json.loads(files["mod.json"]) != json.loads((CARRIER_SOURCE / "mod.json").read_bytes()) or
             files["recipes/usb-wifi-name.recipe"] != (CARRIER_SOURCE / "recipes/usb-wifi-name.recipe").read_bytes()):
@@ -457,11 +457,11 @@ def build_projection_package(source, wireless, hybrid, station_counter, link_dia
         descriptor = descriptor.replace(b"package-version=1.7.4.5\n", f"package-version={PROJECTION_VERSION}\n".encode("ascii"))
         descriptor = descriptor.replace(
             b'depends="!niro.carplay.hotspot"\n',
-            b'depends="hmgapi@>=1.0.99.7,realtek.88x2bu@>=1.1.19,!niro.carplay.hotspot"\n',
+            b'depends="hmgapi@>=1.0.99.8,realtek.88x2bu@>=1.1.19,!niro.carplay.hotspot"\n',
         )
         descriptor = descriptor.replace(
             b"CN7NPE KOR 260902, HMG-API and RTL8812BU v1.1.4 required.",
-            b"CN7PE/CN7HEVPE/CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.7+ and Realtek 1.1.19+.",
+            b"CN7PE/CN7HEVPE/CN7NPE KOR 260902. Requires HMG-API 1.1.0-rc.8+ and Realtek 1.1.19+.",
         )
         descriptor = descriptor.replace(b'name=Korea Projection CN7NPE USB Test\n',
                                         f'name={PROJECTION_NAME}\n'.encode("ascii"))
@@ -593,7 +593,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("driver", type=Path, help="Published Realtek v1.1.7 USB ZIP (reset helper)")
     parser.add_argument("projection", type=Path, help="Published Korea Projection 1.7.4.5 USB ZIP (base package)")
-    parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.7 NEMESIS package ZIP")
+    parser.add_argument("hmg_api", type=Path, help="Official HMG-API 1.1.0-rc.8 NEMESIS package ZIP")
     parser.add_argument(
         "-o", "--output", type=Path,
         default=ROOT / "dist" / f"NEMESIS-Avante-260902-Bundle-v{BUNDLE_VERSION}-USB.zip",
@@ -613,7 +613,7 @@ def main():
     parser.add_argument('--link-diagnostics', required=True, type=Path,
                         help='Android ARMv7 bounded mDNS diagnostic probe')
     parser.add_argument('--audio-carrier', required=True, type=Path,
-                        help='Signed CN7NPE CoreUtils carrier 0.1.0 to embed in Korea Projection')
+                        help='Signed CN7NPE CoreUtils carrier 0.1.1 to embed in Korea Projection')
     args = parser.parse_args()
     try:
         driver_base = read_package(

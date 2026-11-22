@@ -1,9 +1,9 @@
 # CN7NPE A3000mini 무선 CarPlay 오디오 시험
 
-대상은 국내형 아반떼 N CN7NPE `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. **CN7NPE USB CarPlay Audio Test**는 v0.1.34의 Korea Projection 패키지에 들어 있습니다.
+대상은 국내형 아반떼 N CN7NPE `V039.001.260902`, TCC803x, ipTIME A3000mini(`0bda:b812`)입니다. **CN7NPE USB CarPlay Audio Test 0.1.1**은 v0.1.35의 Korea Projection 패키지에 들어 있으며 HMG-API rc.8에서 설치·적용할 수 있습니다.
 
-1. FAT32 USB 최상위에 합본 ZIP을 풉니다. 주차 상태에서 **NEMESIS → Package Store → USB → Korea Projection BETA 1.7.4.39 → Install 또는 Update**를 누릅니다.
-2. 설치 USB를 빼고 A3000mini를 연결합니다. 무선 모드가 준비되면 Korea Projection이 라이브러리 해시를 확인하고 조건에 맞는 차량에서 보정을 자동으로 설치·적용합니다. 재부팅 안내가 나오면 따라 주세요.
+1. FAT32 USB 최상위에 합본 ZIP을 풉니다. 주차 상태에서 **NEMESIS → Package Store → USB → Korea Projection BETA 1.7.4.40 → Install 또는 Update**를 누릅니다.
+2. 설치 USB를 빼고 A3000mini를 연결합니다. 무선 모드가 준비되면 Korea Projection이 라이브러리 해시를 확인하고 조건에 맞는 차량에서 보정 0.1.1을 설치하거나 기존 0.1.0을 갱신한 뒤 적용합니다. 재부팅 안내가 나오면 따라 주세요.
 3. CarPlay가 연결되면 음악을 재생하고 아이폰의 출력 선택 및 차량 스피커를 확인합니다.
 4. 시험 후 제보 USB를 다시 연결하고 Korea Projection의 **제보 파일 만들기**를 누릅니다. `3-log.txt`에서 `libCarPlayCoreUtils.so.md5=`, `usb-carrier.log`, `cn7npe-rtwlan0-carrier: applied` 또는 `Carrier skipped:`를 확인합니다. 적용 기록과 실제 스피커 출력 여부를 함께 보냅니다.
 
