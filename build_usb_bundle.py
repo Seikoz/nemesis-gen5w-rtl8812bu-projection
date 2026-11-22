@@ -613,9 +613,9 @@ prog() {
             old_ref, b"/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb",
         ) + (
             f"\nWireless mod {VERSION} and {HYBRID_VERSION}, including scoped TCP/UDP policy (AGPL-3.0):\n"
-            f"https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/{WIRELESS_SOURCE_REF}/projection-source\n"
+            f"https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/{WIRELESS_SOURCE_REF}/projection-source\n"
             f"\nCN7NPE audio carrier (AGPL-3.0):\n"
-            f"https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/{CARRIER_SOURCE_REF}/projection-source/cn7npe-carrier\n"
+            f"https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/{CARRIER_SOURCE_REF}/projection-source/cn7npe-carrier\n"
             "\nThe diagnostic shell source for this build is included in svc/hotspot.sh and bin/status.sh.\n"
         ).encode("ascii")
         changes["NEMESIS.data"] = descriptor

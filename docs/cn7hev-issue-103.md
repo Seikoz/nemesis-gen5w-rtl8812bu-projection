@@ -16,7 +16,7 @@
 
 첨부된 초기형 CN7HEV 성공 로그는 19:45:21과 19:46:01에 DipoService가 `ResourceOwner.CONTROLLER AudioTye:Media`와 음악 우선권을 기록했습니다. 네이티브 `TccCarPlay_iAPSendMessage()` 호출도 관측됐습니다. 송신 호출의 반환값과 오디오 스트림 설정 시작은 이 로그에서 확인되지 않습니다. [CN7HEV 성공 로그](https://github.com/StopDragon/korea-projection/issues/103#issuecomment-6728508868)
 
-A3000mini를 사용한 CN7PE의 v0.1.26 로그에서는 `rtwlan0`과 AP가 준비되고 무선 세션 및 Bluetooth iAP2 컴포넌트 4가 올라왔습니다. 뒤이어 첫 네이티브 전환 송신이 `rc=19`를 반환했고, 컴포넌트 5에서 `LimitMaxResend`가 반복됐습니다. 09:56:00에 음악 우선권을 얻었지만 DipoService는 `AudioTye:Unknown`을 기록했습니다. 이 차이로 오디오 타입이 인식되는 단계와 우선권을 얻는 단계를 구분할 수 있습니다. 전환 실패와 차량 오디오 문제의 인과관계는 아직 확인되지 않았습니다. [RTL8812BU Gen5W #2](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/issues/2)
+A3000mini를 사용한 CN7PE의 v0.1.26 로그에서는 `rtwlan0`과 AP가 준비되고 무선 세션 및 Bluetooth iAP2 컴포넌트 4가 올라왔습니다. 뒤이어 첫 네이티브 전환 송신이 `rc=19`를 반환했고, 컴포넌트 5에서 `LimitMaxResend`가 반복됐습니다. 09:56:00에 음악 우선권을 얻었지만 DipoService는 `AudioTye:Unknown`을 기록했습니다. 이 차이로 오디오 타입이 인식되는 단계와 우선권을 얻는 단계를 구분할 수 있습니다. 전환 실패와 차량 오디오 문제의 인과관계는 아직 확인되지 않았습니다. [RTL8812BU Gen5W #2](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/issues/2)
 
 같은 CN7PE 로그의 IPv6 필터에는 `rtwlan0`의 UDP 6031 허용 규칙이 입력·출력에 각각 두 줄 있었고 카운터는 0이었습니다. 구형 `ip6tables`는 헤더에 `opt`를 표시하면서 IPv6 행에서 해당 값을 생략했고, 이 때문에 기존 요약에서 규칙 개수도 0으로 표시됐습니다.
 

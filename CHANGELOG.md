@@ -2,7 +2,7 @@
 
 ## 프로젝트 및 릴리스 운영
 
-- 프로젝트 이름을 **NEMESIS RTL8812BU Gen5W**, 저장소 이름을 `nemesis-rtl8812bu-gen5w`로 정리했습니다.
+- 프로젝트 이름을 **NEMESIS RTL8812BU Gen5W**, 저장소 이름을 `nemesis-gen5w-rtl8812bu-projection`로 정리했습니다.
 - 릴리스 제목을 영문으로 통일하고 최신 합본이 GitHub에서 바로 보이도록 **Latest**로 등록합니다.
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
@@ -96,7 +96,7 @@
 ## USB 합본 v0.1.34
 
 - Korea Projection **1.7.4.39**에 **CN7NPE USB CarPlay Audio Test**를 포함했습니다. CN7NPE 260902에서 순정 라이브러리 MD5가 참조값과 일치하고 무선 모드가 준비되면 오디오 보정을 자동 설치·적용합니다.
-- 시작·보류 결과를 제보 `usb-carrier.log`에 남기고, 합본이 직접 설치한 보정만 제거 시 정리합니다. 기존 드라이버·HMG-API·무선 모드를 사용합니다. [v0.1.34 설치 및 원복](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.34/projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)
+- 시작·보류 결과를 제보 `usb-carrier.log`에 남기고, 합본이 직접 설치한 보정만 제거 시 정리합니다. 기존 드라이버·HMG-API·무선 모드를 사용합니다. [v0.1.34 설치 및 원복](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/blob/cn7npe-usb-bundle-v0.1.34/projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)
 - 설치·적용·재부팅·제거 경로와 ZIP 재현 빌드를 확인했습니다. SHA-256 `f26c0786e408154ef84b13b601b053a7b76c4e7f91283a16a65e6118ef89affe`.
 
 ## USB 합본 v0.1.33
@@ -121,7 +121,7 @@
 - Korea Projection **1.7.4.35**가 부팅별로 AP 시험 옵션, iAP2 전환·송신 결과, 오디오 스트림 설정·우선권을 내비에 자동 저장합니다. A는 둘 다 꺼짐, B는 HT20만 켜짐, C는 iAP2 보류만 켜짐, D는 둘 다 켜짐으로 표시합니다.
 - 최근 8회 부팅의 항목을 마지막 제보 `3-log.txt`의 **USB CarPlay trial history**로 한 번에 내보냅니다. 저장한 로그는 부팅 ID를 확인해 서로 섞이지 않게 하고, 순정 CarPlay의 상세 오디오 줄은 해당 로그 옵션을 켜서 실제 관측된 경우 기록합니다.
 - Realtek **1.1.19**, 공식 HMG-API 본체 **1.1.0-rc.7**, 기존 서명의 무선 모드 **2.4.21**(CN7PE·CN7NPE) / **2.4.22**(CN7HEVPE)를 포함합니다.
-- Linux 회귀 48개, 셸 문법 29개, 내보내기 연결 경로와 재현 빌드를 확인했습니다. SHA-256 `be7efa20fe4d4e85ac564ba96bed44cd9385e7e9e7620d205101bf5c7f921c71`. [빌드 및 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44872378639)
+- Linux 회귀 48개, 셸 문법 29개, 내보내기 연결 경로와 재현 빌드를 확인했습니다. SHA-256 `be7efa20fe4d4e85ac564ba96bed44cd9385e7e9e7620d205101bf5c7f921c71`. [빌드 및 검증](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44872378639)
 
 ## USB 합본 v0.1.29
 
@@ -129,21 +129,21 @@
 - **Channel 149 HT20 (USB AP test)**를 켜면 `rtwlan0`의 5GHz 채널 149에서 20MHz로 설정합니다. 제보의 hostapd 시작 로그에 적용한 폭을 남깁니다. [Android hostapd 설정 예제](https://android.googlesource.com/platform/external/wpa_supplicant_8/+/master/hostapd/hostapd.conf)
 - **Defer AP restart during iAP2 (90 s)**를 켜면, 현재 AP의 Bluetooth iAP2 시작 기록을 기준으로 `softap.conf`의 SSID·암호 변경에 따른 재시작만 최대 90초 유예합니다. 동일한 협상의 후속 이벤트는 기한을 연장하지 않습니다. AP 장애 복구와 이미 연결된 CarPlay의 보호는 기존 동작을 따릅니다.
 - GRT47에서 `rtwlan0` 격리 구성, Korea Projection에서 투싼 무선 CarPlay 제보를 확인했습니다. CN7NPE에서 두 설정의 효과와 실제 오디오 출력은 차량 시험 대상입니다. [GRT47](https://github.com/GRT47/HKG_5W_USB_Wlan) · [Korea Projection #125](https://github.com/StopDragon/korea-projection/issues/125)
-- Linux 회귀 45개, 세 차종의 rc.7 옵션 모의 적용·해제, 기존 무선 훅과 본체·드라이버 일치, 셸 문법 29개 및 ZIP 재현 빌드를 확인했습니다. SHA-256 `71049739525c69c2f9b41e0cb7b8cf1067efda77d708433551e3bc6258c7043c`. [빌드 및 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44870998521)
+- Linux 회귀 45개, 세 차종의 rc.7 옵션 모의 적용·해제, 기존 무선 훅과 본체·드라이버 일치, 셸 문법 29개 및 ZIP 재현 빌드를 확인했습니다. SHA-256 `71049739525c69c2f9b41e0cb7b8cf1067efda77d708433551e3bc6258c7043c`. [빌드 및 검증](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44870998521)
 
 ## USB 합본 v0.1.28
 
 - 무선 모드 **2.4.19**(CN7PE·CN7NPE) 및 **2.4.20**(CN7HEVPE)에서 확인된 USB 무선 CarPlay의 iAP2 전환 대기를 1.2초에서 4초로 늘렸습니다. 아이폰 쪽 데이터와 성공한 송신이 아직 없는 경로에서 네이티브 송신이 `rc=19`를 반환하면 동일한 실패를 반복하는 대신, 기존 화면 세션을 보존하며 수신을 기다립니다. 이후 같은 세션의 첫 데이터가 들어오면 이를 보관한 채 새 컴포넌트 5 연결을 시작합니다.
 - Korea Projection **1.7.4.33**의 오디오 스캔은 메인 로그 버퍼를 백그라운드에서 읽습니다. 스캔당 상한은 25초이며 중간 종료돼도 이미 읽은 진단 항목을 현재 부팅 기록에 병합합니다. 제보의 `usb-carplay-audio.log`에는 스캔 종료 코드, 정리한 항목 수, 순정 CarPlay 로그 줄 수와 iAP2 전환 단계가 포함됩니다.
 - 연결 초기 실패 뒤 재개를 모의 검증했습니다. 아이폰 쪽 터널 데이터 유무와 차량 스피커 출력은 실차 시험 대상입니다.
-- Linux 회귀 42개, Android API 19 훅 빌드, rc.7 엔진의 세 차종 모의 적용·복원, 셸 문법 29개 및 USB ZIP 재현 빌드를 확인했습니다. SHA-256 `fc47869a886a02cf0baf86d86be82a2a0857f6847b2ef81cbbbb0a39c472dac4`. [빌드와 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44869289485)
+- Linux 회귀 42개, Android API 19 훅 빌드, rc.7 엔진의 세 차종 모의 적용·복원, 셸 문법 29개 및 USB ZIP 재현 빌드를 확인했습니다. SHA-256 `fc47869a886a02cf0baf86d86be82a2a0857f6847b2ef81cbbbb0a39c472dac4`. [빌드와 검증](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44869289485)
 
 ## USB 합본 v0.1.27
 
 - HMG-API Wireless Mode **2.4.17**에 **Stock Bluetooth handoff (CarPlay audio test)**를 추가했습니다. 기본값은 꺼짐입니다. CN7PE·CN7NPE에서 사용자가 켜고 재부팅하면, 확인된 USB 무선 CarPlay 세션에서 아이폰이 Bluetooth 종료를 요청할 때 차량의 기본 처리를 허용합니다. 다른 헤드유닛에서 Bluetooth와 CarPlay 오디오 경로가 충돌한 사례를 바탕으로 한 대조 시험입니다. [Autochips 사례](https://github.com/riazosama/headunit-carplay/blob/main/docs/GUIDE.md#status-honestly)
 - Korea Projection **1.7.4.32**는 새 부팅 단위의 `usb-carplay-audio.log`를 `3-log.txt`에 포함합니다. 관측된 Bluetooth 전환, 오디오 스트림 설정·오류와 오디오 우선권 요청을 정해진 항목으로 기록합니다. 연결 스냅샷에 `rtwlan0`의 송수신·오류·드롭 누적 카운터를 추가했습니다. [DiPlay의 오디오 수신 문제](https://github.com/shihabal3amri/DiPlay/issues/165)
 - 하이브리드 무선 모드 **2.4.18**은 기존 차량 지도 범위에서 제보 개선을 사용할 수 있습니다. Realtek **1.1.19**와 HMG-API 본체 **1.1.0-rc.7**을 포함합니다. 무선 오디오 출력과 전환 시 연결 유지 여부는 실차 시험 대상입니다.
-- Linux 회귀 42개, Android API 19 훅 빌드, rc.7 엔진의 세 차종 모의 적용·복원, 셸 문법 29개 및 USB ZIP 재현 빌드를 확인했습니다. SHA-256 `80242defd41a4bd0a0d580d584003965d8476cf8ff13475423d5b8d76c075032`. [빌드와 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44772680009)
+- Linux 회귀 42개, Android API 19 훅 빌드, rc.7 엔진의 세 차종 모의 적용·복원, 셸 문법 29개 및 USB ZIP 재현 빌드를 확인했습니다. SHA-256 `80242defd41a4bd0a0d580d584003965d8476cf8ff13475423d5b8d76c075032`. [빌드와 검증](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44772680009)
 
 ## USB 합본 v0.1.26
 
@@ -151,7 +151,7 @@
 - **HMG-API Wireless Mode 2.4.16**은 하이브리드에서 자동 선택됩니다. rc.7에 내장 지도가 없는 차종이므로 내비 파일로 전체 지도를 만든 뒤, 필요한 39개 선언 훅과 네이티브 iAP2 송신 지점을 확인하고 HMG-API 지도 검증을 통과해야 무선 설정을 진행합니다. 생성 및 검증 결과는 `usb-cn7hevpe-map.log`에 남깁니다.
 - 공개 차량 제보 지도에서 확인되지 않는 무선 설정 페이지 대체 및 카플레이 시작 시 Bluetooth 유지 훅은 하이브리드용 선언과 코드에서 제외했습니다. 기존 CN7PE·CN7NPE에는 이전 서명 모드 **2.4.15**를 제공합니다. [CN7HEVPE 차량 제보](https://github.com/StopDragon/korea-projection/issues/390)
 - CN7HEVPE 차량에서 동글 자동 인식, 무선 연결과 유지, 오디오 출력은 시험이 필요합니다.
-- 공개 지도와 필수 지점 대조, 실제 rc.7 엔진의 세 차종 적용·재적용·복원, Linux 회귀 41개, Android API 19 빌드, 셸 문법 29개 및 ZIP 재현 빌드를 확인했습니다. SHA-256 `c68c0ec52ac92ffeb72b225b36cd2f376aaa5d0d4f8a2afd340ffa8bb7fb27e5`. [검사 결과](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44754478562)
+- 공개 지도와 필수 지점 대조, 실제 rc.7 엔진의 세 차종 적용·재적용·복원, Linux 회귀 41개, Android API 19 빌드, 셸 문법 29개 및 ZIP 재현 빌드를 확인했습니다. SHA-256 `c68c0ec52ac92ffeb72b225b36cd2f376aaa5d0d4f8a2afd340ffa8bb7fb27e5`. [검사 결과](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44754478562)
 
 ## USB 합본 v0.1.25
 
@@ -159,14 +159,14 @@
 - **HMG-API Wireless Mode 2.4.15**에 CN7PE 적용 대상을 추가합니다. CN7PE는 무선 모드를 적용하기 전에 rc.7의 차량 지도 확인을 통과해야 합니다. 실패 시 `usb-cn7pe-map.log`를 제보 파일에서 확인할 수 있습니다.
 - **Realtek 1.1.18**은 CN7PE에서도 기존 외부 USB 포트의 고속 복구 조건을 검사하고, 합본의 이전 이름과 새 이름을 모두 USB 지원 패키지로 인식합니다. 커널 모듈, 네이티브 도구와 무선 모드 실행 코드는 v0.1.24와 같습니다.
 - CN7PE의 실차 부팅, AP, 카플레이·AA와 오디오 출력은 시험이 필요합니다. 이전 기기의 안정성 비교를 위해 릴리스와 설치 ZIP을 보존합니다.
-- [rc.7 엔진의 두 차종 계획·적용·재적용·복원 검사, Linux 회귀 38개 및 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44749478094)를 통과했습니다. 완성 ZIP의 셸 문법 29개, 호환 범위, 서명과 재현 빌드도 확인했습니다. SHA-256 `172f550b8f33b123c78deb82ba57606ce2a7fd0c0a56e29b8b0d67fa580e7a23`.
+- [rc.7 엔진의 두 차종 계획·적용·재적용·복원 검사, Linux 회귀 38개 및 Android API 19 빌드](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44749478094)를 통과했습니다. 완성 ZIP의 셸 문법 29개, 호환 범위, 서명과 재현 빌드도 확인했습니다. SHA-256 `172f550b8f33b123c78deb82ba57606ce2a7fd0c0a56e29b8b0d67fa580e7a23`.
 
 ## USB 합본 v0.1.24
 
 - **Korea Projection 1.7.4.29**가 `3-log.txt`의 `usb-boot-timing.log`에 서비스 시작, Android 준비 확인, 480Mbps·rtwlan0 준비, AP 시작 조건 통과, AP 준비, 첫 무선 카플레이 세션 관측 시간을 남깁니다. 각 값은 커널 부팅부터 경과한 초 단위입니다. AP를 재시작해도 첫 기록을 보존하며, 새 부팅은 이전 기록을 제외합니다.
 - 무선 모드 **2.4.14**의 iAP2 전환 시험과 부팅 대기 개선을 함께 사용합니다. `carplay_observed`는 서비스 점검에서 확인한 시각이므로 화면 연결 시각과 차이가 날 수 있습니다.
 - 기존 실차 로그의 Bluetooth 오디오 포커스 요청은 두 번째 카플레이 세션 종료 뒤였습니다. 연결 중 스트림 설정과 차량 출력 등록 여부는 기존 로그로 판단하기 어려워, 순정 CarPlay 진단 로그와 다른 앱 재생을 함께 시험하는 절차를 설치 안내에 추가했습니다.
-- [Linux 회귀 38개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44742073159), 셸 문법 29개와 재현 빌드를 확인했습니다. ZIP SHA-256 `d47c2313045e26e9be2e77d4670162096f5cc340ac7edaafdf8fe8ea5a75c332`.
+- [Linux 회귀 38개](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44742073159), 셸 문법 29개와 재현 빌드를 확인했습니다. ZIP SHA-256 `d47c2313045e26e9be2e77d4670162096f5cc340ac7edaafdf8fe8ea5a75c332`.
 
 ## USB 합본 v0.1.23
 
@@ -174,21 +174,21 @@
 - 중복 SPP 종료, 세션 종료, AP 교체, 유선 연결로 바뀐 상태에서 이전 예약이 전환을 실행하지 않도록 검사합니다. 첫 수신 여부와 길이, 첫 네이티브 송신 반환값을 `USB_CP_HANDOVER`에 남깁니다.
 - v0.1.21 차량에서 두 세션 모두 시작했지만 component 5 전환 뒤 `rc=19`와 `LimitMaxResend`가 기록됐습니다. 오디오 지원 파일 3개는 적용 상태였습니다. 전환 시작 시점의 영향을 확인하는 시험이며 `rc=19`의 의미와 멜론 출력 문제의 직접 원인은 확인이 필요합니다.
 - 부팅 대기 개선은 v0.1.22와 동일합니다. 모드 ID·작성자와 필요한 업데이트 조건을 유지합니다.
-- [Android API 19 빌드와 회귀 검사](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44740466978)에서 Linux 검사 36개, 실제 수정된 전환 코드, rc.7 적용·복구와 지도 호환을 확인했습니다. ZIP의 셸 문법 29개, 모드 서명·업데이트 조건과 동일 입력 재빌드도 확인했습니다. SHA-256 `16fe8ba4f483e71ecdff1bb0e12f203d83a98e7619ca0163b14e5afbda8134a4`.
+- [Android API 19 빌드와 회귀 검사](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44740466978)에서 Linux 검사 36개, 실제 수정된 전환 코드, rc.7 적용·복구와 지도 호환을 확인했습니다. ZIP의 셸 문법 29개, 모드 서명·업데이트 조건과 동일 입력 재빌드도 확인했습니다. SHA-256 `16fe8ba4f483e71ecdff1bb0e12f203d83a98e7619ca0163b14e5afbda8134a4`.
 
 ## USB 합본 v0.1.22
 
 - Korea Projection **1.7.4.27**에서 USB 480Mbps와 `rtwlan0` 준비 후, 기존 설정의 적용 계획·관리 파일·지도 확인 기록을 검사합니다. 복구할 항목이 없으면 기존 120초 권한 확인 대기를 생략합니다. 첫 설치, 업데이트 대기, 설정 불일치, 재부팅 필요 또는 확인 실패 시에는 기존 절차를 따릅니다.
 - `ap.log`에 대기 생략 또는 기존 절차 사용 여부를 남기고, 제보 파일에 `usb-boot-setup.log`를 포함합니다. 드라이버와 HMG-API 본체 및 무선 모드 ZIP을 그대로 사용합니다.
 - v0.1.21 실차 로그의 첫 부팅에서 USB 고속 열거는 부팅 약 10초, AP 준비는 약 148초였습니다. v0.1.22의 실제 단축 시간은 차량에서 측정합니다.
-- [Linux 회귀 36개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44733065568), 셸 문법 29개, 전체 ZIP 재현 빌드를 확인했습니다. SHA-256 `a15e3bdf88779175368adff279beb9f4e0878ea6d79d5e2ae1f907a470c85e69`.
+- [Linux 회귀 36개](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44733065568), 셸 문법 29개, 전체 ZIP 재현 빌드를 확인했습니다. SHA-256 `a15e3bdf88779175368adff279beb9f4e0878ea6d79d5e2ae1f907a470c85e69`.
 
 ## USB 합본 v0.1.21
 
 - 무선 모드의 표시 이름을 **HMG-API Wireless Mode (USB)**에서 **HMG-API Wireless Mode**로, Korea Projection 패키지의 표시 이름을 **Korea Projection CN7NPE USB Test**에서 **Korea Projection CN7NPE BETA**로 변경합니다. USB 목록·설치 후 패키지/모드 목록·설치 및 제거 안내에 반영합니다.
 - 기존 설치에도 새 이름이 반영되도록 Korea Projection **1.7.4.26**, 무선 모드 **2.4.13**으로 갱신합니다. 기존 `USB Test`와 새 `BETA` 이름을 모두 기존 설치 확인 조건에서 허용하고, 같은 패키지/모드 ID·작성자 서명·설정을 유지합니다. Korea Projection CN7NPE BETA만 Update하고 재부팅하며, 모드 적용 안내가 나오면 완료 후 다시 재부팅합니다.
 - HMG-API 본체 **1.1.0-rc.7**와 Realtek Wi-Fi Driver **1.1.17** ZIP은 v0.1.20과 바이트 단위로 동일합니다. 무선 모드는 mod.json의 name/version과 서명 정보만 바꾸며 훅·오디오 파일·네트워크 정책은 그대로입니다. 기능 수정은 포함하지 않습니다.
-- [기존 Linux 회귀 33개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44717133899), 완성 ZIP의 셸 29개 문법·실행 파일/ID/작성자 보존·기존/신규 이름 업데이트 조건·전체 모드 체크섬·동일 입력 재빌드를 확인했습니다.
+- [기존 Linux 회귀 33개](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44717133899), 완성 ZIP의 셸 29개 문법·실행 파일/ID/작성자 보존·기존/신규 이름 업데이트 조건·전체 모드 체크섬·동일 입력 재빌드를 확인했습니다.
 - USB ZIP SHA-256: `00c7e4f1fef4e4edfbb579d82aaa694fb7577e3674471262d81582daa3037de4`. 이전 릴리스·태그·ZIP을 보존하고 새 완성 USB ZIP을 **Latest**로 등록합니다.
 
 ## USB 합본 v0.1.20
@@ -197,7 +197,7 @@
 - 기존 설치에서도 새 이름이 반영되도록 Korea Projection **1.7.4.25**, 드라이버 **1.1.17**, 무선 모드 **2.4.12**로 갱신합니다. Korea Projection 하나를 Update하면 같은 USB의 드라이버와 포함된 모드가 갱신됩니다. 본체는 **1.1.0-rc.7**을 유지합니다.
 - 패키지/모드 ID와 기존 작성자 키를 유지해 설정·업데이트 경로를 보존합니다. 먼저 제거할 필요가 없습니다. 무선 모드 갱신 뒤에는 재부팅하고 적용 안내가 나오면 완료 후 다시 재부팅합니다.
 - 드라이버는 NEMESIS 설명자만 변경합니다. 무선 모드는 기존 검증 ZIP의 mod.json에서 name/version만 변경하고 같은 작성자로 다시 서명합니다. 커널 모듈·드라이버 셸·hooks.jar·오디오 지원 파일·네트워크 정책은 v0.1.19와 바이트 단위로 동일합니다. Korea Projection의 버전·의존성·설치 허용 범위·모드 버전/체크섬을 함께 갱신합니다. 기능 수정이나 실차 증상 해결을 주장하는 배포는 아닙니다.
-- [기존 Linux 회귀 33개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44715211965), 최종 ZIP의 셸 29개 문법·이전 코드 보존·같은 ID/작성자 서명·업데이트 허용 범위·전체 모드 파일 체크섬·동일 입력 재빌드를 확인했습니다.
+- [기존 Linux 회귀 33개](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44715211965), 최종 ZIP의 셸 29개 문법·이전 코드 보존·같은 ID/작성자 서명·업데이트 허용 범위·전체 모드 파일 체크섬·동일 입력 재빌드를 확인했습니다.
 - USB ZIP SHA-256: `b6f55de31ebfd1b22a7bef79d562cc6968710d6c259789d06f74450f065dc9c1`. 이전 릴리스·태그·ZIP을 보존하고 새 완성 USB ZIP 한 개를 **Latest**로 등록합니다.
 
 ## USB 합본 v0.1.19
@@ -209,7 +209,7 @@
 - v0.1.18 로그에서는 수동 재장착 전에 EHCI **480Mbps**와 `rtwlan0`·드라이버 준비를 통과했고, 17:51:50 이후 HMG-API 설정을 기다렸습니다. 17:53 분리·17:53:10 재장착과 겹쳐 재장착이 반드시 필요했다고 확정할 수 없습니다. [부팅/오디오 분석](docs/boot-audio-log-2026-11-20.md)에 근거·미확인 사항을 기록합니다.
 - 멜론이 휴대폰에서 재생된 증상은 오디오 지원 파일 적용 후 재시험이 필요합니다. iAP2 전송 반환값 19와 식별 실패가 있지만 정확한 의미·오디오 증상과의 인과는 미확인입니다. 차량 오디오 형식 패치의 적용 기록도 있어 모든 오디오 패치가 빠졌다고 판단하지 않습니다.
 - HMG-API **1.1.0-rc.7**, 무선 모드 **2.4.11**, Realtek **1.1.16**과 네이티브 도구는 v0.1.18과 바이트 단위로 동일합니다. 드라이버 재열거 방식을 추가 변경하지 않았으며 Realtek의 별도 `awk: not found` 진단 제한은 남아 있습니다.
-- [Linux 회귀 33개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44713724656), 최종 ZIP의 29개 셸 문법, 공식 파일/지도 493개 해시·41개 훅 지도 호환·서명·의존성/업데이트 조건·전체 모드 파일 체크섬·이전 상태 보존·동일 입력 재빌드를 확인했습니다. 실제 자동 부팅 및 음악 출력은 실차 검증이 필요합니다.
+- [Linux 회귀 33개](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44713724656), 최종 ZIP의 29개 셸 문법, 공식 파일/지도 493개 해시·41개 훅 지도 호환·서명·의존성/업데이트 조건·전체 모드 파일 체크섬·이전 상태 보존·동일 입력 재빌드를 확인했습니다. 실제 자동 부팅 및 음악 출력은 실차 검증이 필요합니다.
 - USB ZIP SHA-256: `2399589a53de7fb46629e19651d9ed7e5668e17fd97c13e1d14e9886fb0e009e`. 이전 릴리스·태그·ZIP을 보존하고 새 완성 USB ZIP 한 개를 **Latest**로 등록합니다.
 
 ## 문서 정리 (2026-11-20)
@@ -228,7 +228,7 @@
 - 차량 보고서의 기존 351개 지도에는 상위 모드 선언 49개 중 신규 8개가 없습니다. 이 선언을 넣으면 모드 전체가 거부되므로 호환되는 41개로 제한하고 새 PPService 다중 폰 제어·US/Canada 팝업·AA 주차 소비자를 등록하지 않습니다. 카플레이 주차/복귀도 추가 지도 점이 있어야 켜집니다. 기존 지도에는 그 점이 없어 현재 활성화를 보장하지 않습니다. 이전 한국판의 `tbt_fit`·별표 팝업 건너뛰기는 이식하지 않았습니다. [호환성 검토](docs/compatibility-rc7-rc8-usb.md).
 - 기존 USB 대역 TCP/UDP·IPv6 UDP 6031 정책을 유지하고 AA TCP 40515를 rtwlan0 대역에 한정해 추가합니다. 기존 설정 보존 도구 `usb_network allow`를 모드 업데이트 뒤에도 호출해 rc.7 엔진에서 USB 규칙이 생략되지 않도록 합니다.
 - Realtek **1.1.16** ZIP·커널 모듈·EHCI 복구 도구·단말/mDNS 도구는 v0.1.17과 바이트 단위로 동일합니다. 이번 교체가 USB 12Mbps 문제의 추가 드라이버 수정이나 실차 카플레이 성공 확인을 의미하지 않습니다.
-- [회귀 24개·실제 수정 Bridge/UsbAp/ParkCp·상위 CpTx/재이관 91개와 경로 안내 60개 검사·Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44701743445)를 통과했습니다. 실제 rc.7 엔진으로 CN7NPE KOR의 SDIO 없는 설치 계획/적용/재적용/바이트 동일 복원, USB 규칙과 네이티브 지원 파일을 확인했습니다. 실제 HookPlan은 351개 지도에서 이식판을 허용하고 상위 원본의 신규 선언을 거부했습니다. 사유 제조사 라이브러리가 필요한 네이티브 레시피 검사는 해당 파일이 없어 건너뛰었으며 실차 검증은 남아 있습니다.
+- [회귀 24개·실제 수정 Bridge/UsbAp/ParkCp·상위 CpTx/재이관 91개와 경로 안내 60개 검사·Android API 19 빌드](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44701743445)를 통과했습니다. 실제 rc.7 엔진으로 CN7NPE KOR의 SDIO 없는 설치 계획/적용/재적용/바이트 동일 복원, USB 규칙과 네이티브 지원 파일을 확인했습니다. 실제 HookPlan은 351개 지도에서 이식판을 허용하고 상위 원본의 신규 선언을 거부했습니다. 사유 제조사 라이브러리가 필요한 네이티브 레시피 검사는 해당 파일이 없어 건너뛰었으며 실차 검증은 남아 있습니다.
 - 최종 ZIP의 29개 셸 문법·공식 본체/서명·같은 작성자 키·의존성/업그레이드 조건·이전 rc.4 업데이트의 상태 보존·드라이버 보존·동일 입력 재빌드를 확인했습니다. USB ZIP SHA-256: `c49b5052ed26fdaa428fbc89eed3df98b8e641423a3895fe9ff8859c95fe9a87`.
 - 이전 릴리스·태그·설치 ZIP을 보존하고 새 완성 USB ZIP을 Latest로 등록합니다.
 
@@ -240,7 +240,7 @@
 - Korea Projection **1.7.4.22**: Realtek 1.1.16 이상을 같은 USB에서 먼저 설치/업데이트합니다. 로그의 20초 뒤 종료 코드 143/`Terminated`와 일치하는 드라이버 호출 제한을 **90초**로 늘려 정상적인 호스트 복구·열거 확인을 중간 종료하지 않도록 합니다.
 - 각 복구 시도의 시작 uptime, EHCI 열거 준비/시간 초과/신호 결과와 USB 버스 재번호화 전후의 커널 로그를 `speed.log`에 기록합니다. AP 제보 커널 필터도 현재 포트에 한정하지 않고 직결 포트 1과 외부 플랫폼 호스트 메시지를 포함합니다. 로그의 시리얼·SSID·비밀 값은 제외하고 기록량을 제한합니다.
 - 커널 모듈·무선 모드 **2.4.10**·HMG-API 본체 **1.1.0-rc.4**와 카플레이/iAP2·방화벽 정책은 유지합니다. 실제 480Mbps 확인 전에는 AP를 시작하지 않습니다. 12/480Mbps는 USB 버스 속도이며 실제 Wi-Fi 처리량과 다릅니다. 실차의 480Mbps 자동 전환은 아직 확인이 필요합니다.
-- [실제 C 코드 모의 검사 및 24개 회귀 검사·Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44680540924), 29개 셸 문법, 업데이트 의존성/90초 제한·서명·기존 구성 보존·동일 입력 재빌드를 확인했습니다. USB ZIP SHA-256: `773ebcc1e222caddbe4497b45fa1777a7ad6f5918c0533b4f8e62c0f52dddab4`.
+- [실제 C 코드 모의 검사 및 24개 회귀 검사·Android API 19 빌드](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/actions/runs/44680540924), 29개 셸 문법, 업데이트 의존성/90초 제한·서명·기존 구성 보존·동일 입력 재빌드를 확인했습니다. USB ZIP SHA-256: `773ebcc1e222caddbe4497b45fa1777a7ad6f5918c0533b4f8e62c0f52dddab4`.
 - 이전 릴리스·태그·설치 ZIP을 보존하고 새 완성 USB ZIP을 Latest로 등록합니다.
 
 ## USB 합본 v0.1.16

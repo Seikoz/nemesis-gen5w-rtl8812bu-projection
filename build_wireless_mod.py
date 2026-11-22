@@ -227,7 +227,7 @@ def rebase_files(base, hooks, previous):
         f'HMG-API USB wireless mod {VERSION} (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
-        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.42/projection-source\n'
+        'Local patches: https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/cn7npe-usb-bundle-v0.1.42/projection-source\n'
         'CarPlay HUD input and display behavior adapted from ch0iiih/HMG_Phone_Projection_TBT (AGPL-3.0):\n'
         'https://github.com/ch0iiih/HMG_Phone_Projection_TBT/tree/daeaf32a6fa3c3540c74c93611dad7dedb6d417e\n'
         'AGPL-3.0. Signed by the existing local author; not an unmodified official package.\n'

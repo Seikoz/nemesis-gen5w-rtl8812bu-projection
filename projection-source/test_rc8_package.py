@@ -17,7 +17,7 @@ def fetch(url,digest):
     return data
 base=fetch('https://github.com/Open-HMG/HMG-API/releases/download/v1.1.0-rc.7/wireless-carplay-aa-2.2.0-rc.8.zip',
            '4837efbfc1e71a7f30c65c7d914dc7d00aa788cc7ab4ea17b1a1860e6e96d4ee')
-bundle=fetch('https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/download/cn7npe-usb-bundle-v0.1.17/NEMESIS-CN7NPE-260902-Bundle-v0.1.17-USB.zip',
+bundle=fetch('https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases/download/cn7npe-usb-bundle-v0.1.17/NEMESIS-CN7NPE-260902-Bundle-v0.1.17-USB.zip',
              '773ebcc1e222caddbe4497b45fa1777a7ad6f5918c0533b4f8e62c0f52dddab4')
 with ZipFile(BytesIO(bundle)) as b:
     with ZipFile(BytesIO(b.read('packages/korea.projection.zip'))) as kp:

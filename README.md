@@ -7,7 +7,7 @@
 >
 > 모든 책임은 설치하신 차주 본인에게 있습니다.
 
-**[최신 공개 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)** · [설치·제거 상세 안내](bundle/INSTALL-KO.md) · [전체 변경 이력](CHANGELOG.md)
+**[최신 공개 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases/latest)** · [설치·제거 상세 안내](bundle/INSTALL-KO.md) · [전체 변경 이력](CHANGELOG.md)
 
 ## 지원 환경
 
@@ -90,11 +90,11 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 
 v0.1.47 USB ZIP SHA-256 `d7b06e7b5e24bf30a3ebaf01b603d53fca68f65e5a63ae516d010281531de6da`
 
-[전체 변경 이력](CHANGELOG.md) · [이전 릴리스와 설치 ZIP](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.36/README.md#검증-범위)
+[전체 변경 이력](CHANGELOG.md) · [이전 릴리스와 설치 ZIP](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/blob/cn7npe-usb-bundle-v0.1.36/README.md#검증-범위)
 
 ## 소스와 라이선스
 
 - [Realtek 드라이버·USB 복구 도구](driver-source/README.md) · [USB 합본 스크립트](bundle)
-- [Korea Projection 원본](https://github.com/StopDragon/korea-projection/tree/v1.7.4) · [CN7NPE USB 이식 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
+- [Korea Projection 원본](https://github.com/StopDragon/korea-projection/tree/v1.7.4) · [CN7NPE USB 이식 소스](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
 - [공식 HMG-API rc.8](https://github.com/Open-HMG/HMG-API/tree/v1.1.0-rc.8) · [기반 무선 모드 2.2.0-rc.8](https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc)
 - [무선 모드 이식 소스](projection-source) · [차량 지도 호환성](docs/compatibility-rc7-rc8-usb.md) · [HMG-API AGPL-3.0 라이선스](bundle/licenses/HMG-API-AGPL-3.0.txt)

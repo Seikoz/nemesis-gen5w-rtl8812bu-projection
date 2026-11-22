@@ -2,7 +2,7 @@ The two GPL-2.0 Realtek 88x2bu kernel modules were extracted byte-for-byte
 from GRT47/HKG_5W_USB_Wlan v2.0.7. See MODULE-LICENSE.txt for the license.
 
 Complete corresponding source, configs, and rebuild instructions:
-https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/ae2043044b17c9c494f5e83c33a8c7f4e04b9004/driver-source
+https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/ae2043044b17c9c494f5e83c33a8c7f4e04b9004/driver-source
 
 Original release: https://github.com/GRT47/HKG_5W_USB_Wlan/releases/tag/v2.0.7
 Original release ZIP SHA-256: 1545bc400cfc32693f2fd0a1db155441ee753f35bf25d0b1485cf7d1b46673c3

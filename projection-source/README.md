@@ -20,7 +20,7 @@ bash projection-source/compile_rc8.sh projection-output
 python3 -m unittest discover -s tests -v
 ```
 
-To sign the wireless mods, obtain the [official 2.2.0-rc.8 mod ZIP](https://github.com/Open-HMG/HMG-API/releases/download/v1.1.0-rc.7/wireless-carplay-aa-2.2.0-rc.8.zip) and extract the signed prior mod `hmgapi/wireless-carplay-aa.zip` from `packages/korea.projection.zip` inside the [v0.1.17 installer](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/tag/cn7npe-usb-bundle-v0.1.17). The signing script checks both inputs by SHA-256. Use the existing release author key to produce an upgrade that installed copies will accept.
+To sign the wireless mods, obtain the [official 2.2.0-rc.8 mod ZIP](https://github.com/Open-HMG/HMG-API/releases/download/v1.1.0-rc.7/wireless-carplay-aa-2.2.0-rc.8.zip) and extract the signed prior mod `hmgapi/wireless-carplay-aa.zip` from `packages/korea.projection.zip` inside the [v0.1.17 installer](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases/tag/cn7npe-usb-bundle-v0.1.17). The signing script checks both inputs by SHA-256. Use the existing release author key to produce an upgrade that installed copies will accept.
 
 ```sh
 python3 build_wireless_mod.py --base-mod wireless-carplay-aa-2.2.0-rc.8.zip \
@@ -32,7 +32,7 @@ python3 build_wireless_mod.py --hybrid --previous-mod wireless-avante.zip \
 python3 build_usb_bundle.py --help
 ```
 
-[build_usb_bundle.py](../build_usb_bundle.py) packages the signed mods with the pinned Realtek and Korea Projection base ZIPs, the official HMG-API core package and the ARMv7 helpers. The prebuilt USB install ZIP is available from [GitHub Releases](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest).
+[build_usb_bundle.py](../build_usb_bundle.py) packages the signed mods with the pinned Realtek and Korea Projection base ZIPs, the official HMG-API core package and the ARMv7 helpers. The prebuilt USB install ZIP is available from [GitHub Releases](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases/latest).
 
 Build the Android 4.4 dashboard with [dashboard-app/build.py](../dashboard-app/build.py). Pass the signed APK to the USB builder via `--dashboard-apk`. Keep the dashboard signing key outside the checkout and reuse it for upgrades.
 
@@ -41,5 +41,5 @@ Build the Android 4.4 dashboard with [dashboard-app/build.py](../dashboard-app/b
 - The [CN7HEVPE test fixture](fixtures/cn7hevpe-kor-260902-wireless-points.txt) records the relevant hook names from the verified KOR 260902 map. The package test checks that the hybrid declarations fit this fixture and that the unmodified upstream declarations are refused.
 - [Vehicle map compatibility review](../docs/compatibility-rc7-rc8-usb.md)
 - [Version history and vehicle results](../CHANGELOG.md)
-- [v0.1.14 session and handover source](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.14/projection-source)
-- [v0.1.35 standalone audio test source](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.35/projection-source/cn7npe-carrier)
+- [v0.1.14 session and handover source](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/cn7npe-usb-bundle-v0.1.14/projection-source)
+- [v0.1.35 standalone audio test source](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/cn7npe-usb-bundle-v0.1.35/projection-source/cn7npe-carrier)

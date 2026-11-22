@@ -1,6 +1,6 @@
 # Release conventions
 
-- The project display name is `NEMESIS RTL8812BU Gen5W Wireless Projection`. The GitHub repository is `Seikoz/nemesis-rtl8812bu-gen5w`.
+- The project display name is `NEMESIS RTL8812BU Gen5W Wireless Projection`. The GitHub repository is `Seikoz/nemesis-gen5w-rtl8812bu-projection`.
 - Describe RTL8812BU driver detection, USB access point operation, and wireless CarPlay and Android Auto testing on supported Gen5W head units.
 - Publish one finished USB installation ZIP per release. Extracting this ZIP onto a FAT32 USB drive must be sufficient for installation.
 - Use an English release title beginning with the project display name and version, followed by the scope of the release.

@@ -38,7 +38,7 @@ HUD는 별도 **Phone Projection TBT**를 설치해 **켜짐**으로 사용하�
 ## 재시도 및 제거
 
 - HMG-API가 응답하지 않으면 내비게이션을 재부팅한 뒤 같은 USB에서 Korea Projection 설치를 다시 선택합니다.
-- 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. 별도로 설치한 패키지가 있다면 각 패키지의 제거 순서를 확인하세요. [Korea Projection 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
+- 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. 별도로 설치한 패키지가 있다면 각 패키지의 제거 순서를 확인하세요. [Korea Projection 제거 안내](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
 
 ## 제보 파일 저장
 
@@ -50,4 +50,4 @@ HUD는 별도 **Phone Projection TBT**를 설치해 **켜짐**으로 사용하�
 
 **Wireless Mode → CarPlay 상세 로그 (문제 진단)**를 켜고 재부팅합니다. 다운로드한 곡을 무선 CarPlay로 재생한 뒤 간격을 두고 세 번 넘깁니다. 버튼을 누른 시각, 제목이 바뀐 시각, 소리가 들리기 시작한 시각을 기록합니다. 마지막 전환 약 1분 뒤 제보 파일을 저장합니다.
 
-[전체 변경 이력](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/main/CHANGELOG.md) · [이전 버전 진단 절차](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.40/bundle/INSTALL-KO.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
+[전체 변경 이력](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/blob/main/CHANGELOG.md) · [이전 버전 진단 절차](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/blob/cn7npe-usb-bundle-v0.1.40/bundle/INSTALL-KO.md) · [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md#53-install-on-the-unit)
