@@ -1,0 +1,18 @@
+{
+  "id": "cn7npe-usb-carplay-carrier-test",
+  "name": "CN7NPE USB CarPlay Audio Test",
+  "version": "0.1.0",
+  "hmgapi": "=1.1.0-rc.7",
+  "license": "AGPL-3.0-only",
+  "description": "Tests the CN7 PE rtwlan0 carrier fix on a matching CN7NPE CarPlay library.",
+  "system": {
+    "product": ["CN7NPE.KOR.0000.V039.001.260902", "CN7NPE.KOR.S5W_M.V039.001.260902"],
+    "platform": "tcc803x"
+  },
+  "requires": [{"id": "wireless-carplay-aa", "version": "=2.4.21"}],
+  "hooks": {
+    "jar": "hooks.jar",
+    "entry": "hmgapi.mods.cn7npecarrier.UsbWifiCarrier",
+    "native": {"libCarPlayCoreUtils.so": ["recipes/usb-wifi-name.recipe"]}
+  }
+}

@@ -1,8 +1,6 @@
 # Read-only snapshots. They never add/flush rules, reset counters or start mDNS daemons.
-usb_carplay_coreutils_report() {
+usb_carplay_coreutils_md5() {
   local library="$1" md5
-  echo
-  echo '== CarPlay native library fingerprint'
   if [ ! -f "$library" ]; then
     md5=missing
   elif [ ! -r "$library" ]; then
@@ -14,7 +12,13 @@ usb_carplay_coreutils_report() {
   else
     md5=hash-failed
   fi
-  echo "libCarPlayCoreUtils.so.md5=$md5"
+  echo "$md5"
+}
+
+usb_carplay_coreutils_report() {
+  echo
+  echo '== CarPlay native library fingerprint'
+  echo "libCarPlayCoreUtils.so.md5=$(usb_carplay_coreutils_md5 "$1")"
 }
 
 usb_firewall_snapshot() {

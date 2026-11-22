@@ -7,6 +7,12 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.34
+
+- Korea Projection **1.7.4.39**에 **CN7NPE USB CarPlay Audio Test**를 포함했습니다. CN7NPE 260902에서 순정 라이브러리 MD5가 참조값과 일치하고 무선 모드가 준비되면 오디오 보정을 자동 설치·적용합니다.
+- 시작·보류 결과를 제보 `usb-carrier.log`에 남기고, 합본이 직접 설치한 보정만 제거 시 정리합니다. 기존 드라이버·HMG-API·무선 모드를 사용합니다. [설치 및 원복](projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)
+- 설치·적용·재부팅·제거 경로와 ZIP 재현 빌드를 확인했습니다. SHA-256 `f26c0786e408154ef84b13b601b053a7b76c4e7f91283a16a65e6118ef89affe`.
+
 ## USB 합본 v0.1.33
 
 - Korea Projection **1.7.4.38**에서 `printf`가 빠진 CN7NPE 차량 셸에서도 CarPlay CoreUtils MD5를 `3-log.txt`에 기록하도록 수정합니다.

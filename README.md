@@ -42,9 +42,9 @@
 
 ## 패키지 구성
 
-| 구성 요소 / 표시 이름 | v0.1.33 버전 | 역할 |
+| 구성 요소 / 표시 이름 | v0.1.34 버전 | 역할 |
 | --- | --- | --- |
-| Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA | **1.7.4.38** | 설치 의존성, USB AP·DHCP 운영, 부팅별 시험 로그 저장, CarPlay CoreUtils MD5 수집 |
+| Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA | **1.7.4.39** | 설치 의존성, USB AP·DHCP 운영, 부팅별 제보, CN7NPE 오디오 보정 시험 |
 | Realtek Wi-Fi Driver | **1.1.19** | RTL8812BU 커널 모듈 로드, 동글 바인딩, 부팅 감시와 제한된 USB 고속 복구 |
 | HMG-API 본체 | **1.1.0-rc.7** / NEMESIS 패키지 **1.0.99.7** | 시스템 훅·차량 지도·모드 설치 및 적용 |
 | HMG-API Wireless Mode | **2.4.21** (CN7PE·CN7NPE) / **2.4.22** (CN7HEVPE) | 공식 **2.2.0-rc.8** 기반 USB 이식판. AP 대기·카플레이 세션·iAP2 처리 |
@@ -52,6 +52,8 @@
 무선 모드는 이 프로젝트의 작성자 키로 서명합니다. HMG-API 본체는 공식 rc.7 ZIP을 사용합니다.
 
 NEMESIS USB 목록에서 **Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA**를 선택합니다. 기존 CN7NPE 합본과 패키지 ID·모드 ID·작성자 서명을 공유합니다. CN7PE·CN7HEVPE 신규 설치는 Install, 기존 CN7NPE 합본은 Update를 선택합니다.
+
+v0.1.34의 Korea Projection에 **CN7NPE USB CarPlay Audio Test**가 포함돼 있습니다. 아반떼 N 260902에서 순정 라이브러리 해시가 일치하고 무선 모드가 준비되면 자동으로 설치·적용합니다. 시험과 원복 순서는 [CN7NPE 오디오 시험 안내](projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)를 따릅니다.
 
 USB에 풀었을 때의 기본 구조는 다음과 같습니다.
 
@@ -223,6 +225,10 @@ CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth h
 
 ## 검증 범위
 
+### v0.1.34 오디오 보정 통합
+
+- CN7NPE와 순정 라이브러리 조건, 자동 설치·적용·제거, 다른 변경이 대기 중일 때의 보류와 이전 동작 복구를 모의 검증했습니다. 차량의 보정 적용과 실제 스피커 출력은 추가 확인이 필요합니다.
+
 ### v0.1.33 CarPlay 진단 및 업데이트
 
 - `printf`가 없는 셸에서의 MD5 출력, 기존 모드가 설치된 v0.1.32에서의 업데이트, ZIP 재현 빌드와 셸 문법 29개를 검증했습니다. 차량에서 MD5 수집과 실제 오디오 출력은 추가 확인이 필요합니다.
@@ -292,10 +298,10 @@ CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth h
 
 위 검사는 소스·빌드·모의 환경·배포 파일 검증입니다. 실제 차량의 RF 성능·USB PHY·화면·음성 정상 동작을 대신 검증한 결과가 아닙니다.
 
-**v0.1.33 USB ZIP SHA-256**
+**v0.1.34 USB ZIP SHA-256**
 
 ```text
-86898eabdda59b672ea6f852ba54605980fdddc689389e857b421e7386720d7a
+f26c0786e408154ef84b13b601b053a7b76c4e7f91283a16a65e6118ef89affe
 ```
 
 <details>
@@ -337,6 +343,7 @@ CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth h
 
 | 합본 버전 | 변경 사항 |
 | --- | --- |
+| v0.1.34 | CN7NPE 오디오 보정을 Korea Projection에 통합하고 차량·라이브러리 검증 뒤 자동 설치 및 적용 |
 | v0.1.33 | `printf`가 없는 차량 셸에서도 CarPlay CoreUtils MD5가 제보 파일에 표시되도록 수정 |
 | v0.1.32 (로컬 테스트) | 제보 USB의 `3-log.txt`에 CarPlay CoreUtils 라이브러리 MD5 수집, 기존 합본 업데이트 호환성 수정 |
 | v0.1.31 (로컬 테스트) | 순정 DipoService 오디오 타입과 음악·전화·Siri 우선권, 네이티브 iAP 송신 호출 집계, IPv6 UDP 6031 적용 규칙 집계 수정. [CN7HEV 성공·CN7PE 오디오 실패 로그 대조](docs/cn7hev-issue-103.md) |
@@ -379,7 +386,7 @@ CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth h
 - 새 합본은 GitHub **Latest**로 등록하고 완성된 USB 설치 ZIP 한 개를 제공합니다.
 - **이전 릴리스·태그·설치 ZIP을 보존**해 버전별 다운로드를 유지합니다.
 - 영문 프로젝트/릴리스 이름을 사용하고, 변경 내용은 README와 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
-- 이 README의 현재 설치 안내는 v0.1.33 기준입니다.
+- 이 README의 현재 설치 안내는 v0.1.34 기준입니다.
 
 [최신 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest) · [전체 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases)
 

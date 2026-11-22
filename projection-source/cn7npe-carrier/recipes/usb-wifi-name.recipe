@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# CN7 PE SocketGetInterfaceInfo name-table recipe, reused for an identical stock library.
+id cn7npe-rtwlan0-carrier
+file /system/lib/libCarPlayCoreUtils.so
+verify 0x8a2b8 32 62d631cf8aeb4aa9d35744eb2a466ca2 718e734ade4f4ab6ec8ca8ce4c5667c3
+patch 0x8a2c8 7274776c616e3000

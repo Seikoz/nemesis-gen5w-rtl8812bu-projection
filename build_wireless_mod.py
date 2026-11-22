@@ -54,7 +54,7 @@ def json_bytes(value):
     return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
 
 
-def verify_mod(data, version=VERSION, author=AUTHOR):
+def verify_mod(data, version=VERSION, author=AUTHOR, mod_id=MOD):
     with zipfile.ZipFile(io.BytesIO(data)) as package:
         names = package.namelist()
         if len(names) != len(set(names)) or package.testzip() is not None:
@@ -64,9 +64,9 @@ def verify_mod(data, version=VERSION, author=AUTHOR):
     signature = base64.b64decode(files.pop('META-HMGAPI/signature'), validate=False)
     manifest = json.loads(manifest_bytes)
     mod = json.loads(files['mod.json'])
-    if manifest['uuid'] != author or manifest['id'] != MOD or manifest['version'] != version:
-        raise ValueError('Unexpected wireless mod author, ID or version')
-    if mod['id'] != MOD or mod['version'] != version:
+    if manifest['uuid'] != author or manifest['id'] != mod_id or manifest['version'] != version:
+        raise ValueError('Unexpected mod author, ID or version')
+    if mod['id'] != mod_id or mod['version'] != version:
         raise ValueError('Signed manifest does not match mod metadata')
     public = base64.b64decode(manifest['key'], validate=True)
     derived = bytearray(hashlib.sha256(public).digest()[:16])
