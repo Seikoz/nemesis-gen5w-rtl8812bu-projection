@@ -2,7 +2,7 @@
 
 대상은 국내형 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE의 `V039.001.260902` Gen5W(TCC803x), ipTIME A3000mini(`0bda:b812`)입니다. CN7HEVPE는 실차 시험 대상입니다. NEMESIS Manager **1.16.7 이상**의 USB Package Store를 사용합니다.
 
-- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.43** — 설치·AP·연결 관리 및 CN7NPE 오디오 보정 통합
+- Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA **1.7.4.44** — 설치·AP·연결 관리 및 무선 CarPlay 곡 전환 진단
 - HMG-API Wireless Mode **2.4.25** (CN7PE·CN7NPE) / **2.4.26** (CN7HEVPE) — HMG-API 안의 무선 모드 (공식 2.2.0-rc.8 기반 USB 이식판)
 - Realtek Wi-Fi Driver **1.1.19** — RTL8812BU 무선랜 드라이버
 - HMG-API 본체 **1.1.0-rc.8**, NEMESIS 패키지 버전 **1.0.99.8**. [공식 릴리스](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.8)
@@ -11,12 +11,18 @@
 
 1. 합본 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages` 폴더가 루트에 있어야 합니다. `packages` 안의 ZIP 세 개는 압축 상태로 둡니다.
 2. 주차 상태에서 USB 메모리를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA**를 선택하고 **Install** 또는 **Update**를 누릅니다.
-3. 설치 계획을 승인합니다. HMG-API rc.8과 Realtek Wi-Fi Driver 1.1.19가 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 Korea Projection BETA `1.7.4.1`~`1.7.4.42`는 업데이트할 수 있습니다.
+3. 설치 계획을 승인합니다. HMG-API rc.8과 Realtek Wi-Fi Driver 1.1.19가 필요한 경우 NEMESIS가 먼저 설치하거나 업데이트합니다. 기존 Korea Projection BETA `1.7.4.1`~`1.7.4.43`은 업데이트할 수 있습니다.
 4. USB 메모리를 빼고 A3000mini를 꽂습니다. HMG-API 무선 모드 적용·재부팅 안내를 따릅니다. Korea Projection에 **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 연결합니다.
 
 CN7NPE 오디오 보정은 **HMG-API Wireless Mode 2.4.25**에 포함됩니다. 예전 오디오 테스트 항목을 이미 삭제한 차량도 같은 Korea Projection 업데이트를 설치하면 보정을 받을 수 있습니다. 음악을 재생해 차량 스피커를 확인하고, 제보에서는 `cn7npe-rtwlan0-carrier: applied`를 확인합니다.
 
 CarPlay HUD를 시험할 때는 HMG-API에서 **Phone Projection TBT**를 끄고 **Wireless Mode → Turn-by-turn on the cluster and HUD**를 켠 뒤 재부팅합니다. CarPlay 지도 앱으로 경로를 시작해 다음 회전 방향과 거리가 HUD에 표시되는지 확인합니다. 제보에서 `CarPlay: route guidance Start-only result=`와 `CarPlay: first HUD turn submitted`를 확인할 수 있습니다.
+
+## 무선 곡 전환 무음 시험
+
+1. 주차 상태에서 **HMG-API Wireless Mode → CarPlay's own log (troubleshooting)**를 켜고 재부팅합니다.
+2. 무선 CarPlay가 연결되면 가능한 한 초기에 같은 다운로드 곡을 재생하고, 전환 사이에 몇 초를 두고 다음 곡을 세 번 눌러 봅니다. 제목이 바뀐 시각, 무음 길이, 새 곡이 들리기 시작한 시각을 기록합니다.
+3. 마지막 곡 전환 뒤 약 1분 기다린 다음 제보 USB로 교체해 **제보 파일 만들기**를 실행합니다. `3-log.txt`의 `usb-carplay-audio.log`에 얻을 수 있었던 음악 정보 갱신, 버퍼 비우기, AAC 디코딩 시작, 출력 버퍼 고갈 신호와 초기 출력 스레드 상태가 들어갑니다. 이 로그는 스피커에서 실제로 소리가 나온 시각을 측정하지 않습니다.
 
 HMG-API가 응답하지 않으면 내비게이션을 재부팅하고 같은 USB에서 Korea Projection 설치를 다시 선택합니다. 다른 Korea Projection 패키지나 별도로 설치한 무선 모드가 있다면 기존 패키지의 제거 순서를 확인하세요. 합본을 제거할 때는 Korea Projection을 먼저 제거합니다. [Korea Projection 이식 소스와 제거 안내](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
 

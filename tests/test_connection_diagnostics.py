@@ -120,6 +120,7 @@ EOF
             setup = r'''
 PATH=$TEST_BIN
 W="$PWD" PROC="$PWD/proc" BB=bb BB_OWN=bb UPTIME="$PWD/uptime"
+CP_EVENT_BOOT=new-boot CP_EVENT_RECORD=v1,123,99,gen,100,1,started,1
 USB_TRIAL_DIR="$W/trial" USB_TRIAL_BOOT=new-boot
 mkdir "$USB_TRIAL_DIR"
 usb_ap_live() { return 1; }
@@ -161,6 +162,13 @@ logcat() {
 11-21 12:01:00.014 123 456 I TccCarPlay: [TccCarPlay] TccCarPlay_iAPSendMessage() : data(0x6015C788) size(9)
 11-21 12:01:00.015 123 456 I CarPlay_: [ DipoService ] changeAudioFocus() ResourceOwner.PrivateDevice AudioTye:PrivateDevice, mIsMusicAudioFocusGained:true
 11-21 12:01:00.016 123 456 I CarPlay_: [ DipoService ] updateCarPlayMusicSSOSD : PrivateDevice
+11-21 12:01:00.017 123 456 I TccCarPlay: FLUSHBUFFERED Private iPhone
+11-21 12:01:00.018 123 456 I TccCarPlay: Main buffered audio setting up AAC-LC for Private iPhone
+11-21 12:01:00.019 123 456 I LeafiaAAC: AAC-LC decoder up: 48000 Hz, 2 ch, 1024 frames/packet
+11-21 12:01:00.020 123 456 I LeafiaAAC: first packet decoded: 1024 frames, 2 ch, 48000 Hz
+11-21 12:01:00.021 123 456 W AudioTrack: disabled due to previous underrun
+11-21 12:01:00.022 123 456 W AudioTrack: another underrun
+11-21 12:01:01.022 345 456 W AudioTrack: unrelated underrun
 EOF
   return "$status"
 }
@@ -206,8 +214,66 @@ usb_watch_carplay_audio
             self.assertIn('dipo_audio_focus owner=controller type=unknown music_focus=true', out)
             self.assertIn('dipo_audio_focus owner=other type=other music_focus=true', out)
             self.assertIn('dipo_audio_mode mode=same phone_focus=false siri_focus=false music_focus=true', out)
+            self.assertIn('carplay_music_metadata_updated', out)
+            self.assertIn('buffered_audio_flush_reported', out)
+            self.assertIn('audio_stream_reported stream=main_buffered codec=aac-lc', out)
+            self.assertIn('aac_music_decoder_started', out)
+            self.assertIn('aac_music_first_packet_decoded', out)
+            self.assertEqual(out.count('dipo_audio_track_underrun_reported'), 1)
             self.assertIn('native_iap_send_rows=1', out)
             for excluded in ('old-event', 'Private iPhone', 'type=110', 'com.daudio', 'PrivateDevice', '0x6015C788'):
                 self.assertNotIn(excluded.lower(), out.lower())
+
+    def test_output_snapshot_is_bounded_and_only_keeps_playback_fields(self):
+        with tempfile.TemporaryDirectory() as td:
+            setup = r'''
+PATH=$TEST_BIN
+BB=bb BB_OWN=bb UPTIME="$PWD/uptime"
+bb() {
+  case "$1" in
+    timeout) [ "$2" = 4 ] || return 90; shift 2; "$@" ;;
+    date) echo '11-22 21:15:10' ;;
+    *) command "$@" ;;
+  esac
+}
+dumpsys() {
+  [ "$1" = media.audio_flinger ] || return 91
+  cat <<'EOF'
+Output thread 0xabcdef internals
+Normal frame count: 960
+io handle: 2
+standby: 0
+Sample rate: 48000
+HAL frame count: 240
+Normal mixer raw underrun counters: partial=5 empty=7
+unrelated field: private audio route
+Input thread 0x1234 internals
+Sample rate: 99999
+EOF
+  return 124
+}
+'''
+            run = r'''
+set -e
+usb_capture_carplay_mixer
+usb_capture_carplay_audio() { echo "snapshot_requested=$1"; }
+CP_COUNT=1 CP_STATE=started
+for seconds in 10 40 70; do
+  echo "$seconds.00 0.00" > "$UPTIME"
+  usb_watch_carplay_audio
+  wait "$USB_AUDIO_CAPTURE_PID"
+done
+'''
+            result = subprocess.run([SH, '-s'], input=(setup+AUDIO+run).encode(), env=ENV,
+                                    cwd=td, capture_output=True, check=True)
+            out = result.stdout.decode()
+            self.assertFalse(result.stderr, result.stderr)
+            self.assertIn('mixer_output_handle=2 standby=0 sample_rate_hz=48000 hal_frames=240 normal_frames=960 '
+                          'underrun_partial=5 underrun_empty=7', out)
+            self.assertIn('mixer_dump_exit=124 outputs_seen=1', out)
+            self.assertNotIn('private audio route', out)
+            self.assertNotIn('99999', out)
+            self.assertEqual([line for line in out.splitlines() if line.startswith('snapshot_requested=')],
+                             ['snapshot_requested=1', 'snapshot_requested=1', 'snapshot_requested=0'])
 
 if __name__=='__main__': unittest.main()

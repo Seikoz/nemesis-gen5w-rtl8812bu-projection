@@ -27,15 +27,15 @@
 
 제거할 때는 Korea Projection을 먼저 제거합니다. 무선 모드 업데이트는 합본으로 진행하세요. [설치·제거 상세 안내](bundle/INSTALL-KO.md)
 
-## v0.1.38 변경 사항
+## v0.1.39 변경 사항
 
-- CarPlay 회전 정보가 늦게 도착해도 HUD에 바로 반영합니다. 거리 문자열이 없을 때 받은 숫자 거리를 사용하고, 다음 회전에 이전 거리 값이 남지 않게 했습니다.
-- 무선 iAP2 전환 뒤 첫 경로 안내 요청을 개선했습니다. HUD 제출과 안내 시작 결과를 제보 파일에 기록합니다. [참고한 Phone Projection TBT 소스](https://github.com/ch0iiih/HMG_Phone_Projection_TBT/tree/daeaf32a6fa3c3540c74c93611dad7dedb6d417e)
-- CN7NPE 차량 스피커 출력에 필요한 보정은 무선 모드에 포함됩니다. Korea Projection을 업데이트하면 자동으로 설치됩니다.
+- `usb-carplay-audio.log`에 곡 정보 갱신, 버퍼 비우기, AAC 디코딩 시작, 출력 버퍼 고갈과 AudioFlinger 출력 상태를 기록합니다.
+- 약 1초 무음의 원인을 찾기 위한 진단판입니다. 재생 버퍼 설정은 v0.1.38과 같습니다.
+- v0.1.38의 HUD 변경과 CN7NPE 차량 스피커 출력 보정을 포함합니다. [HUD 참고 소스](https://github.com/ch0iiih/HMG_Phone_Projection_TBT/tree/daeaf32a6fa3c3540c74c93611dad7dedb6d417e)
 
 | 구성 요소 | 버전 |
 | --- | --- |
-| Korea Projection BETA | **1.7.4.43** |
+| Korea Projection BETA | **1.7.4.44** |
 | HMG-API Wireless Mode | **2.4.25** (CN7PE·CN7NPE), **2.4.26** (CN7HEVPE) |
 | HMG-API 본체 | **1.1.0-rc.8** (NEMESIS 패키지 **1.0.99.8**) |
 | Realtek Wi-Fi Driver | **1.1.19** |
@@ -48,13 +48,15 @@ Realtek이 A3000mini를 바인딩하고 USB 480Mbps를 확인하면 Korea Projec
 | --- | --- |
 | 아반떼 N CN7NPE 260902와 A3000mini | v0.1.36에서 동글을 꽂은 채 부팅해 재장착이나 Realtek 수동 Launch 없이 USB 480Mbps와 AP 준비를 확인했습니다. 한 시험에서 USB 인식은 부팅 약 14초, AP 준비는 약 27초였습니다. |
 | 무선 CarPlay 음악 | 같은 차량에서 오디오 보정 적용 후 차량 스피커 출력이 확인됐습니다. 기존에 소리가 iPhone에서만 나오던 증상은 이 시험에서 해결됐습니다. |
-| 곡 전환 | 곡 제목은 즉시 바뀌지만, 같은 차량에서 **무선 CarPlay에만** 차량 스피커의 새 곡 출력이 약 1초 늦는 현상이 보고됐습니다. 원인과 개선 효과는 추가 확인이 필요합니다. |
+| 곡 전환 | 같은 차량에서 제목은 즉시 바뀌고, **무선 CarPlay에서만 약 1초간 무음 뒤** 새 곡이 시작됐습니다. v0.1.39에서 무음 전후의 스트림과 출력 상태를 수집합니다. |
 | HUD | 별도 Phone Projection TBT를 켜고 합본의 TBT를 끈 상태에서 작동이 확인됐습니다. v0.1.38의 통합 HUD 경로는 회전·거리 메시지 재현을 통과했으며 실차 확인을 기다리고 있습니다. |
 | CarPlay 확인창 | 연결 때 차량 정보 제공 동의창이 반복 표시됐습니다. 기존 동의가 재부팅 후에도 유지되는지는 추가 확인이 필요합니다. |
 
 장시간 재연결, 통화·Siri·내비 안내 음성, Android Auto 실차 동작, CN7PE·CN7HEVPE의 차량별 동작은 확인 중입니다.
 
 ## 문제 제보
+
+곡 전환 무음을 시험할 때는 **HMG-API Wireless Mode → CarPlay’s own log (troubleshooting)**를 켜고 재부팅합니다. 다운로드한 곡을 무선으로 재생하며 세 번 넘긴 뒤 버튼을 누른 시각을 각각 기록합니다. 마지막 전환 약 1분 뒤 아래 절차로 로그를 저장합니다. [곡 전환 시험 상세 안내](bundle/INSTALL-KO.md#무선-곡-전환-무음-시험)
 
 1. 증상을 재현한 뒤 시각, 차량·펌웨어, 합본 버전을 기록합니다. HUD는 지도 앱과 방향·거리 표시 여부를 함께 적습니다.
 2. 같은 부팅에서 A3000mini를 제보 USB로 바꾸고 **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 선택합니다.
@@ -64,11 +66,12 @@ Realtek이 A3000mini를 바인딩하고 USB 480Mbps를 확인하면 Korea Projec
 
 | 버전 | 주요 변경 |
 | --- | --- |
-| **v0.1.38** | CarPlay HUD 회전·거리 갱신 및 Wi-Fi 전환 뒤 경로 안내 요청 개선. v0.1.37의 오디오 통합 포함 |
+| **v0.1.39** | 무선 곡 전환 무음 진단. 음악 정보·버퍼 비우기·AAC 디코딩·출력 버퍼 고갈 관측과 출력 스레드 상태 기록 |
+| v0.1.38 | CarPlay HUD 회전·거리 갱신 및 Wi-Fi 전환 뒤 경로 안내 요청 개선. v0.1.37의 오디오 통합 포함 |
 | v0.1.37 (로컬 시험) | CN7NPE 오디오 보정을 무선 모드에 통합하고 Stock Bluetooth handoff 시험 옵션 제거 |
 | v0.1.36 | 순정 CarPlay 라이브러리 MD5 검사 수정. CN7NPE에서 무선 CarPlay의 차량 스피커 출력 확인 |
 
-v0.1.38 USB ZIP SHA-256 `df3962c19a1876f67b74faff0db11682c00b679ff22b8f3fb2ea4eeebafbaaa7`
+v0.1.39 USB ZIP SHA-256 `6fd60f6ac5a329c17b687027d949bcbe25c31f528ddca0b99abd58954e43ead5`
 
 [전체 변경 이력](CHANGELOG.md) · [이전 릴리스와 설치 ZIP](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.36/README.md#검증-범위)
 
