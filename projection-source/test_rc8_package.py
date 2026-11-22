@@ -5,7 +5,7 @@ from zipfile import ZipFile
 import hashlib,json,os,subprocess,sys,tempfile,urllib.request
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from build_wireless_mod import CARRIER_RECIPE, COREUTILS, hybrid_files, rebase_files
+from build_wireless_mod import CARRIER_RECIPE, COREUTILS, HYBRID_OMIT, hybrid_files, rebase_files
 sdk=Path(os.environ['HMGAPI_SDK'])
 model=sys.argv[2].lower()
 assert model in ('cn7npe','cn7pe','cn7hevpe')
@@ -37,13 +37,12 @@ if model=='cn7pe':
         points=('\n'.join(sorted(vehicle))+'\n').encode()
 files,_=rebase_files(base,Path(sys.argv[1]).read_bytes(),previous)
 if model=='cn7hevpe':
-    report=json.loads(fetch('https://github.com/user-attachments/files/34976977/2-car-report.json',
-                            '45a00902da6b533b4812942ede383a048a0d14ed179bb2a7a272e04b7c2b38e1'))
-    assert report['unit']['product']==product and report['unit']['platform']=='tcc803x'
-    assert report['unit']['onebin']==onebin and report['verify_map']['ok']
-    points=('\n'.join(sorted(report['map_car']['points']))+'\n').encode()
+    fixture = Path(__file__).with_name('fixtures') / 'cn7hevpe-kor-260902-wireless-points.txt'
+    points = fixture.read_bytes()
+    hybrid_points = set(points.decode('ascii').splitlines())
+    assert 'dipo.carplay.native_iap_send' in hybrid_points
+    assert HYBRID_OMIT.isdisjoint(hybrid_points)
     files=hybrid_files(files,Path(sys.argv[3]).read_bytes())
-    assert 'dipo.carplay.native_iap_send' in points.decode().splitlines()
 manifest_hooks=json.loads(files['mod.json'])['hooks']
 assert set(manifest_hooks['points']) <= set(points.decode().splitlines())
 assert 'stock_bt_handoff' not in {s['key'] for s in json.loads(files['settings.json'])['settings']}
@@ -94,12 +93,14 @@ with tempfile.TemporaryDirectory() as temporary:
     after={p.relative_to(root/'system'):p.read_bytes() for p in (root/'system').rglob('*') if p.is_file()}
     assert before==after,(before.keys(),after.keys())
     assert json.loads((data/'settings/hmgapi.json').read_text())==settings
-    # Real HookPlan: a checked map with the previous 351 points must load the USB
-    # build; the unmodified upstream declaration must be refused on that map.
+    # The real HookPlan accepts the USB declarations and refuses the upstream set.
     write(root/'points.txt',points);write(root/'mod.json',files['mod.json'])
     with ZipFile(BytesIO(base)) as upstream:write(root/'upstream.json',upstream.read('mod.json'))
     write(root/'HookCheck.java',r'''
-import java.nio.file.*;import java.util.*;import hmgapi.engine.*;
+package hmgapi.engine;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;import java.util.*;
 class HookCheck {
  public static void main(String[] a)throws Exception {
   Set<String> known=new HashSet<String>(Files.readAllLines(Paths.get(a[0])));
@@ -109,9 +110,26 @@ class HookCheck {
   mods.put("wireless-carplay-aa",Json.object(new String(Files.readAllBytes(Paths.get(a[2])),"UTF-8")));
   if(HookPlan.of(mods,known).refused.isEmpty())throw new AssertionError("Unmapped upstream hooks accepted");
   System.out.println("Actual HookPlan accepts USB hooks and refuses unmodified rc.8 on the vehicle fixture");
+
+  Path data=Paths.get(a[3]);
+  String id="wireless-carplay-aa";
+  Path mod=data.resolve("mods").resolve(id);
+  Path settings=data.resolve("settings").resolve(id+".json");
+  for (String saved : new String[]{null, "{\"usb_ap_ht20\":true}", "{\"tbt\":true}", "{\"tbt\":false}"}) {
+   if (saved==null) Files.deleteIfExists(settings);
+   else Files.write(settings,saved.getBytes(StandardCharsets.UTF_8));
+   Map<String,Object> values=Engine.settingsOf(mod.toFile(),data.toFile(),id);
+   boolean expected="{\"tbt\":true}".equals(saved);
+   if (!Boolean.valueOf(expected).equals(values.get("tbt")) ||
+       Engine.when("settings.tbt",values)!=expected ||
+       !Boolean.TRUE.equals(values.get("bridge")) || !Boolean.TRUE.equals(values.get("audio"))) {
+    throw new AssertionError("Unexpected TBT, bridge or audio setting: " + values);
+   }
+  }
+  System.out.println("Actual Engine defaults TBT off, honors explicit choices, and keeps bridge and audio on");
  }
 }''')
     subprocess.run(['javac','--release','8','-cp',str(sdk/'lib/hmgapi-engine.jar'),'-d',str(root),str(root/'HookCheck.java')],check=True)
-    subprocess.run(['java','-cp',str(root)+os.pathsep+str(sdk/'lib/hmgapi-engine.jar'),'HookCheck',
-                    str(root/'points.txt'),str(root/'mod.json'),str(root/'upstream.json')],check=True)
+    subprocess.run(['java','-cp',str(root)+os.pathsep+str(sdk/'lib/hmgapi-engine.jar'),'hmgapi.engine.HookCheck',
+                    str(root/'points.txt'),str(root/'mod.json'),str(root/'upstream.json'),str(data)],check=True)
 print(f'Actual rc.7 engine: {model.upper()} KOR USB plan/apply/reapply/byte-exact restore, native files, scoped rules and no-SDIO checks passed')

@@ -272,6 +272,7 @@ def patch(mod, old):
 
     path = root / 'dipo/Dipo.java'
     text = path.read_text(encoding='utf-8')
+    text = once(text, 'm.settingBoolean("tbt", true)', 'm.settingBoolean("tbt", false)')
     text = once(text, '                    log("DiPO: Bluetooth kept up for wireless CarPlay (disableBluetooth skipped)");',
                 '''                    if (Bridge.sUsbCpTransport == 0 && Bridge.usbCpApCurrent()) {
                         log("USB_CP_AUDIO bluetooth_handoff=preserved");
@@ -284,6 +285,9 @@ def patch(mod, old):
     # would refuse the whole mod, not just the optional feature. Do not register
     # their consumers in this target build (metadata is restricted by the signer).
     path=root/'Wireless.java';text=path.read_text(encoding='utf-8')
+    if text.count('mod.settingBoolean("tbt", true)') != 4:
+        raise ValueError('Expected four Wireless Mode turn-by-turn defaults')
+    text = text.replace('mod.settingBoolean("tbt", true)', 'mod.settingBoolean("tbt", false)')
     text=once(text, '    @Override\n    public void appLoaded(', '''    private final hmgapi.mods.cn7npecarrier.UsbWifiCarrier usbWifiCarrier =
             new hmgapi.mods.cn7npecarrier.UsbWifiCarrier();
 

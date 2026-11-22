@@ -16,8 +16,8 @@ from build_package import PROJECTION_USB_IDS, archive
 BASE_SHA256 = '5b1a36e6652fe61aeb3ad381eff1175e9c6be167849bd07f4fc297f104f4154e'
 AUTHOR = 'e0bc5813-b75d-81c3-be64-31b9b002baba'
 MOD = 'wireless-carplay-aa'
-VERSION = '2.4.27'
-HYBRID_VERSION = '2.4.28'
+VERSION = '2.4.29'
+HYBRID_VERSION = '2.4.30'
 COREUTILS = 'libCarPlayCoreUtils.so'
 CARRIER_RECIPE = 'recipes/usb-wifi-name.recipe'
 CARRIER_SOURCE = Path(__file__).resolve().parent / 'projection-source/cn7npe-carrier'
@@ -142,11 +142,11 @@ def rebase_files(base, hooks, previous):
     files['patches.json'] = json_bytes(patches)
     settings = json.loads(files['settings.json'])
     settings['settings'] = [x for x in settings['settings'] if x['key'] != 'cp_firewall']
-    for entry in settings['settings']:
-        if entry['key'] == 'aa_firewall': entry['default'] = True
-    keys = {x['key'] for x in settings['settings']}
+    entries = {entry['key']: entry for entry in settings['settings']}
+    entries['aa_firewall']['default'] = True
+    entries['tbt']['default'] = False
     for entry in json.loads(old_files['settings.json'])['settings']:
-        if entry['key'] in ('aa_ap','aa_ready_resend') and entry['key'] not in keys:
+        if entry['key'] in ('aa_ap','aa_ready_resend') and entry['key'] not in entries:
             settings['settings'].append(entry)
     for key, _, title, description in ap_options:
         settings['settings'].append({
@@ -158,7 +158,7 @@ def rebase_files(base, hooks, previous):
         f'HMG-API USB wireless mod {VERSION} (local upgrade version), based on official 2.2.0-rc.8.\n'
         'Official source: https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc\n'
         'USB/AA source: https://github.com/StopDragon/HMG-API/tree/b573ac624e284cd7d6e0a7b9fa6c32862c528988/mods/wireless-carplay-aa\n'
-        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.29/projection-source\n'
+        'Local patches: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.41/projection-source\n'
         'CarPlay HUD input and display behavior adapted from ch0iiih/HMG_Phone_Projection_TBT (AGPL-3.0):\n'
         'https://github.com/ch0iiih/HMG_Phone_Projection_TBT/tree/daeaf32a6fa3c3540c74c93611dad7dedb6d417e\n'
         'AGPL-3.0. Signed by the existing local author; not an unmodified official package.\n'
@@ -216,7 +216,6 @@ def hybrid_files(files, hooks):
     files['patches.json'] = json_bytes(patches)
     files['USB-SOURCE.md'] += (
         f'\nCN7HEVPE variant {HYBRID_VERSION}: separate hybrid patch set and hook declaration.\n'
-        'Source: https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/cn7npe-usb-bundle-v0.1.29\n'
     ).encode()
     return files
 
