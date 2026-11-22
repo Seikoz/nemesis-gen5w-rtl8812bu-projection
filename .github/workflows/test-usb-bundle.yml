@@ -4,16 +4,12 @@ on:
     branches: [test/rtl8812bu-boot-retry]
     paths:
       - '.github/workflows/test-usb-bundle.yml'
-      - 'bundle/usb-audio-apply.sh'
-      - 'bundle/usb-mod-plan.sh'
-      - 'bundle/usb-carplay-session.sh'
-      - 'bundle/usb-carplay-audio.sh'
-      - 'bundle/usb-carplay-trials.sh'
-      - 'tests/test_mod_plan.py'
-      - 'tests/test_usb_audio_apply.py'
-      - 'tests/test_connection_diagnostics.py'
-      - 'tests/test_usb_carplay_trials.py'
+      - 'bundle/**'
+      - 'package/**'
+      - 'tests/**'
+      - 'build_package.py'
       - 'build_usb_bundle.py'
+      - 'build_wireless_mod.py'
 permissions:
   contents: read
 jobs:

@@ -6,6 +6,7 @@
 - 릴리스 제목을 영문으로 통일하고 최신 합본이 GitHub에서 바로 보이도록 **Latest**로 등록합니다.
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
+- 기본 브랜치에서 이전 무선 모드의 빌드 경로와 독립 오디오 시험판을 정리했습니다. [현재 무선 모드 빌드 안내](projection-source/README.md)에 이전 소스 링크도 남겼습니다. 패키지 생성기와 테스트 파일의 변경도 GitHub Actions에서 검증합니다.
 
 ## USB 합본 v0.1.40
 
@@ -52,7 +53,7 @@
 ## USB 합본 v0.1.34
 
 - Korea Projection **1.7.4.39**에 **CN7NPE USB CarPlay Audio Test**를 포함했습니다. CN7NPE 260902에서 순정 라이브러리 MD5가 참조값과 일치하고 무선 모드가 준비되면 오디오 보정을 자동 설치·적용합니다.
-- 시작·보류 결과를 제보 `usb-carrier.log`에 남기고, 합본이 직접 설치한 보정만 제거 시 정리합니다. 기존 드라이버·HMG-API·무선 모드를 사용합니다. [설치 및 원복](projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)
+- 시작·보류 결과를 제보 `usb-carrier.log`에 남기고, 합본이 직접 설치한 보정만 제거 시 정리합니다. 기존 드라이버·HMG-API·무선 모드를 사용합니다. [v0.1.34 설치 및 원복](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.34/projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)
 - 설치·적용·재부팅·제거 경로와 ZIP 재현 빌드를 확인했습니다. SHA-256 `f26c0786e408154ef84b13b601b053a7b76c4e7f91283a16a65e6118ef89affe`.
 
 ## USB 합본 v0.1.33
