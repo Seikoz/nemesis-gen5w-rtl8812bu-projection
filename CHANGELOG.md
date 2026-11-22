@@ -7,6 +7,21 @@
 - 새 다운로드와 SHA-256을 검증하고, 버전별 변경 사항을 README와 이 문서에 기록합니다.
 - 사용자 요청으로 기존 단일 릴리스 정리 정책을 변경했습니다. 앞으로 이전 릴리스·태그·설치 ZIP을 보존하고 새 버전만 **Latest**로 등록합니다. 아래 과거 버전의 정리 내역은 당시 작업 이력입니다.
 
+## USB 합본 v0.1.38
+
+- Korea Projection **1.7.4.43**과 USB 무선 모드 **2.4.25·2.4.26**에서 늦게 도착한 회전 정보를 즉시 HUD에 반영합니다. 표시 거리 문자열이 비어 있으면 확인된 숫자 거리를 사용하고, 이전에 받은 회전 각도를 부분 갱신에서 유지합니다.
+- 무선 iAP2 전환 뒤 첫 요청은 경로 안내 구독을 시작합니다. 기존 재요청과 종료 처리를 사용합니다. [Phone Projection TBT 비교 소스](https://github.com/ch0iiih/HMG_Phone_Projection_TBT/tree/daeaf32a6fa3c3540c74c93611dad7dedb6d417e)
+
+- v0.1.37의 CN7NPE 오디오 보정 통합과 시험 옵션 제거를 포함합니다. 무선에서만 새 곡의 오디오 출력이 늦는 현상은 실차 관측으로 기록했습니다.
+- HUD의 회전·거리 메시지 재현, HMG-API rc.8 서명된 모드 업데이트, USB ZIP 재현 및 셸 문법을 확인했습니다. 통합 HUD의 실차 동작은 시험 중입니다.
+- USB ZIP SHA-256 `df3962c19a1876f67b74faff0db11682c00b679ff22b8f3fb2ea4eeebafbaaa7`.
+
+## USB 합본 v0.1.37 (로컬 시험)
+
+- Korea Projection **1.7.4.42**가 설치하는 무선 모드 **2.4.23**에 CN7NPE 오디오 보정을 통합했습니다. 아반떼 N 260902, 순정 CoreUtils MD5, A3000mini와 USB AP 조건은 이전과 같습니다. CN7HEVPE용 모드 **2.4.24**에는 이 보정이 적용되지 않습니다.
+- 별도 **CN7NPE USB CarPlay Audio Test** 설치가 필요 없습니다. 업그레이드 시 새 무선 모드 파일을 검증한 뒤 기존 합본이 설치한 별도 오디오 테스트 모드만 정리합니다.
+- **Stock Bluetooth handoff (CarPlay audio test)** 옵션과 시험 분기를 삭제했습니다. 무선 모드의 기존 기본 Bluetooth 처리와 정식 오디오 지원을 사용합니다.
+
 ## USB 합본 v0.1.36
 
 - Korea Projection을 **1.7.4.41**로 업데이트했습니다. 순정 CarPlay 라이브러리 검사에 무선 모드 파일을 검증하는 BusyBox MD5 경로를 사용합니다. 실패하면 동봉한 BusyBox로 직접 파일을 읽고 제보에 검사 경로와 종료 코드를 남깁니다.

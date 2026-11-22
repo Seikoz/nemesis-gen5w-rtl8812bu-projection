@@ -2,6 +2,8 @@
 from pathlib import Path
 import sys
 
+from patch_cp_tbt import patch_cp_tbt
+
 HERE = Path(__file__).parent
 
 def once(text, old, new):
@@ -270,23 +272,30 @@ def patch(mod, old):
 
     path = root / 'dipo/Dipo.java'
     text = path.read_text(encoding='utf-8')
-    text = once(text, '        // the CarPlay library\'s disableBluetooth:', '''        final boolean stockBtHandoff = mod.settingBoolean("stock_bt_handoff", false);
-        // the CarPlay library's disableBluetooth:''')
     text = once(text, '                    log("DiPO: Bluetooth kept up for wireless CarPlay (disableBluetooth skipped)");',
-                '''                    if (stockBtHandoff && Bridge.sUsbCpTransport == 0 && Bridge.usbCpApCurrent()) {
-                        log("USB_CP_AUDIO bluetooth_handoff=stock");
-                        return;
-                    }
-                    if (Bridge.sUsbCpTransport == 0 && Bridge.usbCpApCurrent()) {
+                '''                    if (Bridge.sUsbCpTransport == 0 && Bridge.usbCpApCurrent()) {
                         log("USB_CP_AUDIO bluetooth_handoff=preserved");
                     }
                     log("DiPO: Bluetooth kept up for wireless CarPlay (disableBluetooth skipped)");''')
     path.write_text(text, encoding='utf-8', newline='\n')
+    patch_cp_tbt(root / 'dipo', once)
 
     # The car's checked 351-point map predates these eight points. Declaring them
     # would refuse the whole mod, not just the optional feature. Do not register
     # their consumers in this target build (metadata is restricted by the signer).
     path=root/'Wireless.java';text=path.read_text(encoding='utf-8')
+    text=once(text, '    @Override\n    public void appLoaded(', '''    private final hmgapi.mods.cn7npecarrier.UsbWifiCarrier usbWifiCarrier =
+            new hmgapi.mods.cn7npecarrier.UsbWifiCarrier();
+
+    @Override
+    public void appLoaded(''')
+    text=once(text, '        if (NAVIGATION.equals(app.packageName)) navigation(mod, app);', '''        if (DIPO.equals(app.packageName) && mod.settingBoolean("bridge", true)) {
+            usbWifiCarrier.appLoaded(mod, app);
+        }
+        if (NAVIGATION.equals(app.packageName)) navigation(mod, app);''')
+    carrier = root.parent / 'cn7npecarrier'
+    carrier.mkdir(exist_ok=True)
+    (carrier / 'UsbWifiCarrier.java').write_bytes((HERE / 'cn7npe-carrier/UsbWifiCarrier.java').read_bytes())
     text=once(text, '            PpManager.zygote(mod);', '            mod.log("USB target: projection manager awaits a checked map with PPService points");')
     text=once(text, '        if (SYSTEM_POPUP.equals(app.packageName) && mod.settingBoolean("menu", true)) popupSettings(mod, app);',
               '        // US/Canada popup hook is not declared for this Korean target map.')

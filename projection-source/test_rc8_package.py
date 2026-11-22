@@ -5,7 +5,7 @@ from zipfile import ZipFile
 import hashlib,json,os,subprocess,sys,tempfile,urllib.request
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from build_wireless_mod import hybrid_files, rebase_files
+from build_wireless_mod import CARRIER_RECIPE, COREUTILS, hybrid_files, rebase_files
 sdk=Path(os.environ['HMGAPI_SDK'])
 model=sys.argv[2].lower()
 assert model in ('cn7npe','cn7pe','cn7hevpe')
@@ -44,7 +44,11 @@ if model=='cn7hevpe':
     points=('\n'.join(sorted(report['map_car']['points']))+'\n').encode()
     files=hybrid_files(files,Path(sys.argv[3]).read_bytes())
     assert 'dipo.carplay.native_iap_send' in points.decode().splitlines()
-assert set(json.loads(files['mod.json'])['hooks']['points']) <= set(points.decode().splitlines())
+manifest_hooks=json.loads(files['mod.json'])['hooks']
+assert set(manifest_hooks['points']) <= set(points.decode().splitlines())
+assert 'stock_bt_handoff' not in {s['key'] for s in json.loads(files['settings.json'])['settings']}
+assert (CARRIER_RECIPE in files) == (model != 'cn7hevpe')
+assert (manifest_hooks.get('native', {}).get(COREUTILS) == [CARRIER_RECIPE]) == (model != 'cn7hevpe')
 def write(path,content):
     path.parent.mkdir(parents=True,exist_ok=True)
     path.write_bytes(content.encode() if isinstance(content,str) else content)
@@ -78,7 +82,9 @@ with tempfile.TemporaryDirectory() as temporary:
         assert (root/'system/lib'/name).read_bytes()==files['files/'+name]
     options = {'usb_ap_ht20': 'persist.kp.ap.ht20', 'usb_ap_handoff_hold': 'persist.kp.ap.hold'}
     for selected in ((), ('usb_ap_ht20',), ('usb_ap_handoff_hold',), tuple(options), ()):
-        write(data/'settings/wireless-carplay-aa.json', json.dumps({key: key in selected for key in options}))
+        mod_settings={key: key in selected for key in options}
+        mod_settings['stock_bt_handoff']=True  # Upgrade from a unit that enabled the retired experiment.
+        write(data/'settings/wireless-carplay-aa.json', json.dumps(mod_settings))
         engine('apply')
         props = (root/'settings.txt').read_text().splitlines()
         for switch, prop in options.items():

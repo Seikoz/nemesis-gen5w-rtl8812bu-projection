@@ -1,423 +1,80 @@
 # NEMESIS RTL8812BU Gen5W Wireless Projection
 
-현대·기아 Gen5W 내비게이션에서 **RTL8812BU USB 무선랜의 자동 인식과 AP 동작을 개선하고, 무선 Apple CarPlay와 Android Auto를 시험하는 프로젝트**입니다. Realtek 드라이버, Korea Projection, HMG-API를 USB 설치 ZIP 하나에 제공합니다.
+현대 Gen5W 내비게이션에서 ipTIME A3000mini(RTL8812BU)를 무선 CarPlay와 Android Auto에 사용하기 위한 USB 설치 합본입니다. Korea Projection, Realtek 드라이버, HMG-API를 담았습니다.
 
 > [!WARNING]
-> **내비게이션 시스템을 변경하는 실차 시험용 패키지입니다.** 설치·업데이트·제거 후 내비게이션이 멈추거나 반복 재부팅할 수 있고, 순정 블루투스나 폰 프로젝션이 정상 작동하지 않을 수 있습니다. 정상 부팅이 어려우면 복구 작업이나 정비가 필요할 수 있습니다.
+> 설치·업데이트·제거 과정에서 내비게이션이 멈추거나 반복 재부팅할 수 있습니다. 순정 블루투스·폰 프로젝션에 문제가 생기면 복구나 정비가 필요할 수 있습니다. 주차 상태에서 진행하고, 설치가 끝날 때까지 전원을 끄거나 USB를 빼지 마세요.
 >
-> 주차 상태에서 지원 차종과 펌웨어를 확인한 뒤 설치하세요. 설치·업데이트가 끝날 때까지 전원을 끄거나 USB를 빼지 마세요. 제거하기 전에 [설치·제거 안내](bundle/INSTALL-KO.md)를 확인하세요.
+> 모든 책임은 설치하신 차주 본인에게 있습니다.
 
-**[최신 릴리스에서 USB 설치 ZIP 받기](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)** · [전체 변경 이력](CHANGELOG.md)
+**[최신 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest)** · [설치·제거 상세 안내](bundle/INSTALL-KO.md) · [전체 변경 이력](CHANGELOG.md)
 
-최신 릴리스의 **Assets**에서 이름이 `-USB.zip`으로 끝나는 설치 파일을 받으세요.
+## 지원 환경
 
-`rtwlan0`의 HT20과 iAP2 재시작 보류를 각각 시험하고, 세 시험의 로그를 마지막 제보 파일 하나로 저장할 수 있습니다. v0.1.36에서 아반떼 N CN7NPE 260902와 A3000mini로 무선 카플레이 연결 및 차량 스피커 출력을 실차에서 확인했습니다.
-
-[시험 대상](#프로젝트와-시험-대상) · [경고 사항](#경고-사항) · [패키지 구성](#패키지-구성) · [작동 원리](#작동-원리) · [설치 순서](#설치-및-업데이트-순서) · [실차 시험](#v0136-실차-시험) · [상태 표시](#상태-표시-읽는-법) · [알려진 문제](#알려진-문제점과-제한-사항) · [미확인 사항](#미확인-사항) · [로그 수집](#문제-발생-시-로그-수집) · [검증 범위](#검증-범위) · [버전 이력](#버전별-변경-사항)
-
-## 프로젝트와 시험 대상
-
-프로젝트의 핵심은 **RTL8812BU 드라이버와 USB AP의 실제 작동**입니다. 무선 카플레이는 USB 인식부터 AP·Bluetooth·iAP2·카플레이 세션까지 이어지는 검증 대상입니다.
-
-| 항목 | 현재 시험 기준 |
+| 항목 | 기준 |
 | --- | --- |
 | 차량 | 아반떼 CN7PE, 아반떼 하이브리드 CN7HEVPE, 아반떼 N CN7NPE |
-| 펌웨어 | 국내형 `CN7PE.KOR.S5W_M.V039.001.260902` · `CN7HEVPE.KOR.S5W_M.V039.001.260902` · `CN7NPE.KOR.S5W_M.V039.001.260902` — 제품 속성의 `0000` 표기도 허용 |
-| 플랫폼 / 커널 | TCC803x / `3.18.24-tcc` |
-| 무선랜 | ipTIME A3000mini, USB ID `0bda:b812` |
-| 네트워크 인터페이스 | `rtwlan0` |
-| 설치 관리자 | NEMESIS Manager 1.16.7 이상, 이미 설치된 상태 |
+| 펌웨어 | 국내형 **V039.001.260902**. 제품 속성의 `S5W_M`·`0000` 표기 지원 |
+| 무선랜 | ipTIME A3000mini (`0bda:b812`), 인터페이스 `rtwlan0` |
+| 설치 전제 | NEMESIS Manager **1.16.7 이상** 설치, FAT32 USB 메모리 |
 
-다른 차량·지역·펌웨어·동글의 호환성은 확인하지 않았습니다. CN7PE에서는 내장 CN7PE 지도를 확인합니다. CN7HEVPE는 차량 자체 파일에서 전체 지도를 만든 뒤 필수 지점과 지도 검증을 통과하면 무선 설정을 진행합니다. 설치 경로와 모의 적용을 검증했으며 실제 차량에서의 연결과 소리는 확인이 필요합니다. [현대 공식 펌웨어 목록](https://update.hyundai.com/KR/KO/updateNoticeView/software-version)
+## 설치 및 업데이트
 
-## 경고 사항
+1. 최신 릴리스의 **Assets**에서 `-USB.zip`을 받아 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages/`가 USB 루트에 있어야 합니다. `packages/` 안의 ZIP은 그대로 둡니다.
+2. 주차 상태에서 **NEMESIS → Package Store → USB → Korea Projection BETA → Install / Update**를 선택합니다. 필요한 HMG-API와 Realtek 드라이버는 먼저 설치 또는 갱신됩니다.
+3. 설치 USB를 A3000mini로 교체하고 무선 모드의 적용·재부팅 안내를 따릅니다. **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 CarPlay에 연결합니다.
+4. HUD를 시험할 때는 HMG-API에서 **Phone Projection TBT**를 끄고 **Wireless Mode → Turn-by-turn on the cluster and HUD**를 켠 뒤 재부팅합니다. CarPlay에서 경로 안내를 시작해 실제 HUD의 방향과 거리를 확인합니다.
 
-- **재부팅과 연결 시험도 주차 상태에서 진행하세요.**
-- **기존 NEMESIS가 필요합니다.** 이 ZIP은 NEMESIS 자체나 차량 순정 펌웨어를 설치하는 패키지가 아닙니다.
-- **공식 무선 모드 원본을 추가로 덮어쓰지 마세요.** 합본은 `rtwlan0`용 이식판과 기존 합본 작성자 서명을 사용합니다. 공식 원본은 작성자 서명·버전·기본 핫스폿 경로가 다릅니다.
-- **실제 USB 480Mbps 확인 전에는 AP 시작을 대기합니다.** 12/480Mbps는 USB 버스 속도이며 Wi-Fi 링크 속도나 실제 전송 속도가 아닙니다.
-- **AP 준비나 연결 표시만으로 카플레이 성공을 판단하지 마세요.** 화면·음악·통화가 실제로 유지되는지도 확인해야 합니다.
-- **이전 ZIP 보존과 자동 다운그레이드는 별개입니다.** 이전 버전 ZIP을 설치하는 것만으로 본체·모드·설정이 모두 되돌아간다고 가정하지 마세요. 제거할 때는 Korea Projection을 먼저 제거하고 [설치·제거 안내](bundle/INSTALL-KO.md)를 확인하세요.
-- **필요한 로그는 다음 재부팅 전에 저장하세요.** 공유 전에는 휴대폰 이름·주소 등 개인 정보가 남아 있는지 확인하세요.
+제거할 때는 Korea Projection을 먼저 제거합니다. 무선 모드 업데이트는 합본으로 진행하세요. [설치·제거 상세 안내](bundle/INSTALL-KO.md)
 
-## 패키지 구성
+## v0.1.38 변경 사항
 
-| 구성 요소 / 표시 이름 | v0.1.36 버전 | 역할 |
-| --- | --- | --- |
-| Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA | **1.7.4.41** | 설치 의존성, USB AP·DHCP 운영, 부팅별 제보, CN7NPE 오디오 보정 시험 |
-| Realtek Wi-Fi Driver | **1.1.19** | RTL8812BU 커널 모듈 로드, 동글 바인딩, 부팅 감시와 제한된 USB 고속 복구 |
-| HMG-API 본체 | **1.1.0-rc.8** / NEMESIS 패키지 **1.0.99.8** | 시스템 훅·차량 지도·모드 설치 및 적용 |
-| HMG-API Wireless Mode | **2.4.21** (CN7PE·CN7NPE) / **2.4.22** (CN7HEVPE) | 공식 **2.2.0-rc.8** 기반 USB 이식판. AP 대기·카플레이 세션·iAP2 처리 |
+- CarPlay 회전 정보가 늦게 도착해도 HUD에 바로 반영합니다. 거리 문자열이 없을 때 받은 숫자 거리를 사용하고, 다음 회전에 이전 거리 값이 남지 않게 했습니다.
+- 무선 iAP2 전환 뒤 첫 경로 안내 요청을 개선했습니다. HUD 제출과 안내 시작 결과를 제보 파일에 기록합니다. [참고한 Phone Projection TBT 소스](https://github.com/ch0iiih/HMG_Phone_Projection_TBT/tree/daeaf32a6fa3c3540c74c93611dad7dedb6d417e)
+- CN7NPE 차량 스피커 출력에 필요한 보정은 무선 모드에 포함됩니다. Korea Projection을 업데이트하면 자동으로 설치됩니다.
 
-무선 모드는 이 프로젝트의 작성자 키로 서명합니다. HMG-API 본체는 공식 rc.8 ZIP을 사용하며 USB AP는 Korea Projection이 관리합니다. [공식 HMG-API rc.8](https://github.com/Open-HMG/HMG-API/releases/tag/v1.1.0-rc.8)
-
-NEMESIS USB 목록에서 **Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA**를 선택합니다. 기존 CN7NPE 합본과 패키지 ID·모드 ID·작성자 서명을 공유합니다. CN7PE·CN7HEVPE 신규 설치는 Install, 기존 CN7NPE 합본은 Update를 선택합니다.
-
-v0.1.36의 Korea Projection에 **CN7NPE USB CarPlay Audio Test 0.1.1**이 포함돼 있습니다. 아반떼 N 260902에서 순정 라이브러리 해시가 일치하고 무선 모드가 준비되면 새로 설치하거나 0.1.0에서 갱신하고 적용합니다. [CN7NPE 오디오 시험 및 원복](projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)
-
-USB에 풀었을 때의 기본 구조는 다음과 같습니다.
-
-```text
-USB/
-├── NEMESIS.data
-├── INSTALL-KO.md
-├── licenses/
-└── packages/
-    ├── hmgapi.zip
-    ├── korea.projection.zip
-    └── realtek.88x2bu.zip
-```
-
-`packages/` 안의 ZIP 세 개는 압축 상태로 둡니다. 무선 모드 ZIP과 실행 도구는 Korea Projection 패키지에 포함돼 있으므로 따로 설치할 파일을 찾을 필요가 없습니다.
-
-## 작동 원리
-
-### 설치 의존성과 모드 적용
-
-USB Package Store에서 **Korea Projection 하나를 선택**합니다. NEMESIS가 의존성을 확인해 필요한 HMG-API와 Realtek을 먼저 설치/업데이트합니다. 이후 Korea Projection이 포함된 무선 모드를 설치하거나 갱신하고 적용합니다. 본체 런타임과 무선 모드는 재부팅 후 새 코드가 로드됩니다.
-
-v0.1.19부터 **이미 설치된 동일 버전의 무선 모드도 확인**합니다. rc.7의 정상 안내 문구를 오류로 취급하던 필터를 수정했습니다. 새 오디오 지원 라이브러리의 적용이 남아 있으면, 합본 소유·고정 여부·전체 설치 파일 해시와 현재 적용 계획을 확인하고 AP 시작 전에 적용합니다. 다른 모드 변경·문제·되돌리기·알 수 없는 형식은 자동 적용하지 않습니다. **적용 완료 안내가 나오면 지금 재부팅을 눌러야 합니다.** 같은 부팅에서는 다시 적용하거나 AP를 시작하지 않으며 자동 재부팅도 하지 않습니다.
-
-### USB 인식과 AP 시작
-
-v0.1.21 실차 로그에서 수동 조작 없이 USB 480Mbps와 rtwlan0이 준비됐고, AP는 부팅 약 148초 뒤 켜졌습니다. v0.1.22는 기존 설정의 적용 계획·관리 파일 상태·지도 확인 기록이 일치하면 120초 복구 대기를 생략합니다. 확인에 실패하거나 설정 변경이 필요하면 기존 대기 절차를 따릅니다. `usb-boot-setup.log`와 AP 로그로 경로를 확인할 수 있습니다.
-
-```mermaid
-flowchart TD
-    A["A3000mini를 꽂은 채 부팅"] --> B["Realtek 모듈 로드 · USB 장치 확인"]
-    B --> C{"실제 USB 속도 480Mbps?"}
-    C -->|예| K["rtwlan0 · HMG-API/오디오 준비 확인"]
-    C -->|12Mbps| E["범위를 검증한 EHCI 복구 시도"]
-    E --> F{"480Mbps 전환 확인?"}
-    F -->|예| K
-    F -->|아니오| G["AP 시작 대기 · speed.log 기록"]
-    K -->|적용 완료 · 재부팅 후 준비| D["rtwlan0 활성화 · hostapd와 DHCP 시작"]
-    K -->|오디오 파일 새로 적용| R["지금 재부팅 안내 · AP 시작 대기"]
-    R --> A
-    D --> H["AP 신호 · 세대 · 인터페이스와 주소 확인"]
-    H --> I["Bluetooth iAP2 시작 · 카플레이 세션 전환"]
-    I --> J["실제 세션 콜백으로 상태 기록"]
-```
-
-동글이 외부 OHCI에서 12Mbps로 잡히면 한 부팅에서 **EHCI 소유권 반환 1회**, 계속 실패하면 **외부 OHCI/EHCI 재초기화 1회**를 요청합니다. 직결 A3000mini 한 대·단일 포트·유일한 외부 컨트롤러 쌍·비어 있는 EHCI·내려간 인터페이스가 확인된 경우에만 진행합니다. 내부 `tcc-ehci`, 허브, 다른 장치가 연결된 루트와 활성 인터페이스는 복구 대상에서 제외합니다.
-
-재초기화에서는 OHCI를 해제한 채 EHCI 아래 A3000mini의 480Mbps·구성 완료를 최대 12초 확인한 뒤 OHCI 복원을 시도합니다. Korea Projection의 NEMESIS 드라이버 호출 제한은 90초입니다. **호스트 재등록 성공은 실제 480Mbps 성공과 다르며, 물리 VBUS 전원 차단이나 보드 PHY 초기화를 보장하지 않습니다.**
-
-### 무선 세션과 방화벽
-
-v0.1.23은 무선 출처와 현재 AP가 확인된 transport 0 세션에서 SPP 종료 뒤 첫 CarPlay 채널 데이터를 최대 1.2초 기다립니다. 첫 데이터로 전환이 시작되거나 시간 만료 시 차량 쪽에서 전환을 요청합니다. 첫 수신과 첫 네이티브 송신 결과는 `USB_CP_HANDOVER`에서 확인합니다.
-
-무선 모드는 AP 준비 신호, 유효한 AP 세대, UP 상태의 `rtwlan0`과 `192.168.43.1`을 확인한 뒤 Bluetooth iAP2를 시작합니다. AP 대기는 최대 약 180초이며 Bluetooth 해제·모드 비활성화·유선 연결·세션 교체 시 취소합니다.
-
-USB iAP2가 없고 이 브리지의 Bluetooth 출처와 같은 AP가 확인된 세션에 한해 `transport=0`도 무선 세션으로 인정합니다. SPP가 끝나면 카플레이 채널로 iAP2를 이관하며, 이전 세션이나 AP에 속한 예약 작업과 전송을 구분합니다. `transport=0`을 모든 차량의 무선 연결로 해석하는 방식은 아닙니다.
-
-방화벽 정책은 `rtwlan0`의 차량 AP IPv4 대역 `192.168.43.0/24`와 IPv6 링크 로컬 대역을 중심으로 적용합니다. 기존 TCP/UDP에 동적 TCP 포트와 IPv6 UDP 6031을 포함하며, AA TCP 40515 규칙도 USB 대역으로 제한합니다. 실제 적용 규칙·순서·카운터는 제보 로그로 확인합니다.
-
-## 설치 및 업데이트 순서
-
-1. **다운로드·압축 해제.** 위의 설치 ZIP을 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages/`가 USB 루트에 있는지 확인합니다.
-2. **Korea Projection 선택:** 주차 상태에서 설치 USB를 내비게이션 데이터 USB 포트에 꽂습니다. **NEMESIS → Package Store → USB → Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA → Install / Update**를 선택합니다.
-3. **의존성 설치 확인.** 설치 계획을 확인하고 진행합니다. 필요한 HMG-API rc.8과 Realtek Wi-Fi Driver 1.1.19는 같은 USB에서 먼저 설치하거나 업데이트합니다.
-4. **동글로 교체:** 설치가 끝나면 설치 USB를 빼고 A3000mini를 꽂아 둡니다.
-5. **OS 재부팅:** **NEMESIS → My Packages → Korea Projection → Launch**로 상태 화면을 열고 **지금 재부팅**을 누릅니다. 이 버튼은 `sync` 후 시스템 `reboot`를 요청합니다.
-6. **본체·모드 버전 확인.** HMG-API 앱에서 **1.1.0-rc.8 / Hooks on(훅 활성)**, **HMG-API Wireless Mode 2.4.21**(CN7PE·CN7NPE) 또는 **2.4.22**(CN7HEVPE)을 확인합니다. 오디오 보정 적용 뒤 재부팅을 요청하면 **지금 재부팅**을 누릅니다. 자동 적용 보류가 나오면 HMG-API 변경 사항과 제보 로그를 확인합니다.
-7. **자동 부팅 시험:** A3000mini를 꽂은 채 약 2분 기다립니다. 첫 시험에는 동글을 재장착하거나 Realtek Launch를 누르지 않습니다.
-8. **연결 시험:** `USB Wi-Fi AP ready (rtwlan0)`를 확인한 뒤 iPhone의 Wi-Fi·Bluetooth를 켜고 내비게이션과 페어링해 CarPlay를 허용합니다. 화면·음악·통화가 유지되는지 확인합니다.
-
-HMG-API가 응답하지 않거나 `Operation failed`가 나오면 현재 설치 버전과 실패 문구를 기록하고 [상세 설치·업데이트 안내](bundle/INSTALL-KO.md)를 확인하세요. 오류 문구만으로 원인을 단정하거나 본체·모드를 반복 제거하지 마세요.
-
-## v0.1.36 실차 시험
-
-1. 주차 상태에서 **Korea Projection BETA 1.7.4.41**과 **HMG-API 1.1.0-rc.8** 설치를 확인합니다. A3000mini를 꽂고 안내에 따라 내비게이션을 재부팅합니다. 무선 모드 또는 CN7NPE 오디오 보정 적용으로 재부팅을 요청하면 마친 뒤 시험을 시작합니다.
-2. **부팅 자동 인식.** 마지막 재부팅 시각을 적고 동글을 꽂은 채 기다립니다. 첫 시험에서는 동글을 재장착하거나 Realtek Launch를 누르지 않습니다. Korea Projection이 AP 준비됨을 표시한 시각과 USB 속도를 기록합니다. 재부팅 후 5분이 지나도 대기 중이면 화면 문구와 속도를 적습니다.
-3. **무선 연결과 오디오.** 아이폰의 Wi-Fi와 Bluetooth를 켠 상태에서 무선 CarPlay에 연결하고 약 1분간 멜론을 재생합니다. 차량 스피커와 아이폰 중 어디서 소리가 나는지, 양쪽 모두 무음인지, 아이폰 출력 목록에 CarPlay가 표시되는지 기록합니다. 화면 끊김이 있었다면 발생 시각을 적습니다. Siri·내비 안내·통화는 각각 확인합니다.
-4. **재장착 비교.** 자동 인식에 실패했으면 A3000mini를 한 번 뺐다가 다시 꽂고 재장착 시각, USB 속도, AP 상태를 적습니다. 이후에 Realtek Launch도 눌렀다면 그 시각을 따로 적습니다.
-5. **제보 저장.** 같은 부팅에서 시험을 마친 뒤 동글을 제보 USB로 교체한 시각을 기록합니다. **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 눌러 `KoreaProjection-report/3-log.txt`를 저장합니다. 차량·펌웨어, 부팅·연결·재생 시각, 스피커 출력 결과와 함께 보내 주세요.
-
-CN7NPE 260902에서는 `3-log.txt`의 `usb-carrier.log`에 오디오 보정의 설치·보류 사유가 기록됩니다. `cn7npe-rtwlan0-carrier: applied`로 CarPlay 메모리 보정 적용을 확인하고, 실제 스피커 출력은 3단계에서 판정합니다. [오디오 시험과 원복](projection-source/cn7npe-carrier/AUDIO-TEST-KO.md)
-
-## 상태 표시 읽는 법
-
-| 관측한 상태 | 확인된 것 | 추가 확인할 것 |
-| --- | --- | --- |
-| 드라이버 로드됨 | 커널 모듈 로드 | 동글 바인딩·실제 USB 속도·인터페이스 생성 |
-| USB 480Mbps | USB 고속 열거 | AP 활성화와 Wi-Fi 접속 |
-| `rtwlan0` 존재 | 네트워크 인터페이스 생성 | 480Mbps, UP 상태, AP·DHCP 시작 |
-| AP ready | AP 준비 조건 충족 | iPhone 접속과 카플레이 세션 시작 |
-| Wi-Fi 단말 수 증가 | hostapd 인증 또는 Realtek 연결 테이블에서 접속 관측 | 카플레이 프로토콜·화면·음성 |
-| 세션 연결됨 / `started` | 실제 무선 세션 시작 콜백 및 부팅·프로세스·AP 세대 검증 | 화면·음악·통화의 정상 유지 |
-| 단말 수 확인 불가 | 조회 경로에서 접속 수를 읽지 못함 | 미접속 0대와 구분해 로그 확인 |
-
-상태는 보통 약 30초 점검 주기에 갱신됩니다. 제보 USB로 바꾸려고 동글을 빼면 현재 상태가 AP lost/미연결로 바뀔 수 있으므로, 같은 부팅에서 저장된 직전 기록을 함께 봅니다.
-
-## 알려진 문제점과 제한 사항
-
-과거 실차 관측과 현재 코드의 대응을 구분합니다. 수정 코드가 있다는 사실이 최신 버전에서 해결됐다는 실차 확인을 뜻하지는 않습니다.
-
-| 항목 | 관측·제한 | 현재 대응 또는 확인 방법 |
-| --- | --- | --- |
-| USB 12Mbps 인식 | 과거 실패가 있었으나 v0.1.18 로그는 재장착 전 자동 480Mbps 전환을 확인 | 기존 EHCI 복구 유지. 최신 시험도 `speed.log`의 실제 `speed_after=480`으로 판단 |
-| 부팅 후 대기 / 재장착 | v0.1.18은 17:51:50 드라이버 준비 통과 뒤 HMG-API 설정 대기, 수동 재장착은 17:53 | 재장착 필수 여부는 이 시험으로 확정 불가. 새 `USB readiness passed` 로그로 USB 대기와 설정 대기를 구분 |
-| 멜론 소리가 휴대폰에서 나옴 | 연결 화면·세션 시작 이후 증상. rc.7 적용 필터 오류와 오디오 파일 대기 확인 | v0.1.19에서 자동 적용·재부팅 안내. 무음 해소 여부와 iAP2 실패·오디오 경로의 관계는 미확인 |
-| 연결 창만 표시 / 연결·끊김 반복 | 과거 AP 준비·세션 시작 뒤에도 연결 실패나 반복 종료가 보고됨 | AP·접속 단말·실제 세션·화면/음성을 분리해 관측. 최신 무선 모드 이식 결과는 실차 확인 필요 |
-| 인터페이스 UP / hostapd 오류 | 과거 `Operation not permitted`와 AP 시작 실패가 보고됨 | UP 전후 커널 로그·hostapd 권한/종료 로그 수집. 재발 원인을 오류 문구만으로 단정하지 않음 |
-| 외부 호스트 복구 범위 | 허브·여러 후보·다른 장치·활성 인터페이스·제어 파일 부재 시 복구를 거부할 수 있음 | `speed.log`의 거부 사유·복원 결과 확인. 물리 전원 재인가와 같은 동작으로 간주하지 않음 |
-| 351개 차량 지도 | 공식 rc.8의 신규 훅 8개를 선언하면 모드 전체가 거부될 수 있음 | 이식판은 호환되는 41개 선언을 사용. 신규 다중 폰 제어·US/Canada 팝업·AA 주차 소비자는 등록하지 않음 |
-| 카플레이 주차·복귀 | 기존 351개 지도에는 필요한 종료·재광고 점도 없음 | 해당 점이 매핑된 경우에만 켜지는 구조. 현재 차량 지도에서 활성화됐다고 볼 수 없음 |
-| 이전 한국판 전용 옵션 | `tbt_fit`·별표 팝업 건너뛰기는 새 상위 소스에 이식하지 않음 | 저장된 설정이 남아 있어도 새 모드의 같은 기능으로 해석하지 않음 |
-
-상위 소스·서명·지도별 세부 검토는 [rc.7 / rc.8 USB 호환성 문서](docs/compatibility-rc7-rc8-usb.md)를 참고하세요.
-
-재장착 시각과 USB·HMG-API·iAP2 단계를 나눈 [최근 부팅/오디오 로그 분석](docs/boot-audio-log-2026-11-20.md)도 기록했습니다. 로그의 native iAP2 반환값 19의 정확한 뜻은 확인되지 않았습니다. Realtek의 별도 `awk: not found` 진단 제한은 이번 Korea Projection 수정에 포함하지 않았습니다.
-
-## 미확인 사항
-
-- v0.1.19 지원 파일 적용·재부팅 후 A3000mini를 꽂은 채 **수동 조작 없이 AP 준비까지 도달하는지**. v0.1.18의 재장착 전 USB 480Mbps·드라이버 준비 통과와는 별도 확인 사항입니다.
-- 카플레이의 장시간 연결, 화면·음악·Siri·통화, 주행 안내 및 계기판 표시가 안정적으로 유지되는지.
-- A3000mini 프리징의 재현 조건과 원인, USB·무선 링크의 실제 처리량. USB 12/480Mbps 표시는 처리량 측정값이 아닙니다.
-- 차량 순정 네이티브 라이브러리에 대한 새 무선 모드 레시피의 실제 적용·음성 동작. 해당 사유 라이브러리가 필요한 오프라인 검사는 파일 부재로 건너뛴 항목이 있습니다.
-- 최신 본체·로컬 차량 지도의 실차 호환성과 지도 의존 기능, Android Auto의 실제 연결·유지 동작.
-- 다른 차량·펌웨어·동글 조합 및 이전 버전으로의 전체 복원 결과.
-
-## 문제 발생 시 로그 수집
-
-### 부팅과 재장착을 비교하는 순서
-
-1. A3000mini를 꽂은 채 재부팅하고 약 2분 기다린 뒤 상태와 시간을 기록합니다.
-2. 실패하면 같은 부팅에서 동글을 한 번 뺐다 꽂고 **분리·재장착 시각**을 각각 기록합니다. 필요하면 Realtek Launch를 한 번 누르고 그 시각도 기록합니다.
-3. **다시 재부팅하기 전에** 동글을 제보 USB 메모리로 바꿉니다.
-4. **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 실행합니다.
-5. USB의 `KoreaProjection-report/3-log.txt`와 생성된 `1-report.md`, `2-car-report.json`을 함께 보냅니다. Realtek `speed.log`, `boot.log`, `preload.log`, `launch.log`도 확보할 수 있으면 첨부합니다.
-
-제보할 때 합본·본체·무선 모드 버전, 처음부터 동글을 꽂았는지, 실제 화면·음성 증상, 수동 조작 시각을 함께 적어주세요. USB 장치 번호 변경에는 자동 복구에 따른 재열거도 포함되므로 번호 변경만으로 수동 재장착을 판단하지 않습니다.
-
-### 로그에서 보는 항목
-
-| 로그·항목 | 확인 목적 |
+| 구성 요소 | 버전 |
 | --- | --- |
-| `usb-cn7hevpe-map.log` | 하이브리드의 차량 지도 생성 및 필수 지점 확인 결과 |
-| `usb-cn7pe-map.log` | CN7PE에서 적용 전에 실행한 HMG-API 차량 지도 확인 결과 |
-| `usb-boot-timing.log` | 커널 부팅부터 USB 480Mbps·rtwlan0, AP 시작 조건, AP 준비, 최초 카플레이 관측까지 걸린 초 |
-| `speed.log` | EHCI 소유권·호스트 재초기화 단계, 열거 준비/시간 초과, USB 버스 변경 전후 커널 기록, 실제 480Mbps 확인 |
-| `boot.log` / `preload.log` / `launch.log` | 부팅 자동 실행, 모듈/동글 바인딩, 수동 Launch 결과 |
-| `usb-ap-up-boot.log` / `usb-ap-up-replug.log` | 첫 USB와 재열거 후 인터페이스 UP, 실제 속도·전후 커널 로그 |
-| `usb-hostapd-permissions-*.log` / `usb-hostapd-logcat-*.log` | hostapd의 UID·권한·SELinux 상태, 종료 코드·실패 순간 로그 |
-| `usb-carplay-events.log` / `usb-cp-capture.log` | 세션 생성·시작·종료와 수집 실패 여부 |
-| `usb-carplay-audio.log` | iAP2 전환 대기·재개·준비, 오디오 스트림 설정·오류, 우선권 요청, 스캔 종료 코드와 관측 줄 수. v0.1.31에서 순정 DipoService 오디오 타입·우선권과 네이티브 iAP 송신 호출 개수 추가 |
-| `usb-audio-apply.log` / `usb-mod-files-check.log` / `mod-apply.txt` | 같은 버전의 오디오 지원 파일 적용 여부, 설치 파일 일치, 보류·실패·재부팅 대기 |
-| `usb-connection-first.log` / `usb-connection-latest.log` | 실제 방화벽 규칙·순서·카운터, mDNS·TCP 관측, `rtwlan0`의 누적 수신·송신·드롭 |
+| Korea Projection BETA | **1.7.4.43** |
+| HMG-API Wireless Mode | **2.4.25** (CN7PE·CN7NPE), **2.4.26** (CN7HEVPE) |
+| HMG-API 본체 | **1.1.0-rc.8** (NEMESIS 패키지 **1.0.99.8**) |
+| Realtek Wi-Fi Driver | **1.1.19** |
 
-제보 파일은 위 진단 내용을 모아 줍니다. 파일이 없거나 0KB라면 화면의 복사 완료 문구만으로 수집 성공으로 판단하지 말고, 위 제보 경로로 다시 수집해 내용이 들어 있는지 확인하세요. mDNS 응답 없음이나 방화벽 카운터 하나만으로 실패 원인을 단정하지 않습니다.
+Realtek이 A3000mini를 바인딩하고 USB 480Mbps를 확인하면 Korea Projection이 `rtwlan0`에 핫스폿을 엽니다. 무선 모드는 Bluetooth iAP2 세션을 Wi-Fi로 넘깁니다. USB 480Mbps 표시는 USB 버스 연결 속도입니다. [무선 모드 동작 및 빌드](projection-source/README.md)
 
-HMG-API의 **Logs → Record a problem**에서도 연결 증상을 기록할 수 있습니다. USB 인식 분석에는 Korea Projection 제보와 Realtek 로그가 함께 필요합니다.
+## 실차 확인 결과
 
-### v0.1.33 CarPlay 라이브러리 확인
+| 항목 | 확인 결과 |
+| --- | --- |
+| 아반떼 N CN7NPE 260902와 A3000mini | v0.1.36에서 동글을 꽂은 채 부팅해 재장착이나 Realtek 수동 Launch 없이 USB 480Mbps와 AP 준비를 확인했습니다. 한 시험에서 USB 인식은 부팅 약 14초, AP 준비는 약 27초였습니다. |
+| 무선 CarPlay 음악 | 같은 차량에서 오디오 보정 적용 후 차량 스피커 출력이 확인됐습니다. 기존에 소리가 iPhone에서만 나오던 증상은 이 시험에서 해결됐습니다. |
+| 곡 전환 | 곡 제목은 즉시 바뀌지만, 같은 차량에서 **무선 CarPlay에만** 차량 스피커의 새 곡 출력이 약 1초 늦는 현상이 보고됐습니다. 원인과 개선 효과는 추가 확인이 필요합니다. |
+| HUD | 별도 Phone Projection TBT를 켜고 합본의 TBT를 끈 상태에서 작동이 확인됐습니다. v0.1.38의 통합 HUD 경로는 회전·거리 메시지 재현을 통과했으며 실차 확인을 기다리고 있습니다. |
+| CarPlay 확인창 | 연결 때 차량 정보 제공 동의창이 반복 표시됐습니다. 기존 동의가 재부팅 후에도 유지되는지는 추가 확인이 필요합니다. |
 
-**제보 파일 만들기**를 누르면 `3-log.txt`의 **CarPlay native library fingerprint**에 `libCarPlayCoreUtils.so.md5=`가 기록됩니다. A3000mini를 빼고 제보 USB를 연결한 상태에서도 수집됩니다. [제보 순서](bundle/INSTALL-KO.md#v0133-carplay-라이브러리-확인)
+장시간 재연결, 통화·Siri·내비 안내 음성, Android Auto 실차 동작, CN7PE·CN7HEVPE의 차량별 동작은 확인 중입니다.
 
-### v0.1.30 A/B/C 로그 일괄 내보내기
+## 문제 제보
 
-동글을 꽂은 채 **A 둘 다 끔 → B HT20만 켬 → C iAP2 재시작 보류만 켬** 순서로 시험합니다. 설정을 바꿀 때마다 적용하고 재부팅합니다. 각 시험의 연결 시도나 오디오 재생 뒤 약 1분 동안 수집을 기다린 뒤 다음 시험으로 넘어갑니다. 마지막 시험의 재부팅 전에 제보 USB로 교체해 **제보 파일 만들기**를 한 번 누릅니다.
-
-`3-log.txt`의 **USB CarPlay trial history**에는 최근 8회 부팅의 선택 옵션, AP 상태, iAP2 전환과 오디오 진단이 들어갑니다. 자세한 순정 CarPlay 로그를 기록하려면 첫 시험 전에 **CarPlay's own log (troubleshooting)**를 켭니다. [시험과 제보 순서](bundle/INSTALL-KO.md#v0130-abc-로그-한-번에-내보내기)
-
-### v0.1.29 핫스팟 옵션 시험
-
-HMG-API Wireless Mode에서 **Channel 149 HT20 (USB AP test)**와 **Defer AP restart during iAP2 (90 s)**를 각각 켤 수 있습니다. 두 옵션의 기본값은 꺼짐입니다. **Apply changes** 후 재부팅하고 한 옵션씩 비교합니다. 90초 보류는 현재 AP의 Bluetooth iAP2 협상 중 `softap.conf`가 바뀌어 발생하는 재시작에 적용합니다. [옵션별 시험 순서](bundle/INSTALL-KO.md#v0129-ht20-및-iap2-협상-중-ap-재시작-보류)
-
-### v0.1.28 iAP2 재전환 시험
-
-Korea Projection과 무선 모드의 업데이트를 적용하고 재부팅합니다. **CarPlay's own log (troubleshooting)**를 켜면 순정 오디오 협상 로그를 수집할 수 있습니다. 제보의 `usb-carplay-audio.log`에서 초기 송신 실패 후 `waiting-after-rc19`가 `resume-on-peer`와 `component5-ready`로 이어지는지, 그 뒤 오디오 스트림이 열리는지 확인합니다. 25초 상한으로 종료된 스캔도 이미 읽은 항목을 보존합니다. [설치 및 시험 순서](bundle/INSTALL-KO.md#v0128-iap2-재전환과-오디오-제보)
-
-### v0.1.27 오디오 비교
-
-CN7PE·CN7NPE에서는 **HMG-API → HMG-API Wireless Mode → Stock Bluetooth handoff (CarPlay audio test)**를 켜고 내비게이션을 재부팅합니다. 무선 CarPlay에서 음악·내비 안내·통화가 나오는 곳과 아이폰의 출력 기기 목록을 확인합니다. 같은 항목을 끄고 재부팅하면 v0.1.26의 블루투스 유지 조건으로 비교할 수 있습니다. [설치 및 시험 순서](bundle/INSTALL-KO.md#v0127-무선-카플레이-오디오-비교)
-
-## 검증 범위
-
-### v0.1.36 CN7NPE 실차에서 무선 카플레이 오디오 확인
-
-2026년 11월 22일 아반떼 N 페이스리프트(CN7NPE, 국내형 260902)에서 ipTIME A3000mini를 꽂은 채 부팅했습니다. 로그에서 부팅 약 14초 뒤 USB 480Mbps 인식, 약 27초 뒤 AP 준비, iAP2 Wi-Fi 연결 성공을 확인했습니다. 순정 CarPlay 라이브러리 MD5 검사와 오디오 보정이 적용됐으며, 운전자가 무선 카플레이 소리가 차량 스피커에서 정상 출력되는 것을 확인했습니다. 통화·내비 안내와 장시간 재연결은 별도 시험이 필요합니다.
-
-Korea Projection 1.7.4.41은 무선 모드 검증에 쓰이는 BusyBox로 순정 라이브러리 MD5를 먼저 검사합니다. 실패하면 동봉된 BusyBox로 다시 검사하고 제보에 검사 경로와 종료 코드를 남깁니다. 기존 해시 일치 조건은 유지합니다.
-
-### v0.1.35 HMG-API rc.8 및 오디오 보정 갱신
-
-- 공식 rc.8 엔진에서 CN7NPE 오디오 보정 0.1.1의 설치·갱신·적용을 모의 검증했습니다. 무선 모드 2.4.21·2.4.22는 v0.1.34의 서명된 파일과 일치합니다. 실차 스피커 출력은 추가 확인이 필요합니다.
-
-### v0.1.34 오디오 보정 통합
-
-- CN7NPE와 순정 라이브러리 조건, 자동 설치·적용·제거, 다른 변경이 대기 중일 때의 보류와 이전 동작 복구를 모의 검증했습니다. 차량의 보정 적용과 실제 스피커 출력은 추가 확인이 필요합니다.
-
-### v0.1.33 CarPlay 진단 및 업데이트
-
-- `printf`가 없는 셸에서의 MD5 출력, 기존 모드가 설치된 v0.1.32에서의 업데이트, ZIP 재현 빌드와 셸 문법 29개를 검증했습니다. 차량에서 MD5 수집과 실제 오디오 출력은 추가 확인이 필요합니다.
-
-### v0.1.30 A/B/C 부팅별 로그 보존
-
-- A/B/C 시험의 설정과 로그를 독립적으로 저장하고 동일 부팅의 서비스 재시작, 지난 부팅의 파일 제외, 최근 8회 보관 및 단일 제보 출력을 모의 검증했습니다. Linux 회귀 검사 48개를 통과했습니다. [빌드 및 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44872378639)
-- 셸 문법 29개와 USB ZIP 재현 빌드를 확인했습니다. 아반떼 실차의 연결 및 실제 오디오 출력은 추가 시험이 필요합니다.
-
-### v0.1.29 두 AP 옵션
-
-- 채널 폭과 재시작 보류를 독립적으로 바꾸는 경우, 보류 만료, AP 재생성, 세션 종료와 이전 세션 기록 배제를 검사했습니다. HMG-API rc.7에서는 세 차종의 옵션 기본값·개별 적용·동시 적용·해제를 모의 검증했습니다. [빌드 및 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44870998521)
-- 무선 모듈 서명과 기존 훅 바이너리, 29개 셸의 문법 및 USB 설치 ZIP 재현 빌드를 확인했습니다.
-
-### v0.1.28 iAP2 재전환 및 오디오 수집
-
-- 실제 수정 코드로 초기 `rc=19` 뒤 반복 송신 중지, 늦게 들어온 첫 패킷으로 재전환, 이전 세션 격리와 기존 정상 경로를 검사했습니다. 중간 종료된 logcat의 부분 기록도 검증했습니다. Linux 회귀 42개, Android API 19 빌드 및 rc.7 엔진의 세 차종 모의 적용·복원을 통과했습니다. [빌드 및 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44869289485)
-- 완성 ZIP의 두 무선 모드 서명, 셸 문법 29개 및 재현 빌드를 확인했습니다. 순정 Wi‑Fi iAP2와 실제 오디오 출력은 실차 확인이 필요합니다.
-
-### v0.1.27 블루투스 전환 및 오디오 제보
-
-- 확인된 USB 무선 세션, 구형 무선 전송, 유선 및 AP 변경 상황에서 시험 옵션의 동작을 검증했습니다. Linux 회귀 42개, Android API 19 훅 빌드 및 rc.7 엔진의 세 차종 모의 적용·복원 검사를 통과했습니다. [빌드와 검증](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44772680009)
-- 완성 ZIP의 두 무선 모드 작성자 서명, 기존 드라이버·본체 일치, 셸 문법 29개 및 재현 빌드를 확인했습니다. 차량 오디오 복구 여부는 시험이 필요합니다.
-
-### v0.1.26 CN7HEVPE 설치 검사
-
-- 공개 CN7HEVPE 제보의 338개 지점과 하이브리드판의 필수 지점을 대조했습니다. rc.7 엔진으로 세 차종의 적용·재적용·복원을 검사했고, 하이브리드 Android API 19 빌드와 Linux 회귀 41개가 통과했습니다. [검사 결과](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44754478562)
-- 완성 ZIP의 두 모드 선택, 기존 모드 보존, 대상 펌웨어 검사, 셸 문법 29개와 재현 빌드를 확인했습니다. 첫 지도 생성과 연결은 CN7HEVPE 차량에서 확인해야 합니다.
-
-### v0.1.25 CN7PE 설치 검사
-
-- 실제 rc.7 엔진으로 CN7PE와 CN7NPE 모의 환경에서 설치 계획·적용·재적용·복원을 검사했습니다. CN7PE 공식 지도에 필요한 훅이 모두 있는지 확인했고 Linux 회귀 검사 38개와 Android API 19 빌드도 통과했습니다. [검사 결과](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44749478094)
-- 완성 ZIP에 대해 두 차종의 설치·서비스·드라이버 대상 검사, 다른 모델·지역·플랫폼 거부, 셸 문법 29개 및 재현 빌드를 확인했습니다. CN7PE의 실제 자동 인식·AP·오디오 결과는 차량에서 시험합니다.
-
-### v0.1.24 부팅 시간 기록 검사
-
-- [Linux 회귀 38개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44742073159) 통과. 첫 기록 유지, 부팅 변경 시 초기화와 잘못된 시간 입력 거부를 확인했습니다.
-- 완성 ZIP의 셸 문법 29개, 단계별 기록의 호출 위치, 재현 빌드와 본체·드라이버·무선 모드 ZIP의 일치를 확인했습니다.
-
-### v0.1.23 iAP2 전환 검사
-
-- [Android API 19 빌드 및 회귀 검사](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44740466978) 통과. Linux 검사 36개, 실제 수정된 전환 코드, rc.7 설치 계획·적용·복원과 지도 호환을 확인했습니다.
-- 기존 작성자 서명·부팅 대기 코드·오디오 지원 파일 보존, 완성 ZIP의 셸 문법 29개와 재현 빌드를 확인했습니다. 실제 iAP2 식별과 차량 음악 출력은 차량에서 측정해야 합니다.
-
-### v0.1.22 부팅 대기 검사
-
-- [Linux 회귀 36개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44733065568) 통과. 적용·권한 복구가 필요 없는 기존 설치의 대기 생략과, 설정 미완료·변경 대기·검증 실패 시 기존 절차를 확인했습니다.
-- 완성 ZIP의 셸 29개 문법, 기존 오디오 적용 뒤의 실행 순서, 동일 입력 재빌드 및 본체·드라이버·무선 모드 ZIP이 동일함을 확인했습니다. 실제 단축 시간은 차량에서 측정합니다.
-
-### v0.1.21에서 확인한 항목
-
-- [기존 회귀 33개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44717133899) 통과. 새 이름·업데이트 버전·의존성·기존 설치 허용 범위와 같은 작성자 서명을 확인했습니다.
-- 이전 v0.1.20과 대조해 본체·드라이버 ZIP 보존과 무선 모드의 표시 이름·버전·서명 정보만 변경됐음을 확인했습니다. 기존 USB Test와 새 BETA 이름의 업데이트 허용 범위도 확인했습니다. 커널 모듈·드라이버 셸·훅·오디오 파일·방화벽 설정은 동일합니다. 완성 ZIP의 셸 29개 문법과 동일 입력 재빌드도 확인했습니다.
-
-### v0.1.19 기반 자동 적용 검증
-
-- [Linux 회귀 33개](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44713724656): rc.7 계획 형식, 같은 버전의 자동 적용·재부팅 대기·다음 부팅 무변경, 다른 모드/수정/고정/실패/활성 AP 거부, BusyBox 전용 세션 조회 통과.
-- 완성 ZIP의 29개 셸 문법, 공식 본체 파일/지도 493개 해시, 의존성·업데이트 조건, 서명·41개 훅 지도 호환, 이전 rc.4 업데이트의 상태 보존 확인.
-- 전체 서명 모드 파일의 체크섬 목록과 AP 이전 적용/재부팅 게이트, 제보 로그 포함, 본체·Realtek·무선 모드·도구 보존, 동일 입력 재빌드의 바이트 동일성 확인.
-
-### v0.1.18 기반 구성 검증
-
-- [공식 SDK·회귀 24개·실제 수정 메서드/패치 엔진·351개 지도 호환 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44701743445) 통과. 상위 CpTx/재이관 91개와 경로 안내 60개 검사 포함.
-- 실제 rc.7 엔진의 CN7NPE KOR·SDIO 없는 모의 환경에서 설치 계획·적용·재적용·바이트 동일 복원과 USB 규칙 생성 확인.
-- 29개 셸 문법, 공식 본체 내부 파일/지도 493개 해시, 무선 모드 작성자·서명·업데이트 조건, 이전 rc.4 업데이트의 상태 보존 경로 확인.
-- 기존 Realtek/도구 보존, 동일 입력으로 만든 최종 ZIP의 바이트 동일성, 게시된 공개 다운로드와 SHA-256 확인.
-
-위 검사는 소스·빌드·모의 환경·배포 파일 검증입니다. 실제 차량의 RF 성능·USB PHY·화면·음성 정상 동작을 대신 검증한 결과가 아닙니다.
-
-**v0.1.36 USB ZIP SHA-256**
-
-```text
-694225f73cc5ddea64eb92c2f5aca784aadce3a009e1fbe77e6529dafde9377d
-```
-
-<details>
-<summary>이전 버전 배포 검증 기록</summary>
-
-### v0.1.17 배포 검증
-
-- [실제 C 코드의 EHCI 버스 재번호화·지연 준비·미구성/다른 장치·시간 초과·실패/신호 복원 검사, 24개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44680540924)를 통과했습니다.
-- 29개 셸 문법, 새 드라이버 의존성·90초 호출 제한·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서 실제 480Mbps 전환은 확인이 필요합니다.
-- USB ZIP SHA-256: `773ebcc1e222caddbe4497b45fa1777a7ad6f5918c0533b4f8e62c0f52dddab4`
-
-### v0.1.16 배포 검증
-
-- [실제 C 코드의 외부 호스트 재초기화 모의 검사·기존 EHCI 검사·23개 회귀 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44677378486)를 통과했습니다. 해제/등록 효과와 실패·SIGTERM을 모의해 순서·내부 호스트 보존·복원을 확인했습니다.
-- 29개 셸 문법, 새 의존성·helper ELF·모드 서명, 기존 커널/카플레이 모드/본체 보존과 동일 입력 재빌드를 확인했습니다. 실차 480Mbps 자동 전환은 확인이 필요합니다.
-- USB ZIP SHA-256: `74022f1af7b88e1a6130ab4e4417afeb30e3805505375511a410acc301424e78`
-
-### v0.1.15 배포 검증
-
-- [Linux의 실행 비트 손실 재현·22개 회귀 검사·기존 EHCI 범위 검사와 Android API 19 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44668325705)를 통과했습니다.
-- 29개 셸 문법, 새 드라이버 의존성, 모드 서명과 기존 커널/실행 파일/카플레이 모드 보존 및 동일 입력 재빌드를 확인했습니다. 실차의 USB 480Mbps 복구와 Wi-Fi 처리량은 아직 확인되지 않았습니다.
-- USB ZIP SHA-256: `db9b9339939a9e560b81da5f1f1a1f1c2679641ffce496cdbecae7d7dbee78bb`
-
-### v0.1.14 배포 검증
-
-- [실제 수정 메서드의 끊김 재현·이관·세션 격리 검사와 Android API 19 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44665053112)를 통과했습니다. 16개 회귀 검사, 기존 AP 대기 검사와 원래 transport 값을 보존하는 상태 갱신 검사도 포함합니다.
-- 중첩 ZIP·29개 셸 문법·동일 작성자 서명, 2.4.6~2.4.10 업데이트/재설치 조건, 기존 드라이버·본체·네트워크 정책 보존을 확인했습니다. 동일 입력 재빌드의 파일 내용도 일치합니다. 실차의 연결 지속 여부는 확인이 필요합니다.
-- USB ZIP SHA-256: `ddac046fe0a26230b1a5548a44194b83d995f133ab7f6fc2c2adf2f6a25ad1f1`
-
-### v0.1.13 배포 검증 기록
-
-- [회귀 검사·세션 콜백·Android 훅 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44536318095), [mDNS 응답 해석 검사·ARMv7 도구 빌드](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/actions/runs/44535807005)를 통과했습니다.
-- 중첩 패키지·29개 셸 문법·모드 서명·드라이버/본체 보존과 동일 입력 재빌드를 확인했습니다. 차량에서의 실제 방화벽 통과·카플레이 동작 확인은 남아 있습니다.
-- USB ZIP SHA-256: `340087b19afb6daaea24699776a1ebc80eed468da0ea121f5377129ab1b79f5c`
-
-</details>
+1. 증상을 재현한 뒤 시각, 차량·펌웨어, 합본 버전을 기록합니다. HUD는 지도 앱과 방향·거리 표시 여부를 함께 적습니다.
+2. 같은 부팅에서 A3000mini를 제보 USB로 바꾸고 **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 선택합니다.
+3. `KoreaProjection-report/3-log.txt`와 `1-report.md`, `2-car-report.json`을 공유합니다. USB 인식 문제에는 Realtek `speed.log`와 `boot.log`도 첨부해 주세요. 공유 전에 기기 이름·주소와 위치 정보가 포함됐는지 확인하세요.
 
 ## 버전별 변경 사항
 
-| 합본 버전 | 변경 사항 |
+| 버전 | 주요 변경 |
 | --- | --- |
-| v0.1.36 | 순정 CarPlay 라이브러리 MD5 검사 경로 수정 및 실패 원인 기록. 아반떼 N 260902와 A3000mini 실차에서 무선 카플레이 차량 스피커 출력 확인 |
-| v0.1.35 | 공식 HMG-API rc.8과 CN7NPE 오디오 보정 0.1.1의 자동 설치·갱신·적용, 기존 USB 무선 모드 유지 |
-| v0.1.34 | CN7NPE 오디오 보정을 Korea Projection에 통합하고 차량·라이브러리 검증 뒤 자동 설치 및 적용 |
-| v0.1.33 | `printf`가 없는 차량 셸에서도 CarPlay CoreUtils MD5가 제보 파일에 표시되도록 수정 |
-| v0.1.32 (로컬 테스트) | 제보 USB의 `3-log.txt`에 CarPlay CoreUtils 라이브러리 MD5 수집, 기존 합본 업데이트 호환성 수정 |
-| v0.1.31 (로컬 테스트) | 순정 DipoService 오디오 타입과 음악·전화·Siri 우선권, 네이티브 iAP 송신 호출 집계, IPv6 UDP 6031 적용 규칙 집계 수정. [CN7HEV 성공·CN7PE 오디오 실패 로그 대조](docs/cn7hev-issue-103.md) |
-| v0.1.30 | A/B/C 옵션과 iAP2·오디오 로그를 최근 8회 부팅별로 자동 보존하고 제보 USB에 한 번에 내보내기 |
-| v0.1.29 | 채널 149 HT20과 Bluetooth iAP2 협상 중 AP 설정 변경에 따른 재시작의 최대 90초 보류 옵션 |
-| v0.1.28 | 초기 `rc=19` 반복 송신 억제와 아이폰 데이터 수신 시 재전환, 오디오 로그 백그라운드 스캔 및 부분 기록 보존 |
-| v0.1.27 | CN7PE·CN7NPE의 순정 블루투스 전환 비교 옵션, 오디오 제보와 `rtwlan0` 카운터 |
-| v0.1.26 | CN7HEVPE 국내형 260902 설치 대상 추가, 하이브리드용 무선 모드와 차량 지도 생성·검증 |
-| v0.1.25 | CN7PE 국내형 260902 설치·USB 복구·무선 모드 지원 추가, 지도 확인 뒤 적용 |
-| v0.1.24 | 커널 부팅 기준 USB·HMG-API·AP·카플레이 관측 시간 제보에 포함, 오디오 원인 구분 시험 안내 |
-| v0.1.23 | 확인된 transport 0 무선 세션의 SPP 종료 뒤 최대 1.2초 첫 수신 대기, 첫 수신·네이티브 송신 반환값 기록 |
-| v0.1.22 | 기존 설정이 검증된 부팅에서 120초 권한 복구 대기 생략, 부팅 기록 추가 |
-| v0.1.21 | HMG-API Wireless Mode / Korea Projection CN7NPE BETA로 이름 확정, 기존 USB Test·BETA 이름의 업데이트 호환 유지 |
-| v0.1.20 | 표시 이름을 Realtek Wi-Fi Driver / HMG-API Wireless Mode (USB)로 구분. 기존 설치 갱신용 버전 증가와 동일 ID·작성자 유지, 실행 코드 보존 |
-| v0.1.19 | rc.7 자동 적용 필터 수정, 같은 2.4.11의 오디오 지원 파일 확인·적용·재부팅 대기, USB/HMG 설정 단계 로그, BusyBox 세션 조회 수정 |
-| v0.1.18 | HMG-API rc.7 + 공식 무선 rc.8 기반 USB 이식판 2.4.11, 351개 지도 호환·AP 대기·세션/이관·방화벽 검증, Realtek 1.1.16 유지 |
-| v0.1.17 | EHCI 480Mbps 구성 완료 대기 후 OHCI 복원, 드라이버 호출 제한 20→90초, USB 버스 재번호화 이후의 커널 로그 수집 |
-| v0.1.16 | 소유권 반환 후 12Mbps가 유지되면 외부 OHCI/EHCI를 EHCI 우선 순서로 재초기화, 대상 범위·복원·실제 480 확인 |
-| v0.1.15 | USB 12→480Mbps 복구 도구의 실행 권한 누락 수정, 준비 실패 시 시도 예산 보존, 조회·진단 도구 실행 권한 복구 |
-| v0.1.14 | 확인된 USB-AP Bluetooth 세션의 transport=0 판정, SPP 종료 후 iAP2 이관, 이전 세션의 예약 작업·전송 차단 |
-| v0.1.13 | IPv6 UDP 6031 허용, 실제 방화벽 규칙·순서·카운터와 mDNS 진단, 실제 카플레이 세션 기준 연결 표시 |
-| v0.1.12 | USB AP 대역의 동적 TCP 허용, 현재 접속 단말 수·확인 불가 표시, 기존 설치의 포트 정책 자동 적용 |
-| v0.1.11 | AP 준비 전에 Bluetooth iAP2가 시작되는 순서 수정, 준비 후 자동 진행, 끊긴 연결의 대기 취소 |
-| v0.1.10 | 부팅 시 A3000mini의 외부 포트를 EHCI로 되돌리는 복구 추가, 실제 USB 480Mbps를 확인한 뒤 AP 시작 |
-| v0.1.9 | 분리된 네트워크 장치 등록 정리, 재장착 시 AP·DHCP 재시작, 첫 USB 기록 저장 수정, USB 속도·단말 접속 로그 추가 |
-| v0.1.8 | Realtek 절전 옵션 비활성화, HALMAC 단계별 실패 로그 추가, `printf` 미지원 오류 수정, 인터페이스 UP 성공 뒤 AP 시작 |
-| v0.1.7 | 칩 초기화 실패 로그와 부팅·재열거별 UP 결과, `hostapd` 권한·실패 로그를 제보 파일에 추가 |
-| v0.1.6 | 인터페이스 활성화가 거부되면 권한·USB 상태 확인 후 드라이버 연결을 부팅당 한 번 갱신 |
-| v0.1.5 | 기존 HMG-API 무선 모드가 남은 상태에서 Korea Projection을 업데이트하는 조건 수정 |
-| v0.1.4 | `hostapd` 실패 직후 해당 프로세스의 Android 로그 자동 수집 |
-| v0.1.3 | HMG-API 본체를 공식 1.1.0-rc.4로 교체 |
-| v0.1.2 | HMG-API 본체를 포함하고 Korea Projection 설치 시 필요한 의존성을 먼저 설치 |
-| v0.1.1 | Korea Projection 설치 시 Realtek 드라이버를 같은 USB에서 먼저 설치 |
-| v0.1.0 | Korea Projection CN7NPE USB 테스트판과 Realtek 드라이버를 하나의 USB 설치 ZIP으로 제공 |
+| **v0.1.38** | CarPlay HUD 회전·거리 갱신 및 Wi-Fi 전환 뒤 경로 안내 요청 개선. v0.1.37의 오디오 통합 포함 |
+| v0.1.37 (로컬 시험) | CN7NPE 오디오 보정을 무선 모드에 통합하고 Stock Bluetooth handoff 시험 옵션 제거 |
+| v0.1.36 | 순정 CarPlay 라이브러리 MD5 검사 수정. CN7NPE에서 무선 CarPlay의 차량 스피커 출력 확인 |
 
-자세한 수정 내역과 이전 드라이버 버전의 이력은 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
+v0.1.38 USB ZIP SHA-256 `df3962c19a1876f67b74faff0db11682c00b679ff22b8f3fb2ea4eeebafbaaa7`
 
-## 릴리스 운영
-
-- 새 합본은 GitHub **Latest**로 등록하고 완성된 USB 설치 ZIP 한 개를 제공합니다.
-- **이전 릴리스·태그·설치 ZIP을 보존**해 버전별 다운로드를 유지합니다.
-- 영문 프로젝트/릴리스 이름을 사용하고, 변경 내용은 README와 [CHANGELOG.md](CHANGELOG.md)에 기록합니다.
-- 이 README의 현재 설치 안내는 v0.1.36 기준입니다.
-
-[최신 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases/latest) · [전체 릴리스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases)
+[전체 변경 이력](CHANGELOG.md) · [이전 릴리스와 설치 ZIP](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/releases) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/blob/cn7npe-usb-bundle-v0.1.36/README.md#검증-범위)
 
 ## 소스와 라이선스
 
-- [Realtek 대응 소스·Gen5W 빌드 설정](driver-source/README.md) · [USB 복구 도구](driver-source/usb_reset_a3000mini.c)
-- [Korea Projection 1.7.4 원본](https://github.com/StopDragon/korea-projection/tree/v1.7.4) · [기존 CN7NPE USB 이식 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb) · [합본 스크립트](bundle)
-- [공식 HMG-API 본체 rc.8 소스](https://github.com/Open-HMG/HMG-API/tree/v1.1.0-rc.8) · [USB 이식판 기반 무선 모드 2.2.0-rc.8 소스](https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc)
-- [USB 무선 모드 이식·빌드](projection-source/README.md) · [모드 패키지·서명 처리](build_wireless_mod.py) · [호환성 검토](docs/compatibility-rc7-rc8-usb.md)
-- [NEMESIS USB 패키지 문서](https://github.com/xwtk/hmg_nemesis/blob/main/05-Packages.md)
-
-구성 요소별 라이선스와 대응 소스는 패키지의 라이선스 안내 및 위 소스를 확인하세요. 무선 모드 이식은 원본과 같은 AGPL-3.0을 따르며 개인 서명 키는 배포하지 않습니다.
+- [Realtek 드라이버·USB 복구 도구](driver-source/README.md) · [USB 합본 스크립트](bundle)
+- [Korea Projection 원본](https://github.com/StopDragon/korea-projection/tree/v1.7.4) · [CN7NPE USB 이식 소스](https://github.com/Seikoz/nemesis-rtl8812bu-gen5w/tree/5b0d60ed47baf868714954b6290123a702d6a5e9/projection-usb)
+- [공식 HMG-API rc.8](https://github.com/Open-HMG/HMG-API/tree/v1.1.0-rc.8) · [기반 무선 모드 2.2.0-rc.8](https://github.com/Open-HMG/hmgapi-wireless-cp-aa/tree/c47c0bbf8513e725c9852acb932bdde39e3d7edc)
+- [무선 모드 이식 소스](projection-source) · [차량 지도 호환성](docs/compatibility-rc7-rc8-usb.md) · [HMG-API AGPL-3.0 라이선스](bundle/licenses/HMG-API-AGPL-3.0.txt)

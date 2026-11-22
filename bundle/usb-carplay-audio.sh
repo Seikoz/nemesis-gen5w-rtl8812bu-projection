@@ -50,7 +50,10 @@ usb_capture_carplay_audio() {
         if (line ~ /requestaudiofocus\(\) from/) event="focus_request source=" source
         else if (line ~ /abandonaudiofocus\(\) from/) event="focus_abandon source=" source
       } else if (line ~ /[[:space:]]hmg-api[[:space:]]*:/) {
-        if (line ~ /usb_cp_audio bluetooth_handoff=(stock|preserved)[[:space:]]*$/)
+        if (line ~ /carplay: route guidance start-only result=(true|false)[[:space:]]*$/)
+          event="hud_guidance_start=" (line ~ /=true[[:space:]]*$/ ? "true" : "false")
+        else if (line ~ /carplay: first hud turn submitted[[:space:]]*$/) event="hud_first_turn_submitted"
+        else if (line ~ /usb_cp_audio bluetooth_handoff=(stock|preserved)[[:space:]]*$/)
           event="bluetooth_handoff=" (line ~ /=stock[[:space:]]*$/ ? "stock" : "preserved")
         else if (match(line, /usb_cp_handover stage=first-native-send rc=-?[0-9]+ len=[0-9]+ peer_seen=(false|true)/)) {
           event=substr(line, RSTART, RLENGTH)

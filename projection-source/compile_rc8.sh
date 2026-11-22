@@ -28,7 +28,13 @@ python3 -m unittest discover -s "$src/../tests" -v
 python3 "$src/test_rc8_handover.py" "$mod/src/hmgapi/mods/wireless/dipo/Bridge.java"
 python3 "$src/test_rc8_ap.py" "$mod/src/hmgapi/mods/wireless"
 python3 "$src/test_rc8_park.py" "$mod/src/hmgapi/mods/wireless/dipo/ParkCp.java"
+python3 "$src/test_cp_tbt.py" "$mod/src/hmgapi/mods/wireless/dipo/CpTurns.java"
 python3 "$src/test_session_status.py"
+mkdir -p "$work/carrier-test" "$work/carrier-usb"
+javac --release 8 -cp "$HMGAPI_SDK/lib/hmgapi-runtime.jar:$HMGAPI_SDK/lib/hmgapi-engine.jar" \
+  -d "$work/carrier-test" "$src/cn7npe-carrier/UsbWifiCarrier.java" "$src/cn7npe-carrier/CarrierTest.java"
+java -cp "$work/carrier-test:$HMGAPI_SDK/lib/hmgapi-runtime.jar:$HMGAPI_SDK/lib/hmgapi-engine.jar" \
+  hmgapi.mods.cn7npecarrier.CarrierTest "$src/cn7npe-carrier/recipes/usb-wifi-name.recipe" "$work/carrier-usb"
 # The upstream sender's blocked-call/generation tests and reconnection tests.
 for suite in reattach recipes projection cn7npe; do
   [ ! -f "$mod/tools/$suite/test.sh" ] || sh "$mod/tools/$suite/test.sh"
@@ -39,11 +45,15 @@ javac --release 8 -cp "$ANDROID_JAR:$work/runtime-stubs" -d "$work/runtime" $(fi
 javac --release 8 -cp "$ANDROID_JAR" -d "$work/mod-stubs" $(find "$mod/stubs" -name '*.java')
 javac --release 8 -cp "$ANDROID_JAR:$work/runtime:$work/mod-stubs" -d "$work/classes" $(find "$mod/src" -name '*.java')
 "$d8" --release --min-api 19 --lib "$ANDROID_JAR" --classpath "$work/runtime" --classpath "$work/mod-stubs" --output "$out/hooks.jar" $(find "$work/classes" -name '*.class')
-python3 - "$out/hooks.jar" <<'PY'
+python3 - "$out/hooks.jar" "$mod/src" <<'PY'
 import zipfile,sys
+from pathlib import Path
+# The integrated carrier checks for a stock interface solely to keep it untouched.
+stock_users = [p.name for p in Path(sys.argv[2]).rglob('*.java') if '"wlan0"' in p.read_text(encoding='utf-8')]
+assert stock_users == ['UsbWifiCarrier.java'], stock_users
 with zipfile.ZipFile(sys.argv[1]) as z:
     dex=z.read('classes.dex')
-    assert dex.startswith(b'dex\n035\0') and b'rtwlan0\0' in dex and b'\x05wlan0\0' not in dex
+    assert dex.startswith(b'dex\n035\0') and b'rtwlan0\0' in dex and b'UsbWifiCarrier;' in dex
     for token in (b'USB hotspot ready; starting Bluetooth iAP2',b'USB_CP_EVENT',b'UsbAp;',b'ParkCp;',b'CpTx;'):
         assert token in dex,token
 PY

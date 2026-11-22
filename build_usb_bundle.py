@@ -10,19 +10,19 @@ import zipfile
 from pathlib import Path
 
 from build_package import MODULES, PACKAGE_PATH, RESET_HELPER_PATH, ROOT, archive, build_driver_package
-from build_wireless_mod import BASE_SHA256 as WIRELESS_BASE_SHA256, HYBRID_VERSION, VERSION, hybrid_files, verify_mod
+from build_wireless_mod import (BASE_SHA256 as WIRELESS_BASE_SHA256, CARRIER_RECIPE,
+                                CARRIER_SOURCE, COREUTILS, HYBRID_VERSION, VERSION,
+                                hybrid_files, verify_mod)
 
 
 PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "eb2480561bb88c53bafb460bb9e4a02d437de23ca8aca11fecc78ee7b9ecb8b3"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.36"
-PROJECTION_VERSION = "1.7.4.41"
+BUNDLE_VERSION = "0.1.38"
+PROJECTION_VERSION = "1.7.4.43"
 WIRELESS_SOURCE_REF = "cn7npe-usb-bundle-v0.1.30"
 CARRIER_SOURCE_REF = "cn7npe-usb-bundle-v0.1.35"
-CARRIER_ID = "cn7npe-usb-carplay-carrier-test"
-CARRIER_SOURCE = ROOT / "projection-source/cn7npe-carrier"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
                  for model in ("CN7PE", "CN7HEVPE", "CN7NPE") for variant in ("0000", "S5W_M"))
 BASE_PRODUCTS = b"CN7NPE.KOR.0000.V039.001.260902|CN7NPE.KOR.S5W_M.V039.001.260902"
@@ -410,40 +410,22 @@ esac
     return allow_avante_products(hotspot.replace(anchor, gate + anchor)), status
 
 
-def add_audio_carrier(hotspot, status, uninstall, carrier):
-    files, _ = verify_mod(carrier, "0.1.1", mod_id=CARRIER_ID)
-    if (set(files) != {"hooks.jar", "mod.json", "recipes/usb-wifi-name.recipe"} or
-            json.loads(files["mod.json"]) != json.loads((CARRIER_SOURCE / "mod.json").read_bytes()) or
-            files["recipes/usb-wifi-name.recipe"] != (CARRIER_SOURCE / "recipes/usb-wifi-name.recipe").read_bytes()):
-        raise ValueError("Unexpected CN7NPE carrier metadata or native recipe")
-    with zipfile.ZipFile(io.BytesIO(carrier)) as package:
-        manifest = package.read("META-HMGAPI/manifest.json")
+def add_audio_carrier_migration(hotspot, status):
     helper = (ROOT / 'bundle/usb-audio-carrier.sh').read_bytes()
-    helper = helper.replace(b'@CARRIER_MANIFEST_SHA@', hashlib.sha256(manifest).hexdigest().encode())
-    helper = helper.replace(b'@CARRIER_ZIP_SHA@', hashlib.sha256(carrier).hexdigest().encode())
     main = b'\nmain() {\n'
-    ready = b'  usb_boot_mark ap_prerequisites_ready\n'
-    remove = b'\nremove_app\n'
+    reconcile = b'  usb_audio_reconcile > "$W/usb-audio-apply.log" 2>&1\n'
+    update_plan = b'  hmgapid engine plan > $W/plan.txt 2>&1\n  if plan_nothing; then\n'
     report = b'$W/usb-audio-apply.log '
-    if hotspot.count(main) != 1 or hotspot.count(ready) != 1 or uninstall.count(remove) != 1 or status.count(report) != 1:
-        raise ValueError("Expected the carrier setup, uninstall and report hooks")
+    if any(hotspot.count(anchor) != 1 for anchor in (main, reconcile, update_plan)) or status.count(report) != 1:
+        raise ValueError("Expected the carrier migration and report hooks")
     hotspot = hotspot.replace(main, b'\n' + helper + main)
-    hotspot = hotspot.replace(ready, '''  if ! usb_carrier_setup > "$W/usb-carrier.log" 2>&1; then
-    prog 100 reboot "USB 카플레이 오디오 보정을 적용했습니다. 지금 재부팅을 눌러 주세요."
-    idle_req
-  fi
-'''.encode() + ready)
-    uninstall = uninstall.replace(remove, b'''
-if ! usb_carrier_remove; then
-  echo "Could not remove the bundled CN7NPE audio carrier. Check HMG-API and retry uninstall."
-  exit 1
-fi
-''' + remove)
-    status = status.replace(report, report + b'$W/usb-carrier.log $W/usb-carrier-plan.txt ')
-    return hotspot, status, uninstall
+    for anchor in (reconcile, update_plan):
+        hotspot = hotspot.replace(anchor, b'  usb_carrier_cleanup >> "$W/usb-carrier-migration.log" 2>&1\n' + anchor)
+    status = status.replace(report, report + b'$W/usb-carrier-migration.log ')
+    return hotspot, status
 
 
-def build_projection_package(source, wireless, hybrid, station_counter, link_diagnostics, carrier):
+def build_projection_package(source, wireless, hybrid, station_counter, link_diagnostics):
     if (station_counter[:6] != b'\x7fELF\x01\x01' or len(station_counter) < 20 or
             struct.unpack_from('<HH', station_counter, 16) != (3, 40) or
             b'/system/bin/linker\0' not in station_counter or
@@ -525,6 +507,10 @@ done''',
         if hashlib.sha256(old_wireless).hexdigest() != WIRELESS_BASE_SHA256:
             raise ValueError('Expected the original CN7NPE wireless mod 2.4.6')
         standard_files, author = verify_mod(wireless)
+        standard_hooks = json.loads(standard_files['mod.json'])['hooks']
+        if (standard_hooks['native'][COREUTILS] != [CARRIER_RECIPE] or
+                standard_files[CARRIER_RECIPE] != (CARRIER_SOURCE / CARRIER_RECIPE).read_bytes()):
+            raise ValueError("Unexpected integrated CN7NPE audio recipe")
         hybrid_payload, hybrid_author = verify_mod(hybrid, HYBRID_VERSION)
         if author != hybrid_author or hybrid_payload != hybrid_files(standard_files, hybrid_payload['hooks.jar']):
             raise ValueError("The hybrid mod must match the expected CN7HEVPE variant")
@@ -542,8 +528,8 @@ done''',
         hybrid_digest = hashlib.md5(hybrid, usedforsecurity=False).hexdigest()
         changes['svc/hotspot.sh'], changes['bin/status.sh'] = check_avante_map_before_start(
             hotspot, changes['bin/status.sh'], hybrid_digest)
-        changes['svc/hotspot.sh'], changes['bin/status.sh'], changes['scripts/preun.sh'] = add_audio_carrier(
-            changes['svc/hotspot.sh'], changes['bin/status.sh'], package.read('scripts/preun.sh'), carrier)
+        changes['svc/hotspot.sh'], changes['bin/status.sh'] = add_audio_carrier_migration(
+            changes['svc/hotspot.sh'], changes['bin/status.sh'])
         changes['hmgapi/wireless-carplay-aa.zip'] = wireless
         required = set(json.loads(hybrid_payload['mod.json'])['hooks']['points'])
         required.add('dipo.carplay.native_iap_send')
@@ -555,7 +541,6 @@ done''',
             hmg_files[prefix + 'usb-mod-files.md5'] = checksums.encode("ascii")
         hmg_files['hmgapi/cn7hevpe/wireless-carplay-aa.zip'] = hybrid
         hmg_files['hmgapi/cn7hevpe/required-hooks.txt'] = ('\n'.join(sorted(required)) + '\n').encode("ascii")
-        hmg_files[f'hmgapi/{CARRIER_ID}.zip'] = carrier
         # Use the original source commit so the notice survives release tag cleanup.
         source_notice = package.read("licenses/Source.md")
         old_ref = b"/tree/kp-usb-test-v0.1.4/projection-usb"
@@ -613,8 +598,6 @@ def main():
                         help='Android ARMv7 read-only hostapd station counter')
     parser.add_argument('--link-diagnostics', required=True, type=Path,
                         help='Android ARMv7 bounded mDNS diagnostic probe')
-    parser.add_argument('--audio-carrier', required=True, type=Path,
-                        help='Signed CN7NPE CoreUtils carrier 0.1.1 to embed in Korea Projection')
     args = parser.parse_args()
     try:
         driver_base = read_package(
@@ -637,8 +620,7 @@ def main():
             PACKAGE_PATH: driver,
             PROJECTION: build_projection_package(projection_base, args.wireless_mod.read_bytes(),
                                                  args.hybrid_wireless_mod.read_bytes(),
-                                                 args.station_counter.read_bytes(), args.link_diagnostics.read_bytes(),
-                                                 args.audio_carrier.read_bytes()),
+                                                 args.station_counter.read_bytes(), args.link_diagnostics.read_bytes()),
             HMG_API: read_verified_release(args.hmg_api, HMG_API_SHA256),
         })
         args.output.parent.mkdir(parents=True, exist_ok=True)

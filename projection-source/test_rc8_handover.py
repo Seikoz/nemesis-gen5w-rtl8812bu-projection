@@ -106,7 +106,7 @@ public class Bridge {
  static boolean ensureHotspot(Context c){return apReady;}
  static String prop(String key,String fallback){return key.equals("sys.kp.cp_gen")?generation:fallback;}
  static void log(String s){} static void error(String s,Throwable t){}
- static void bluetoothHandoff(Param p, boolean stockBtHandoff) {
+ static void bluetoothHandoff(Param p) {
  BLUETOOTH_HOOK
  }
  static String mask(String s){return "[mac]";}
@@ -222,19 +222,17 @@ public class Bridge {
   check(sUsbCpWaitPeer==null,"Legacy transport inherited the rc=19 recovery rule");
 
   reset();begin(true);onCpSessionStarted(0);
-  Param control=new Param();bluetoothHandoff(control,false);
-  check(control.skipped,"Default must keep the previous behavior");
-  Param trial=new Param();bluetoothHandoff(trial,true);
-  check(!trial.skipped,"Configured USB Wi-Fi session did not allow the stock handoff");
+  Param control=new Param();bluetoothHandoff(control);
+  check(control.skipped,"USB wireless CarPlay must keep the Bluetooth link");
   generation="replugged-ap";
-  Param stale=new Param();bluetoothHandoff(stale,true);
-  check(stale.skipped,"A stale AP inherited the trial");
+  Param stale=new Param();bluetoothHandoff(stale);
+  check(stale.skipped,"A stale AP changed Bluetooth handling");
   reset();begin(false);onCpSessionStarted(1);
-  Param legacy=new Param();bluetoothHandoff(legacy,true);
-  check(legacy.skipped,"Non-USB wireless transport inherited the trial");
+  Param legacy=new Param();bluetoothHandoff(legacy);
+  check(legacy.skipped,"Other wireless sessions must also keep Bluetooth");
   onUsbIapConnected(1,"usb-phone");
-  Param wired=new Param();bluetoothHandoff(wired,true);
-  check(!wired.skipped,"Trial intercepted a wired session");
+  Param wired=new Param();bluetoothHandoff(wired);
+  check(!wired.skipped,"Hook intercepted a wired session");
   System.out.println("Actual rc.8 Bridge transport-0/SPP-loss replay, iAP2 forwarding, cancellation and reconnect isolation passed");
  }
 }
