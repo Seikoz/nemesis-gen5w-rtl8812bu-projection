@@ -132,11 +132,11 @@ bb() {
   else command "$@"; fi
 }
 logcat() {
-  [ "$1 $2 $3" = '-b main -d' ] || return 91
+  [ "$1 $2 $3 $4 $5" = '-b main -b system -d' ] || return 91
   dipo_tag=0
   for arg do
     [ "$arg" != -t ] || return 92
-    [ "$arg" != CarPlay_:I ] || dipo_tag=1
+    [ "$arg" != CarPlay_:D ] || dipo_tag=1
   done
   [ "$dipo_tag" = 1 ] || return 93
   status=0
@@ -169,6 +169,24 @@ logcat() {
 11-21 12:01:00.021 123 456 W AudioTrack: disabled due to previous underrun
 11-21 12:01:00.022 123 456 W AudioTrack: another underrun
 11-21 12:01:01.022 345 456 W AudioTrack: unrelated underrun
+11-21 12:04:10.100 123 456 D TccCarPlay: Main audio setting up AAC-LC for Private iPhone
+11-21 12:04:10.101 686 456 I MicomAudioService: setVolumeGroupInfoMember volumeGroup : 5, member : 11, value1 : 1, value2 : -1
+11-21 12:04:10.102 686 456 D MicomAudioService: setVolumeSlot : slot : 1, volume : 30
+11-21 12:04:11.103 123 456 I CarPlay_: [ DipoService ] changeAudioFocus() ResourceOwner.CONTROLLER AudioType:Speech, mIsMusicAudioFocusGained:true
+11-21 12:04:11.104 123 456 D CarPlay_: [ DipoService ] onChangeAltAudioMode() AltAudio: ENABLE
+11-21 12:04:11.105 123 456 I TccCarPlay: Alternate audio setting up Opus for Private iPhone
+11-21 12:04:11.106 686 456 I MicomAudioService: setVolumeGroupInfoMember volumeGroup : 56, member : 11, value1 : 1, value2 : -1
+11-21 12:04:11.107 686 456 D MicomAudioService: setVolumeSlot : slot : 1, volume : 3
+11-21 12:04:11.108 123 456 D MediaFocusControl: dispatchAudioFocusChange from com.daudio.dipo focusChange: -3
+11-21 12:04:13.109 123 456 I TccCarPlay: Alt audio stopped for Private iPhone
+11-21 12:04:13.110 123 456 I TccCarPlay: Teardown stream type: 101
+11-21 12:04:13.111 123 456 I CarPlay_: [ DipoService ] onChangeAltAudioMode() AltAudio: DISABLE
+11-21 12:04:13.112 686 456 I MicomAudioService: setVolumeGroupInfoMember volumeGroup : 5, member : 11, value1 : 1, value2 : -1
+11-21 12:04:13.113 686 456 I MicomAudioService: setVolumeGroupInfoMember volumeGroup : 010123456789, member : 11, value1 : 0
+11-21 12:04:14.001 123 456 W TccCarPlay: Video decoder timed out for Private iPhone
+11-21 12:04:14.002 123 456 W ACodec: timed out for Private iPhone
+11-21 12:04:14.003 345 456 W ACodec: unrelated decoder error
+11-21 12:04:16.001 123 456 I TccCarPlay: Video stream resumed for Private iPhone
 EOF
   return "$status"
 }
@@ -202,7 +220,7 @@ usb_watch_carplay_audio
             self.assertTrue(out.startswith('boot=new-boot\nlogcat_exit=0\n'))
             self.assertIn('bluetooth_handoff=stock', out)
             self.assertIn('audio_setup_request type=102', out)
-            self.assertEqual(out.count('audio_stream_reported stream=main codec=aac-lc'), 1)
+            self.assertEqual(out.count('12:01:00.003 audio_stream_reported stream=main codec=aac-lc'), 1)
             self.assertIn('audio_setup_error', out)
             self.assertIn('iap2_stage=waiting-after-rc19', out)
             self.assertIn('iap2_setup_request type=130', out)
@@ -221,6 +239,26 @@ usb_watch_carplay_audio
             self.assertIn('aac_music_first_packet_decoded', out)
             self.assertEqual(out.count('dipo_audio_track_underrun_reported'), 1)
             self.assertIn('native_iap_send_rows=1', out)
+            timeline = (
+                '12:04:10.100 audio_stream_reported stream=main codec=aac-lc',
+                '12:04:10.101 vehicle_volume_group group=5 member=11 value1=1 value2=-1',
+                '12:04:10.102 vehicle_volume_slot slot=1 level=30',
+                '12:04:11.103 dipo_audio_focus owner=controller type=speech music_focus=true',
+                '12:04:11.104 dipo_alt_audio_mode mode=enable',
+                '12:04:11.105 audio_stream_reported stream=alt codec=opus',
+                '12:04:11.106 vehicle_volume_group group=56 member=11 value1=1 value2=-1',
+                '12:04:11.107 vehicle_volume_slot slot=1 level=3',
+                '12:04:11.108 focus_dispatch source=carplay change=-3',
+                '12:04:13.109 audio_stream_stopped stream=alt',
+                '12:04:13.110 audio_teardown_request type=101',
+                '12:04:13.111 dipo_alt_audio_mode mode=disable',
+                '12:04:13.112 vehicle_volume_group group=5 member=11 value1=1 value2=-1',
+                '12:04:14.001 native_video_error',
+                '12:04:14.002 dipo_codec_error',
+                '12:04:16.001 native_video_state state=resumed',
+            )
+            self.assertEqual([line[6:] for line in out.splitlines() if '12:04:' in line], list(timeline))
+            self.assertNotIn('010123456789', out)
             for excluded in ('old-event', 'Private iPhone', 'type=110', 'com.daudio', 'PrivateDevice', '0x6015C788'):
                 self.assertNotIn(excluded.lower(), out.lower())
 

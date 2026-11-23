@@ -20,8 +20,8 @@ PROJECTION = "packages/korea.projection.zip"
 HMG_API = "packages/hmgapi.zip"
 HMG_API_SHA256 = "eb2480561bb88c53bafb460bb9e4a02d437de23ca8aca11fecc78ee7b9ecb8b3"
 PROJECTION_NAME = "Korea Projection CN7PE / CN7HEVPE / CN7NPE BETA"
-BUNDLE_VERSION = "0.1.47"
-PROJECTION_VERSION = "1.7.4.52"
+BUNDLE_VERSION = "0.1.48"
+PROJECTION_VERSION = "1.7.4.53"
 WIRELESS_SOURCE_REF = "cn7npe-usb-bundle-v0.1.42"
 CARRIER_SOURCE_REF = "cn7npe-usb-bundle-v0.1.35"
 PRODUCTS = tuple(f"{model}.KOR.{variant}.V039.001.260902"
@@ -279,7 +279,7 @@ def add_session_diagnostics(hotspot, status):
     anchor = b'      lastmask 400 < "$_f"'
     if status.count(anchor) != 1:
         raise ValueError('Expected report snapshot size hook')
-    status = status.replace(anchor, b'      case "$_f" in "$W"/usb-connection-*.log) lastmask 1400 < "$_f" ;; *) lastmask 400 < "$_f" ;; esac')
+    status = status.replace(anchor, b'      case "$_f" in "$W"/usb-connection-*.log|"$W"/usb-carplay-audio.log) lastmask 1400 < "$_f" ;; *) lastmask 400 < "$_f" ;; esac')
     anchor = b'  echo "cp_conn=$K_CP"'
     if status.count(anchor) != 1:
         raise ValueError('Expected report session summary')

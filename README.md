@@ -37,14 +37,19 @@
 
 제거할 때는 Korea Projection을 먼저 제거합니다. 무선 모드 업데이트는 합본으로 진행하세요. [설치·제거 상세 안내](bundle/INSTALL-KO.md)
 
-## v0.1.47 변경 사항
+## v0.1.48 변경 사항
+
+- 무선 CarPlay 연결 중 메인·보조 오디오 상태, 오디오 포커스, 차량 볼륨 그룹·슬롯을 시간순으로 수집해 제보 USB의 `3-log.txt`에 넣습니다. 내비가 출력한 영상·코덱 오류, 곡 전환과 버퍼 상태도 함께 대조할 수 있습니다.
+- 아반떼 N에서 T맵 안내 볼륨이 유선에서는 분리되고 무선에서는 음악과 연동된 사례를 재현할 때 사용합니다. 수집 범위는 내비가 제공하는 이벤트에 따릅니다. [T맵 안내 볼륨 시험](bundle/INSTALL-KO.md#무선-t맵-안내-볼륨-시험)
+
+### 무선 연결 대시보드
 
 - Korea Projection을 설치하거나 업데이트하면 **무선 연결 대시보드**의 홈 바로가기 등록을 자동으로 요청합니다. Android 앱 목록과 Korea Projection **Launch**에서도 열 수 있으며, 화면을 연 동안 약 5초마다 갱신합니다. [대시보드 사용 방법](bundle/INSTALL-KO.md#연결-대시보드)
 - GPS 카드에서 차량 내비의 수신 상태를 표시합니다. 휴대폰 GPS 연동은 확인 신호를 읽을 수 없어 확인 불가로 표시합니다.
 
 | 구성 요소 | 버전 |
 | --- | --- |
-| Korea Projection BETA | **1.7.4.52** |
+| Korea Projection BETA | **1.7.4.53** |
 | HMG-API Wireless Mode | **2.4.31** (CN7PE·CN7NPE), **2.4.32** (CN7HEVPE) |
 | HMG-API 본체 | **1.1.0-rc.8** (NEMESIS 패키지 **1.0.99.8**) |
 | Realtek Wi-Fi Driver | **1.1.19** |
@@ -75,7 +80,8 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 
 | 버전 | 주요 변경 |
 | --- | --- |
-| **v0.1.47** | 5초 갱신 대시보드 및 설치 시 홈 바로가기 자동 등록 요청 |
+| **v0.1.48** | 무선 CarPlay 스트림·포커스·차량 볼륨 그룹 및 영상 오류 로그 보강 |
+| v0.1.47 | 5초 갱신 대시보드 및 설치 시 홈 바로가기 자동 등록 요청 |
 | v0.1.46 (로컬 시험) | 차량 GPS 수신과 휴대폰 GPS 연동 표시 구분 |
 | v0.1.45 (로컬 시험) | 내비 GPS 위성 수와 신호 대 잡음비 표시 |
 | v0.1.44 (로컬 시험) | 대시보드 앱·바로가기, 화면에서 5초 갱신, 부팅·연결·Wi-Fi·HUD 상세 상태 |
@@ -88,7 +94,7 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 | v0.1.37 (로컬 시험) | CN7NPE 오디오 보정을 무선 모드에 통합하고 Stock Bluetooth handoff 시험 옵션 제거 |
 | v0.1.36 | 순정 CarPlay 라이브러리 MD5 검사 수정. CN7NPE에서 무선 CarPlay의 차량 스피커 출력 확인 |
 
-v0.1.47 USB ZIP SHA-256 `d7b06e7b5e24bf30a3ebaf01b603d53fca68f65e5a63ae516d010281531de6da`
+v0.1.48 USB ZIP SHA-256 `bc850e0d7064d1fd76fcb9a306fe13f7c68fcc70b10333e05a8348415e9e8418`
 
 [전체 변경 이력](CHANGELOG.md) · [이전 릴리스와 설치 ZIP](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/blob/cn7npe-usb-bundle-v0.1.36/README.md#검증-범위)
 

@@ -1,4 +1,4 @@
-# Keep only audio milestones and source categories. Native logs may name the phone.
+# Keep only known playback, volume and display events. Native logs may name the phone.
 usb_capture_carplay_mixer() {
   local stamp rc=0
   stamp=$("$BB" date '+%m-%d %H:%M:%S') || return 0
@@ -59,7 +59,9 @@ EOF
   fi
   {
     rc=0
-    "$BB_OWN" timeout 25 logcat -b main -d -v threadtime 'TccCarPlay:V' 'CarPlay_:I' 'LeafiaAAC:I' 'AudioTrack:W' 'MediaFocusControl:I' 'HMG-API:I' '*:S' 2>/dev/null || rc=$?
+    "$BB_OWN" timeout 25 logcat -b main -b system -d -v threadtime \
+      'TccCarPlay:V' 'CarPlay_:D' 'LeafiaAAC:I' 'AudioTrack:W' 'MediaFocusControl:D' \
+      'MicomAudioService:D' 'ACodec:W' 'OMXCodec:W' 'HMG-API:I' '*:S' 2>/dev/null || rc=$?
     echo "logcat_exit=$rc"
   } | "$BB" awk -v dipo_pid="$dipo_pid" '
     function diagnostic_field(line, key, allowed,    value) {
@@ -68,17 +70,34 @@ EOF
       sub(/^[^:.]+[:.][[:space:]]*/, "", value)
       return value ~ allowed ? value : "other"
     }
+    function number_field(line, key,    value) {
+      if (!match(line, "(^|[^a-z0-9_])" key "[[:space:]]*:[[:space:]]*-?[0-9]+([,[:space:]]|$)"))
+        return "unseen"
+      value=substr(line, RSTART, RLENGTH)
+      sub(/^[^:]+:[[:space:]]*/, "", value)
+      sub(/[,[:space:]]+$/, "", value)
+      return length(value)<=8 ? value : "unseen"
+    }
+    function audio_route(line) {
+      if (line ~ /mainhigh|main buffered audio|buffered main audio/) return "main_buffered"
+      if (line ~ /alt(ernate)? audio/) return "alt"
+      if (line ~ /main audio/) return "main"
+      return "other"
+    }
     /^logcat_exit=[0-9]+$/ {print; next}
-    $1 !~ /^[0-9][0-9]-[0-9][0-9]$/ || $2 !~ /^[0-9:.]+$/ {next}
+    $1 !~ /^[0-9][0-9]-[0-9][0-9]$/ || $2 !~ /^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]([.][0-9]+)?$/ {next}
     {
       line=tolower($0); event=""
       if (line ~ /[[:space:]]tcccarplay[[:space:]]*:/) {
         native++
         if (line ~ /tcccarplay_iapsendmessage\(\)[[:space:]]*:/) native_iap_send++
         if (line ~ /audio/ && line ~ /setup.*(fail|error)|failed to (set up|start|open)/) event="audio_setup_error"
-        else if (line ~ /setting up (aac|opus|pcm)|audio stream.*(started|prepared)/) {
-          route=(line ~ /mainhigh|main buffered audio|buffered main audio/ ? "main_buffered" :
-            (line ~ /alt audio/ ? "alt" : (line ~ /main audio/ ? "main" : "other")))
+        else if (line ~ /teardown stream type:[[:space:]]*10[0-3]([^0-9]|$)/) {
+          event="audio_teardown_request type=" diagnostic_field(line, "teardown stream type:", "^10[0-3]$")
+        } else if (line ~ /audio/ && line ~ /(stopped|torn down|teardown|tear down)/ && audio_route(line)!="other") {
+          event="audio_stream_stopped stream=" audio_route(line)
+        } else if (line ~ /setting up (aac|opus|pcm)|audio stream.*(started|prepared)/) {
+          route=audio_route(line)
           codec=(line ~ /aac-eld/ ? "aac-eld" : (line ~ /aac-lc/ ? "aac-lc" : (line ~ /opus/ ? "opus" : (line ~ /pcm/ ? "pcm" : "unknown"))))
           event="audio_stream_reported stream=" route " codec=" codec
         } else if (line ~ /setup stream type:[[:space:]]*(100|101|102|103)([^0-9]|$)/) {
@@ -87,6 +106,14 @@ EOF
         else if (line ~ /(^|[^a-z])flushbuffered([^a-z]|$)|flush(ing|ed)? buffered audio/) event="buffered_audio_flush_reported"
         else if (line ~ /audio.*(underrun|underflow)|(underrun|underflow).*audio/) event="native_audio_underrun_reported"
         else if (line ~ /audio.*(resum(ed|ing)|rebuffer(ing)?)/) event="native_audio_resume_or_refill_reported"
+        else if (line ~ /(video|screen|decoder|render)/ && line ~ /(stall|timeout|timed out|fail|error)/)
+          event="native_video_error"
+        else if (match(line, /(video|screen)( stream)?[^[:alnum:]]+(stopped|paused|resumed|started)([^a-z]|$)/)) {
+          state=substr(line, RSTART, RLENGTH)
+          sub(/^(video|screen)( stream)?[^[:alnum:]]+/, "", state)
+          sub(/[^a-z]+$/, "", state)
+          event="native_video_state state=" state
+        }
       } else if (line ~ /[[:space:]]leafiaaac[[:space:]]*:/) {
         if (line ~ /aac-lc decoder up:/) event="aac_music_decoder_started"
         else if (line ~ /first packet decoded: [0-9]+ frames, [0-9]+ ch, [0-9]+ hz/) event="aac_music_first_packet_decoded"
@@ -94,11 +121,14 @@ EOF
         if (line ~ /underrun|underflow|disabled due to previous underrun/) event="dipo_audio_track_underrun_reported"
       } else if (line ~ /[[:space:]]carplay_[[:space:]]*:.*\[[[:space:]]*diposervice[[:space:]]*\]/) {
         if (line ~ /updatecarplaymusicssosd/) event="carplay_music_metadata_updated"
-        else if (line ~ /changeaudiofocus\(\).*resourceowner[.].*audiotye:/) {
+        else if (line ~ /changeaudiofocus\(\).*resourceowner[.].*audioty(pe|e):/) {
           owner=diagnostic_field(line, "resourceowner[.]", "^(controller|accessory|none|unknown)$")
-          type=diagnostic_field(line, "audiotye:", "^(media|telephony|speech|default|unknown)$")
+          type=diagnostic_field(line, "audioty(pe|e):", "^(media|telephony|speech|default|unknown)$")
           music=diagnostic_field(line, "mismusicaudiofocusgained:", "^(true|false)$")
           event="dipo_audio_focus owner=" owner " type=" type " music_focus=" music
+        } else if (line ~ /onchangealtaudiomode\(\).*altaudio:/) {
+          mode=diagnostic_field(line, "altaudio:", "^(same|enable|disable)$")
+          event="dipo_alt_audio_mode mode=" mode
         } else if (line ~ /onchangemainaudiomode\(\).*mainaudio:/) {
           mode=diagnostic_field(line, "mainaudio:", "^(same|enable|disable)$")
           if (line ~ /mismusicaudiofocusgained:/) {
@@ -112,6 +142,23 @@ EOF
         source=(line ~ /btaudio/ ? "bluetooth-media" : (line ~ /[.]dipo|carplay/ ? "carplay" : "other"))
         if (line ~ /requestaudiofocus\(\) from/) event="focus_request source=" source
         else if (line ~ /abandonaudiofocus\(\) from/) event="focus_abandon source=" source
+        else if (line ~ /dispatchaudiofocuschange|audio focus (gain|loss)/)
+          event="focus_dispatch source=" source " change=" number_field(line, "focuschange")
+      } else if (line ~ /[[:space:]]micomaudioservice[[:space:]]*:/) {
+        if (line ~ /setvolumegroupinfomember/) {
+          group=number_field(line, "volumegroup")
+          member=number_field(line, "member")
+          if (group!="unseen" && member!="unseen")
+            event="vehicle_volume_group group=" group " member=" member " value1=" number_field(line, "value1") " value2=" number_field(line, "value2")
+        } else if (line ~ /setvolumeslot/) {
+          slot=number_field(line, "slot")
+          volume=number_field(line, "volume")
+          if (slot!="unseen" && volume!="unseen")
+            event="vehicle_volume_slot slot=" slot " level=" volume
+        }
+      } else if (dipo_pid ~ /^[1-9][0-9]*$/ && $3==dipo_pid &&
+        line ~ /[[:space:]](acodec|omxcodec)[[:space:]]*:/ && line ~ /error|failed|timeout|timed out/) {
+        event="dipo_codec_error"
       } else if (line ~ /[[:space:]]hmg-api[[:space:]]*:/) {
         if (line ~ /carplay: route guidance start-only result=(true|false)[[:space:]]*$/)
           event="hud_guidance_start=" (line ~ /=true[[:space:]]*$/ ? "true" : "false")
@@ -134,10 +181,10 @@ EOF
         else if (line ~ /carplay log: on /) event="native_logging=enabled"
         else if (line ~ /carplay log: logcontrol failed|carplay log: can.t switch it on/) event="native_logging=error"
       }
-      if (event ~ /underrun_reported$/) {
+      if (event ~ /(underrun_reported|video_error|codec_error)$/) {
         second=$1 " " substr($2, 1, 8)
-        if (last_underrun[event]==second) next
-        last_underrun[event]=second
+        if (last_repeated[event]==second) next
+        last_repeated[event]=second
       }
       if (event!="") {print $1, $2, event; matched++}
     }
@@ -154,11 +201,11 @@ EOF
       }
       /^logcat_exit=/ {status=$0; next}
       /^capture_rows=/ {counts=$0; next}
-      !seen[$0]++ {items[n++%160]=$0}
+      !seen[$0]++ {items[n++%1200]=$0}
       END {
         if (status!="") print status
         if (counts!="") print counts
-        for (i=(n>160?n-160:0); i<n; i++) print items[i%160]
+        for (i=(n>1200?n-1200:0); i<n; i++) print items[i%1200]
       }' "$previous" "$snapshot"
   } > "$output" && "$BB" mv -f "$output" "$file"; then
     [ -z "${USB_TRIAL_DIR:-}" ] || usb_trial_save usb-carplay-audio.log

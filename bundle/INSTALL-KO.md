@@ -1,6 +1,6 @@
 # 아반떼 Gen5W USB 합본 설치
 
-**v0.1.47**은 국내형 아반떼 CN7PE, 하이브리드 CN7HEVPE, N CN7NPE의 **V039.001.260902** Gen5W(TCC803x)를 대상으로 합니다. NEMESIS Manager **1.16.7 이상**이 필요합니다. 합본에는 Korea Projection **1.7.4.52**, Wireless Mode **2.4.31**(CN7PE·CN7NPE) 또는 **2.4.32**(CN7HEVPE), HMG-API **1.1.0-rc.8**, Realtek **1.1.19**가 포함됩니다.
+**v0.1.48**은 국내형 아반떼 CN7PE, 하이브리드 CN7HEVPE, N CN7NPE의 **V039.001.260902** Gen5W(TCC803x)를 대상으로 합니다. NEMESIS Manager **1.16.7 이상**이 필요합니다. 합본에는 Korea Projection **1.7.4.53**, Wireless Mode **2.4.31**(CN7PE·CN7NPE) 또는 **2.4.32**(CN7HEVPE), HMG-API **1.1.0-rc.8**, Realtek **1.1.19**가 포함됩니다.
 
 주차 상태에서 설치하고 완료될 때까지 전원을 끄거나 USB를 빼지 마세요. 설치 실패 시 내비게이션 재부팅이나 복구가 필요할 수 있습니다. 모든 책임은 설치하신 차주 본인에게 있습니다.
 
@@ -45,6 +45,12 @@ HUD는 별도 **Phone Projection TBT**를 설치해 **켜짐**으로 사용하�
 1. 동글을 꽂은 채 부팅하고 약 2분 기다립니다. 인식하지 못하면 같은 부팅에서 동글을 한 번 재장착하고, 필요하면 Realtek Launch를 한 번 누릅니다. 부팅·재장착·Launch 시각과 화면 상태를 기록합니다.
 2. 증상을 재현한 **같은 부팅**에서 동글을 빼고 제보 USB를 연결합니다. **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 선택합니다.
 3. `KoreaProjection-report`의 `1-report.md`, `2-car-report.json`, `3-log.txt`를 확인합니다. USB 인식은 `speed.log`·`boot.log`, 오디오는 `usb-carplay-audio.log`, CN7NPE 오디오 보정은 `cn7npe-rtwlan0-carrier: applied` 기록을 함께 확인하세요. 제보 전에 개인 정보가 포함됐는지 확인합니다.
+
+### 무선 T맵 안내 볼륨 시험
+
+1. 무선 CarPlay에 연결하고 음악을 재생합니다. **CarPlay 상세 로그 (문제 진단)**를 켜면 내비가 제공하는 스트림 세부 이벤트도 함께 수집할 수 있습니다. 옵션을 켰다면 재부팅한 뒤 시험합니다.
+2. T맵 안내가 나오기 전, 나오는 중, 끝난 직후에 각 상황을 확인합니다. 안내 중 볼륨 노브를 한 번 조작하고, 음악 볼륨이 함께 바뀌는지와 안내가 끝나면 되돌아오는지 기록합니다. 안내 및 노브 조작 시각은 가능하면 초 단위로 기록합니다.
+3. 안내가 끝나고 약 1분 뒤, 같은 부팅에서 제보 USB로 바꾸고 **제보 파일 만들기**를 실행합니다. 안내 전·중·후에 내비가 남긴 이벤트는 `3-log.txt`의 `usb-carplay-audio.log` 섹션에 모입니다. 화면이 멈췄다면 발생·복구 시각과 당시 음악이 계속 나왔는지도 함께 기록합니다.
 
 ### 무선 곡 전환 무음 시험
 
