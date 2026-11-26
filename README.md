@@ -1,15 +1,19 @@
 # NEMESIS RTL8812BU Gen5W Wireless Projection
 
-현대 Gen5W 내비게이션에서 RTL88x2BU USB 무선랜을 무선 CarPlay와 Android Auto에 사용하기 위한 USB 설치 합본입니다. Korea Projection, Realtek 드라이버, HMG-API를 담았습니다.
+현대 Gen5W 내비게이션에서 RTL88x2BU USB 무선랜으로 무선 CarPlay와 Android Auto를 시험한 프로젝트입니다. 이 저장소에는 자체 제작 합본의 소스와 시험 기록을 보관합니다.
 
 > [!WARNING]
 > 설치·업데이트·제거 과정에서 내비게이션이 멈추거나 반복 재부팅할 수 있습니다. 순정 블루투스·폰 프로젝션에 문제가 생기면 복구나 정비가 필요할 수 있습니다. 주차 상태에서 진행하고, 설치가 끝날 때까지 전원을 끄거나 USB를 빼지 마세요.
 >
 > 모든 책임은 설치하신 차주 본인에게 있습니다.
 
-**[최신 공개 USB 설치 ZIP 다운로드](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases/latest)** · [설치·제거 상세 안내](bundle/INSTALL-KO.md) · [전체 변경 이력](CHANGELOG.md)
+**[Korea Projection 최신 정식 릴리즈](https://github.com/StopDragon/korea-projection/releases/latest)** · [공식 설치 안내](https://github.com/StopDragon/korea-projection/blob/main/docs/install-guide.md)
 
-## 지원 환경
+공식 릴리즈의 **Assets**에서 `korea-projection-<버전>-usb.zip`을 내려받아 공식 안내에 따라 설치하세요. 아래의 버전과 실차 결과는 자체 제작 합본을 시험할 당시의 기록입니다.
+
+## 이전 합본의 시험 기록
+
+### 지원 환경
 
 | 항목 | 기준 |
 | --- | --- |
@@ -18,7 +22,7 @@
 | 무선랜 | 아래 동글 목록 참고. 인터페이스 `rtwlan0` |
 | 설치 전제 | NEMESIS Manager **1.16.7 이상** 설치, FAT32 USB 메모리 |
 
-### 지원 동글과 시험 범위
+#### 지원 동글과 시험 범위
 
 | 모델 | USB ID 및 확인 범위 |
 | --- | --- |
@@ -28,21 +32,12 @@
 
 새 동글은 한 번에 하나씩 연결해 USB 480Mbps와 `rtwlan0` 준비 여부를 확인합니다. TP-Link에 대한 EHCI 호스트 자동 복구는 시험 범위에서 제외됩니다.
 
-## 설치 및 업데이트
-
-1. 최신 릴리스의 **Assets**에서 `-USB.zip`을 받아 FAT32 USB 메모리 최상위에 풉니다. `NEMESIS.data`와 `packages/`가 USB 루트에 있어야 합니다. `packages/` 안의 ZIP은 그대로 둡니다.
-2. 주차 상태에서 **NEMESIS → Package Store → USB → Korea Projection BETA → Install / Update**를 선택합니다. 필요한 HMG-API와 Realtek 드라이버는 먼저 설치 또는 갱신됩니다.
-3. 설치 USB를 사용할 동글로 교체하고 무선 모드의 적용·재부팅 안내를 따릅니다. **USB Wi-Fi AP ready (rtwlan0)**가 표시되면 iPhone의 Wi-Fi와 Bluetooth를 켜고 CarPlay에 연결합니다.
-4. HUD 길안내는 별도 **Phone Projection TBT**를 켜서 사용합니다. 합본 Wireless Mode의 **계기판·HUD 길안내**는 기본 **꺼짐**입니다. 업데이트 시 저장된 설정은 유지됩니다. [HUD 설정 방법](bundle/INSTALL-KO.md#hud-경로-안내)
-
-제거할 때는 Korea Projection을 먼저 제거합니다. 무선 모드 업데이트는 합본으로 진행하세요. [설치·제거 상세 안내](bundle/INSTALL-KO.md)
-
-## v0.1.48 변경 사항
+### v0.1.48 변경 사항
 
 - 무선 CarPlay 연결 중 메인·보조 오디오 상태, 오디오 포커스, 차량 볼륨 그룹·슬롯을 시간순으로 수집해 제보 USB의 `3-log.txt`에 넣습니다. 내비가 출력한 영상·코덱 오류, 곡 전환과 버퍼 상태도 함께 대조할 수 있습니다.
 - 아반떼 N에서 T맵 안내 볼륨이 유선에서는 분리되고 무선에서는 음악과 연동된 사례를 재현할 때 사용합니다. 수집 범위는 내비가 제공하는 이벤트에 따릅니다. [T맵 안내 볼륨 시험](bundle/INSTALL-KO.md#무선-t맵-안내-볼륨-시험)
 
-### 무선 연결 대시보드
+#### 무선 연결 대시보드
 
 - Korea Projection을 설치하거나 업데이트하면 **무선 연결 대시보드**의 홈 바로가기 등록을 자동으로 요청합니다. Android 앱 목록과 Korea Projection **Launch**에서도 열 수 있으며, 화면을 연 동안 약 5초마다 갱신합니다. [대시보드 사용 방법](bundle/INSTALL-KO.md#연결-대시보드)
 - GPS 카드에서 차량 내비의 수신 상태를 표시합니다. 휴대폰 GPS 연동은 확인 신호를 읽을 수 없어 확인 불가로 표시합니다.
@@ -56,7 +51,7 @@
 
 Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하면 Korea Projection이 `rtwlan0`에 핫스폿을 엽니다. 무선 모드는 Bluetooth iAP2 세션을 Wi-Fi로 넘깁니다. USB 480Mbps 표시는 USB 버스 연결 속도입니다. [무선 모드 동작 및 빌드](projection-source/README.md)
 
-## 실차 확인 결과
+### 실차 확인 결과
 
 | 항목 | 확인 결과 |
 | --- | --- |
@@ -66,7 +61,7 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 
 장시간 재연결, 통화·Siri·내비 안내 음성, Android Auto 실차 동작, CN7PE·CN7HEVPE의 차량별 동작은 확인 중입니다.
 
-## 알려진 문제
+### 알려진 문제
 
 아래 증상은 아반떼 N CN7NPE 260902와 ipTIME A3000mini의 실차 시험에서 확인했습니다.
 
@@ -77,9 +72,9 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 | 무선 CarPlay 화면이 일시 정지 | v0.1.47에서 터널 진입 후 한 차례 관측했습니다. 기록상 CarPlay 연결은 유지됐고, 순정 내비 화면으로 돌아갔다가 CarPlay를 다시 열어 복구됐습니다. 발생 원인은 확인 중입니다. |
 | 연결할 때 차량 정보 제공 동의창이 반복 표시됨 | 무선 CarPlay 연결에서 확인했습니다. 기반 모드에는 동일 iPhone의 최초 동의가 재연결 때도 조회되도록 보정하는 코드가 포함돼 있습니다. 실차에서 승인 이벤트가 전달되는지와 동의 기록이 재연결·재부팅 후에도 조회되는지는 확인 중입니다. |
 
-분석 중 확인한 미해결 문제를 이 목록에 반영합니다. 해결을 검증한 항목은 목록에서 빼고, 해결 버전과 검증 결과를 [변경 이력](CHANGELOG.md)에 기록합니다. 로그 수집 전용 시험 ZIP은 로컬 시험 버전으로 관리합니다.
+이 목록은 자체 제작 합본 당시의 기록입니다. 공식 릴리즈의 변경과 알려진 문제는 위의 공식 릴리즈에서 확인하세요.
 
-## 문제 제보
+### 이전 합본의 제보 절차
 
 곡 전환 무음을 시험할 때는 **HMG-API Wireless Mode → CarPlay 상세 로그 (문제 진단)**를 켜고 재부팅합니다. 다운로드한 곡을 무선으로 재생하며 세 번 넘긴 뒤 버튼을 누른 시각을 각각 기록합니다. 마지막 전환 약 1분 뒤 아래 절차로 로그를 저장합니다. [곡 전환 시험 상세 안내](bundle/INSTALL-KO.md#무선-곡-전환-무음-시험)
 
@@ -87,7 +82,7 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 2. 같은 부팅에서 동글을 제보 USB로 바꾸고 **NEMESIS → My Packages → Korea Projection → Launch → 제보 파일 만들기**를 선택합니다.
 3. `KoreaProjection-report/3-log.txt`와 `1-report.md`, `2-car-report.json`을 공유합니다. USB 인식 문제에는 Realtek `speed.log`와 `boot.log`도 첨부해 주세요. 공유 전에 기기 이름·주소와 위치 정보가 포함됐는지 확인하세요.
 
-## 버전별 변경 사항
+### 버전별 변경 사항
 
 | 버전 | 주요 변경 |
 | --- | --- |
@@ -107,7 +102,7 @@ Realtek 드라이버가 동글에 연결되고 USB 480Mbps 조건을 충족하�
 
 v0.1.48 USB ZIP SHA-256 `bc850e0d7064d1fd76fcb9a306fe13f7c68fcc70b10333e05a8348415e9e8418`
 
-[전체 변경 이력](CHANGELOG.md) · [이전 릴리스와 설치 ZIP](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/releases) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/blob/cn7npe-usb-bundle-v0.1.36/README.md#검증-범위)
+[전체 변경 이력](CHANGELOG.md) · [이전 기술 검증 기록](https://github.com/Seikoz/nemesis-gen5w-rtl8812bu-projection/blob/7d33b8303d050621ccadedf58d64c0b8b9f7532b/README.md#검증-범위)
 
 ## 소스와 라이선스
 
